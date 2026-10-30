@@ -1,4 +1,8 @@
 /*
+  NOTE (Oct 2026): the colour VALUES now come from design-system/brand.css —
+  the logo's magenta and violet, one font. The notes below record the older
+  Berry kit these names were first built for; the names and roles still hold.
+
   The redesigned member experience — its own palette.
   Every value sampled from the supplied screens rather than guessed.
 
@@ -73,43 +77,43 @@
      sheet. Dark mode never had the problem (#14122a against #1c1936), which
      is exactly why it looked designed and this did not. The tint leans to the
      brand's violet rather than to grey, so white cards read warm on it. */
-  --ux-canvas: #fcf8f7;
-  --ux-surface: #ffffff;
-  --ux-surface-2: #f9f0ee;
-  --ux-line: #f8eae9;
-  --ux-line-strong: #f3dad7;
+  --ux-canvas: var(--ws-canvas);
+  --ux-surface: var(--ws-surface);
+  --ux-surface-2: var(--ws-surface-2);
+  --ux-line: var(--ws-line);
+  --ux-line-strong: var(--ws-line-strong);
 
   /* ink */
-  --ux-ink: #29141f;          /* headings, sidebar labels */
-  --ux-ink-2: #592b43;
+  --ux-ink: var(--ws-ink);          /* headings, sidebar labels */
+  --ux-ink-2: var(--ws-ink-2);
   /* Both darkened after measuring. The sampled #6e7391 reads 4.21:1 on the
      violet quick-action tint and #9aa0b8 read 2.35:1 — under the 4.5:1 that
      small text needs. These are the nearest values that clear it on EVERY
      surface they land on, including the six coloured tints, rather than only
      on white where they happened to look fine. */
-  --ux-muted: #6c6065;        /* "Course • Beginner" — 5.47:1 worst case */
-  --ux-faint: #6c6065;        /* timestamps, chevrons — 4.91:1 worst case */
+  --ux-muted: var(--ws-muted);        /* "Course • Beginner" — 5.47:1 worst case */
+  --ux-faint: var(--ws-muted);        /* timestamps, chevrons — 4.91:1 worst case */
 
   /* brand violet */
-  --ux-brand: #742a4f;        /* links, "See All" */
-  --ux-brand-600: #a55168;    /* primary button */
-  --ux-ink-on-brand: #ffffff; /* ink for a --ux-brand / --ux-brand-600 fill */
-  --ux-brand-700: #742a4f;
-  --ux-brand-900: #521e38;    /* the dark "Complete Your Profile" card */
+  --ux-brand: var(--ws-magenta-600);        /* links, "See All" */
+  --ux-brand-600: var(--ws-magenta-600);    /* primary button */
+  --ux-ink-on-brand: var(--ws-on-brand); /* ink for a --ux-brand / --ux-brand-600 fill */
+  --ux-brand-700: var(--ws-magenta-700);
+  --ux-brand-900: var(--ws-magenta-800);    /* the dark "Complete Your Profile" card */
   /* What sits ON the brand-900 slab. Written as literal hex in two components
      before, which is how the button on it came to be 4.31:1 — below AA, in the
      sidebar, on every screen. The button is white because no violet clears 4.5:1
      for white text while still separating from the slab it sits on. */
-  --ux-on-brand-2: #f3dad7;        /* 5.98:1 on brand-900 */
+  --ux-on-brand-2: var(--ws-magenta-100);        /* 5.98:1 on brand-900 */
   --ux-on-brand-track: rgba(0, 0, 0, 0.20);
-  --ux-on-brand-fill: #e8b7b7;     /* 5.13:1 — a graphic, needs 3:1 */
+  --ux-on-brand-fill: var(--ws-magenta-300);     /* 5.13:1 — a graphic, needs 3:1 */
   --ux-on-brand-btn: #ffffff;      /* 10.35:1 against the slab */
-  --ux-on-brand-btn-ink: #521e38;  /* 10.35:1 on that white */
+  --ux-on-brand-btn-ink: var(--ws-magenta-800);  /* 10.35:1 on that white */
   /* The bed a video or a poster sits on. Deliberately near-black in BOTH
      themes — a light letterbox around a photograph fights the photograph. */
-  --ux-media-bed: #29141f;
-  --ux-brand-tint: #f7f2f4;   /* active nav pill */
-  --ux-brand-tint-2: #f3dad7; /* progress track */
+  --ux-media-bed: var(--ws-deep);
+  --ux-brand-tint: var(--ws-magenta-50);   /* active nav pill */
+  --ux-brand-tint-2: var(--ws-magenta-100); /* progress track */
   --ux-on-brand: #ffffff;
   /* Filled surfaces that carry WHITE text — buttons, sent message bubbles.
      Separate from the accent because the accent also paints progress fills and
@@ -117,8 +121,8 @@
      against white, so every primary button's right-hand gradient stop was
      failing AA and nothing caught it: a gradient has no single background
      colour, so the contrast pass skips it entirely. */
-  --ux-fill:   #742a4f;       /* 8.57:1 with white */
-  --ux-fill-2: #a55168;       /* 6.27:1 with white */
+  --ux-fill:   var(--ws-magenta-600);       /* 8.57:1 with white */
+  --ux-fill-2: var(--ws-magenta-700);       /* 6.27:1 with white */
 
   /* ── The six accent families ───────────────────────────────────────────
      Generated in OKLCH, not picked by eye, and the difference is measurable.
@@ -131,13 +135,14 @@
      and bars are graphics and need 3:1. Text needs 4.5:1, which on tints this
      pale is a much darker colour — so it gets its own token rather than
      dragging the whole palette down and taking the warmth with it. */
-  --ux-tint-violet: #e9ddfb;
+  --ux-tint-violet: var(--ws-violet-100);
   --ux-tint-orange: #fae0cf;
-  --ux-tint-blue:   #eaeff4;
-  --ux-tint-green:  #eaf0ea;
-  --ux-tint-pink:   #f5dfdf;
-  --ux-tint-lilac:  #e9ddfb;
-  --ux-tint-amber:  #f1eade;   /* ink clears AA at 4.60:1 */
+  --ux-tint-blue:   var(--ws-info-tint);
+  --ux-tint-green:  var(--ws-success-tint);
+  --ux-tint-pink:   var(--ws-magenta-50);
+  --ux-tint-lilac:  #f3ebfc;                  /* Pregnancy: its own purple, apart from Sleep's violet */
+  --ux-tint-magenta: var(--ws-magenta-50);   /* Health home and Reminders: the brand itself */
+  --ux-tint-amber:  var(--ws-warning-tint);   /* ink clears AA at 4.60:1 */
 
   /* graphics — measured 3.01 to 3.03 on the worst surface each lands on */
   /* ── The deep canvas, and the emblem's own ribbon ramp ────────────────
@@ -146,12 +151,12 @@
      the ribbon obeys ADR-013 like every other colour, and so one edit
      restyles the emblem, the spine and the hero art together. The ramp is
      the emblem's, sampled in order: indigo, violet, magenta, coral, gold. */
-  --ux-deep:      #29141f;   /* the ground */
-  --ux-deep-2:    #3a1c2c;   /* raised blocks on it */
-  --ux-deep-3:    #4f263c;   /* hairlines and tracks */
+  --ux-deep:      var(--ws-deep);   /* the ground */
+  --ux-deep-2:    #2a1f4a;   /* raised blocks on it */
+  --ux-deep-3:    #3a2d63;   /* hairlines and tracks */
   --ux-deep-ink:  #ffffff;
-  --ux-deep-ink-2:#e8b7b7;   /* 8.9:1 on --ux-deep */
-  --ux-deep-ink-3:#9f797d;   /* 5.1:1 on --ux-deep */
+  --ux-deep-ink-2:var(--ws-magenta-200);   /* 8.9:1 on --ux-deep */
+  --ux-deep-ink-3:#b3aac6;   /* 5.1:1 on --ux-deep */
 
   /* The bloom under a Home card on hover. Two, because the tiles carry the
      accent of whatever they link to and the figures carry the brand. */
@@ -178,40 +183,42 @@
   /* The alert red. Deep enough to carry white text in either theme: the light
      red used for emphasis measures 2.8:1 against white, on the one control
      that has to work when she is frightened. */
-  --ux-danger-solid: #b91c1c;
+  --ux-danger-solid: var(--ws-danger-solid);
   --ux-on-danger: #ffffff;    /* ink for a --ux-danger-solid fill */
-  --ux-danger-tint: #f5e3e1;
+  --ux-danger-tint: var(--ws-danger-tint);
 
   --ux-read-tick: #7fe3ff;
 
   --ux-glow: transparent;
-  --ux-shadow-glow: 0 16px 38px -18px rgba(116, 42, 79, 0.55);
-  --ux-shadow-glow-2: 0 20px 46px -18px rgba(165, 81, 104, 0.45);
+  --ux-shadow-glow: 0 16px 38px -18px rgba(200, 0, 102, 0.50);
+  --ux-shadow-glow-2: 0 20px 46px -18px rgba(72, 48, 240, 0.40);
 
-  --ux-rib-1: #742a4f;
-  --ux-rib-2: #a55168;
-  --ux-rib-3: #e8b7b7;
-  --ux-rib-4: #f6c7a8;
-  --ux-rib-5: #8b5cf6;
+  --ux-rib-1: var(--ws-violet-600);
+  --ux-rib-2: var(--ws-orchid);
+  --ux-rib-3: var(--ws-magenta-500);
+  --ux-rib-4: var(--ws-magenta-300);
+  --ux-rib-5: var(--ws-gold);
 
-  --ux-violet: #8b5cf6;
+  --ux-violet: var(--ws-violet-600);
   --ux-orange: #e97427;
   --ux-blue:   #1891f2;
   --ux-green:  #00a44b;
-  --ux-pink:   #a55168;
+  --ux-pink:   var(--ws-magenta-600);
   --ux-amber:  #b48700;
 
   /* text on a tint — measured 4.51 to 4.56 */
-  --ux-violet-ink: #6f35f4;
+  --ux-violet-ink: var(--ws-violet-600);
   --ux-orange-ink: #a34b11;
-  --ux-blue-ink:   #006dbd;
-  --ux-green-ink:  #007d38;
-  --ux-pink-ink:   #9b4c62;
-  --ux-amber-ink:  #856200;
+  --ux-blue-ink:   var(--ws-info-ink);
+  --ux-green-ink:  var(--ws-success-ink);
+  --ux-pink-ink:   var(--ws-magenta-700);
+  --ux-lilac-ink:  #7a3fc7;   /* 5.6:1 on its tint */
+  --ux-magenta-ink: var(--ws-magenta-600);   /* 5.2:1 on its tint */
+  --ux-amber-ink:  var(--ws-warning-ink);
   /* Error text. Sits on a surface, not on the danger fill — `--ux-danger-solid`
      is the bed white text sits on, and using it for type on white was the bug
      this replaced. */
-  --ux-danger-ink: #b3261e;
+  --ux-danger-ink: var(--ws-danger-ink);
 
   /* Ink on a filled green surface — a paid tick, a completed pill. */
   --ux-on-green: #06281f;
@@ -219,7 +226,7 @@
   /* The hover wash under `.ux-tile-lit`. Referenced by that rule since it was
      written and never defined, so the gradient resolved to nothing and the
      hover state simply did not paint. */
-  --ux-wash: rgba(116, 42, 79, 0.10);
+  --ux-wash: rgba(200, 0, 102, 0.10);
 
   /* ── Type scale ────────────────────────────────────────────────────────────
      Lives in `design-system/tokens.css`, not here.
@@ -298,8 +305,8 @@
   --ux-dashboard-surface: var(--ux-surface);
   --ux-dashboard-muted-surface: var(--ux-surface-2);
   --ux-dashboard-shadow: var(--ux-shadow-card);
-  --ux-dashboard-font-body: var(--font-sans), Arial, sans-serif;
-  --ux-dashboard-font-display: var(--font-fraunces), Georgia, serif;
+  --ux-dashboard-font-body: var(--ws-font);
+  --ux-dashboard-font-display: var(--ws-font);
   --ux-dashboard-title-size: clamp(40px, 3.45vw, 52px);
   --ux-dashboard-title-leading: 1.02;
   --ux-dashboard-section-size: 18px;
@@ -386,7 +393,7 @@
     0 10px 24px -10px var(--ux-sh-2),
     0 32px 64px -28px var(--ux-sh-3);
 
-  --ux-shadow-ink: 58 21 36;
+  --ux-shadow-ink: 27 18 56;
   --ux-sh-1: rgb(var(--ux-shadow-ink) / 0.05);
   --ux-sh-2: rgb(var(--ux-shadow-ink) / 0.10);
   --ux-sh-3: rgb(var(--ux-shadow-ink) / 0.16);
@@ -454,9 +461,9 @@
 /* Derived, not measured — see the note at the top. */
 :is(.ux.dark, .dark .ux) {
   --ux-sheen: rgba(255, 255, 255, 0.055);
-  --ux-danger-solid: #f28ba0;   /* 7.2:1 on the dark tint it is printed on */
+  --ux-danger-solid: var(--ws-danger-solid);   /* 7.2:1 on the dark tint it is printed on */
   --ux-on-danger: #3a0d14;    /* 10.4:1 — the fill is light in this theme */
-  --ux-danger-tint: #351e1d;
+  --ux-danger-tint: var(--ws-danger-tint);
 
   /* Glass in the dark: less white, more blur showing through. A light border
      at 58% would read as a chalk line on plum, so it drops to a tenth. */
@@ -475,7 +482,7 @@
   --ux-bloom:
     radial-gradient(58% 40% at 6% 0%, rgba(215, 86, 133, 0.10), transparent 62%),
     radial-gradient(50% 34% at 98% 10%, rgba(171, 122, 235, 0.07), transparent 60%),
-    radial-gradient(64% 44% at 74% 94%, rgba(116, 42, 79, 0.12), transparent 64%);
+    radial-gradient(64% 44% at 74% 94%, rgba(200, 0, 102, 0.10), transparent 64%);
   --ux-glass-bg: color-mix(in srgb, var(--ux-surface) 72%, transparent);
   --ux-glass-bg-solid: var(--ux-surface);
   --ux-glass-line: rgba(255, 255, 255, 0.10);
@@ -487,68 +494,71 @@
     0 34px 70px -28px rgba(0, 0, 0, 0.6);
 
 
-  --ux-canvas: #150c0f;
-  --ux-surface: #22161b;
-  --ux-surface-2: #302227;
-  --ux-line: #443138;
-  --ux-line-strong: #5b434c;
+  --ux-canvas: var(--ws-canvas);
+  --ux-surface: var(--ws-surface);
+  --ux-surface-2: var(--ws-surface-2);
+  --ux-line: var(--ws-line);
+  --ux-line-strong: var(--ws-line-strong);
 
-  --ux-ink: #fbf4f5;
-  --ux-ink-2: #e7dadf;
-  --ux-muted: #b0929d;        /* 4.66:1 on the lightest tint it lands on */
-  --ux-faint: #a38590;        /* was #7d78a0 — 3.25:1 on the raised card */
+  --ux-ink: var(--ws-ink);
+  --ux-ink-2: var(--ws-ink-2);
+  --ux-muted: var(--ws-muted);        /* 4.66:1 on the lightest tint it lands on */
+  --ux-faint: var(--ws-faint);        /* was #7d78a0 — 3.25:1 on the raised card */
 
   /* Measured on the dashboards in dark: #d75685 as TEXT on the raised
      surfaces (#2f1d27, #352225) lands at 4.2:1 — under the 4.5 a person
      needs, in 35 places on one screen. Lifted until it clears. Fills that
      carry white text use `--ux-fill`, which is deliberately deeper. */
-  --ux-brand: #e58aae;
-  --ux-brand-600: #dc7a9e;
-  --ux-ink-on-brand: #2a1018; /* 8.6:1 — both brand fills go light in this theme */
-  --ux-brand-700: #c9547f;
-  --ux-brand-900: #401c29;
-  --ux-on-brand-2: #d194aa;        /* 8.61:1 on the darker slab */
+  --ux-brand: var(--ws-brand-dark);
+  --ux-brand-600: var(--ws-brand-dark);
+  --ux-ink-on-brand: var(--ws-on-brand); /* 8.6:1 — both brand fills go light in this theme */
+  --ux-brand-700: #ff9cc8;
+  --ux-brand-900: #3a1030;
+  --ux-on-brand-2: #ffc2dd;        /* 8.61:1 on the darker slab */
   --ux-on-brand-track: rgba(0, 0, 0, 0.28);
-  --ux-on-brand-fill: #cb7292;     /* 7.38:1 */
+  --ux-on-brand-fill: #ff7ab6;     /* 7.38:1 */
   --ux-on-brand-btn: #ffffff;      /* 14.90:1 */
-  --ux-on-brand-btn-ink: #401c29;
-  --ux-media-bed: #0f080b;
-  --ux-brand-tint: #2f1d24;
-  --ux-brand-tint-2: #3b262e;
+  --ux-on-brand-btn-ink: #3a1030;
+  --ux-media-bed: var(--ws-deep);
+  --ux-brand-tint: #2a1630;
+  --ux-brand-tint-2: #3a1d40;
   --ux-on-brand: #ffffff;
   /* The SAME two berries as light mode, and deliberately so: a filled button
      carries white text in both themes, and Berry and Primary Light already
      clear AA with white (9.60:1 and 5.28:1). Lightening them for dark mode —
      which the violet palette had to do — would have broken that. */
-  --ux-fill:   #742a4f;       /* 6.28:1 with white */
-  --ux-fill-2: #a55168;       /* 5.02:1 with white */
+  --ux-fill:   var(--ws-magenta-600);  /* 5.76:1 with white */
+  --ux-fill-2: var(--ws-magenta-700);  /* 7.76:1 with white */
 
-  --ux-tint-violet: #2a2235;
+  --ux-tint-violet: #231d45;
   --ux-tint-orange: #352922;
-  --ux-tint-blue:   #232b34;
-  --ux-tint-green:  #23342c;
-  --ux-tint-pink:   #352225;
-  --ux-tint-lilac:  #2a2235;
-  --ux-tint-amber:  #352f22;   /* ink clears AA at 4.68:1; #332a18 was 4.42 */
+  --ux-tint-blue:   var(--ws-info-tint);
+  --ux-tint-green:  var(--ws-success-tint);
+  --ux-tint-pink:   #2a1630;
+  --ux-tint-lilac:  #2b1d40;
+  --ux-tint-magenta: #2a1630;
+  --ux-tint-amber:  var(--ws-warning-tint);   /* ink clears AA at 4.68:1; #332a18 was 4.42 */
 
   /* Dark mode needs only one strength. Solving for 4.5:1 here lands around
      L 0.72, which is luminous enough to work as a shape as well as a word —
      whereas solving graphics at 3:1 returns the DIMMEST colour that passes,
      and a dim accent on a dark ground reads as a hole, not a highlight. */
-  --ux-violet: #ab7aeb;
+  --ux-violet: var(--ws-violet-dark);
   --ux-orange: #e7b492;
   --ux-blue:   #1c93f5;
   --ux-green:  #00a64b;
-  --ux-pink:   #e18e9c;
+  --ux-pink:   var(--ws-brand-dark);
   --ux-amber:  #b68900;
 
-  --ux-violet-ink: #a674e7;
+  --ux-violet-ink: var(--ws-violet-dark);
   --ux-orange-ink: #d88c5a;
-  --ux-blue-ink:   #5196db;
-  --ux-green-ink:  #51c890;
-  --ux-pink-ink: #db7e8e;
-  --ux-amber-ink:  #d3a445;
-  --ux-danger-ink: #da6a62;
+  --ux-blue-ink:   var(--ws-info-ink);
+  --ux-green-ink:  var(--ws-success-ink);
+  --ux-pink-ink: var(--ws-brand-dark);
+  --ux-lilac-ink: #c79bff;
+  --ux-magenta-ink: var(--ws-brand-dark);
+  --ux-amber-ink:  var(--ws-warning-ink);
+  --ux-danger-ink: var(--ws-danger-ink);
 
   --ux-on-green: #04231b;
 
@@ -602,7 +612,7 @@
   /* These two had no dark value at all, so a hovered card down here wore a
      violet bloom mixed for a white page. */
   --ux-shadow-glow: 0 16px 38px -18px rgba(232, 183, 183, 0.42);
-  --ux-shadow-glow-2: 0 20px 46px -18px rgba(165, 81, 104, 0.40);
+  --ux-shadow-glow-2: 0 20px 46px -18px rgba(255, 122, 182, 0.30);
   --ux-scrim: rgba(6, 5, 18, 0.72);
 }
 
@@ -784,7 +794,6 @@
 .ux :where(a, button, input, textarea, select, [tabindex]):focus-visible {
   outline: 2px solid var(--ux-brand);
   outline-offset: 3px;
-  border-radius: 6px;
 }
 
 /* ── Surface treatments ────────────────────────────────────────────────────
@@ -1581,6 +1590,47 @@
    the subtree around the page being left, and the destination then never
    renders. */
 .ux-swap > * { animation: ux-swap-in 240ms var(--ux-ease-out) both; }
+
+/*
+ * Fixed side columns — one rule for the whole app.
+ *
+ * The left navigation already stays put (it sits outside the scroller). The
+ * right-hand column did not: on most screens it scrolled away with the page
+ * and left an empty strip beside the content — on a dark canvas, a black one.
+ * Find people to hire was the exception, because the shell's own side column
+ * was sticky. Now every right column is: it stays under the top bar while the
+ * middle scrolls, and when it is taller than the window it scrolls inside
+ * itself instead of being cut off.
+ *
+ *   .ux-sticky-col        the column element itself
+ *   .ux-split-lg / -xl    a two-column grid whose LAST child is the side
+ *                         column; pinned from the width the grid splits at
+ *
+ * Below those widths the columns stack and scroll as one page, as before.
+ * The 4px of padding (taken back by the negative margin) keeps card shadows
+ * from being clipped by the column's own scroll box.
+ */
+.ux-sticky-col, .ux-split-lg > :last-child, .ux-split-xl > :last-child { align-self: start; }
+@media (min-width: 1024px) {
+  .ux-split-lg > :last-child {
+    position: sticky; top: calc(var(--ux-topbar-h, 72px) + 18px);
+    max-height: calc(100dvh - var(--ux-topbar-h, 72px) - 36px);
+    overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+    padding: 4px; margin: -4px;
+  }
+}
+@media (min-width: 1280px) {
+  .ux-sticky-col, .ux-split-xl > :last-child {
+    position: sticky; top: calc(var(--ux-topbar-h, 72px) + 18px);
+    max-height: calc(100dvh - var(--ux-topbar-h, 72px) - 36px);
+    overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+    padding: 4px; margin: -4px;
+  }
+}
+.ux-sticky-col::-webkit-scrollbar, .ux-split-lg > :last-child::-webkit-scrollbar, .ux-split-xl > :last-child::-webkit-scrollbar { width: 6px; }
+.ux-sticky-col::-webkit-scrollbar-thumb, .ux-split-lg > :last-child::-webkit-scrollbar-thumb, .ux-split-xl > :last-child::-webkit-scrollbar-thumb {
+  background: var(--ux-line-strong); border-radius: 999px;
+}
 @keyframes ux-swap-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ux-swap > * { animation: none; } }
 
@@ -2477,7 +2527,7 @@
    Anything here is measured against the band's own gradient, not the canvas.
    `--ux-band-ink` is 13.5:1 on it; `--ux-band-ink-2` is 7.9:1. */
 .ux {
-  --ux-band-ink: #29141f;
+  --ux-band-ink: var(--ws-ink);
   --ux-band-ink-2: #413f63;
   --ux-band-brand: #6c3fd0;
   --ux-band-edge: #ecdff0;
@@ -2853,4 +2903,58 @@
 [dir="rtl"] button,
 [dir="rtl"] a {
   unicode-bidi: plaintext;
+}
+
+/* ── The pictures' ground ──────────────────────────────────────────────────
+   Every pictogram, picture badge and section banner stands on the brand —
+   the same plum → magenta → orchid as Home's hero — so the whole app reads
+   as one product. (It tried one colour per module first; eight hues side by
+   side read as eight apps, and weakened the brand they all sit inside.) The
+   picture says WHICH place; the brand says WHOSE. Built from theme tokens, so
+   a member's own theme recolours all of it. */
+.ux {
+  --ux-pic-ground: linear-gradient(145deg, color-mix(in oklab, var(--ux-fill) 88%, white) 0%, var(--ux-fill) 46%, var(--ux-rib-2) 100%);
+  --ux-banner-ground: linear-gradient(102deg, var(--ux-brand-900) 0%, var(--ux-fill) 62%, var(--ux-rib-2) 118%);
+}
+
+/* The SOS circle's slow ring: enough motion to be found at a glance, slow
+   enough not to alarm. Off for anyone who has asked for less motion. */
+@keyframes ux-sos-ring { 0% { box-shadow: 0 0 0 0 rgba(224, 30, 30, .45); } 70%, 100% { box-shadow: 0 0 0 14px rgba(224, 30, 30, 0); } }
+.ux-sos-ring { animation: ux-sos-ring 2.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .ux-sos-ring { animation: none; } }
+
+/* A page with a hero of its own does not get the section banner on top of it
+   (components/ux/nav/banners.ts). */
+#content:has([data-page-hero], [data-health-hero]) .ux-section-banner { display: none; }
+/* …and its title gets its picture back, in place of the back arrow that
+   stood in for it beside the banner (PlaceMark in components/ux/nav/Place.tsx). */
+#content:has([data-page-hero], [data-health-hero]) .ux-place-banner { display: inline-flex; }
+#content:has([data-page-hero], [data-health-hero]) .ux-place-back { display: none; }
+#content:has([data-page-hero], [data-health-hero]) .ux-place-pic { display: inline-flex; }
+/* A page that draws its own "← Back to …" link (kit/back.tsx) does not also
+   get the round back arrow beside its title — one way back, the labelled
+   one. Unless the page has a hero, where that slot holds its picture. */
+#content:has(.ux-back-inpage):not(:has([data-page-hero], [data-health-hero])) .ux-place-banner { display: none; }
+
+/* A wrong PIN: the dots shake once. */
+@keyframes ux-shake { 0%, 100% { transform: none; } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.ux-shake { animation: ux-shake 360ms var(--ux-ease) 1; }
+@media (prefers-reduced-motion: reduce) { .ux-shake { animation: none; } }
+
+/* My Khata's note colours (components/ux/khata/NotesTab.tsx): soft pastels
+   mixed into the surface — less of them in dark mode, where a light-mode
+   share of yellow reads as olive. */
+.ux {
+  --khata-note-pink: color-mix(in oklab, #f9a8d4 32%, var(--ux-surface));
+  --khata-note-yellow: color-mix(in oklab, #fde68a 42%, var(--ux-surface));
+  --khata-note-green: color-mix(in oklab, #a7f3d0 38%, var(--ux-surface));
+  --khata-note-blue: color-mix(in oklab, #bfdbfe 45%, var(--ux-surface));
+  --khata-note-violet: color-mix(in oklab, #ddd6fe 50%, var(--ux-surface));
+}
+.dark .ux, :is(.ux.dark, .dark .ux) {
+  --khata-note-pink: color-mix(in oklab, #f472b6 18%, var(--ux-surface));
+  --khata-note-yellow: color-mix(in oklab, #facc15 13%, var(--ux-surface));
+  --khata-note-green: color-mix(in oklab, #34d399 15%, var(--ux-surface));
+  --khata-note-blue: color-mix(in oklab, #60a5fa 18%, var(--ux-surface));
+  --khata-note-violet: color-mix(in oklab, #a78bfa 20%, var(--ux-surface));
 }

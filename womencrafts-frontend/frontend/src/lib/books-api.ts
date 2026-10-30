@@ -14,7 +14,7 @@
 import { apiClient } from "./api";
 
 export type EntryState = "paid" | "owed" | "promised";
-export type EntryVia = "whatsapp" | "shop" | "person" | "circle";
+export type EntryVia = "whatsapp" | "shop" | "person" | "circle" | "course" | "mentoring";
 
 export interface BookEntry {
   id: string;

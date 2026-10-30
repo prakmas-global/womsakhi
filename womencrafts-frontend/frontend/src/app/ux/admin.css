@@ -53,13 +53,13 @@
   --wc-ring-focus: color-mix(in srgb, var(--ux-brand) 40%, transparent);
   --color-focus: var(--ux-brand);
 
-  /* ── Brand: Berry, and the tints the member app uses around it ───────── */
+  /* ── Brand: the logo magenta, and the tints the member app uses around it ─ */
   --color-brand: var(--ux-brand);
   --color-brand-50: var(--ux-brand-tint);
   --color-brand-100: var(--ux-brand-tint-2);
-  --color-brand-200: #e8b7b7;
-  --color-brand-300: #d59aa8;
-  --color-brand-400: #bc7e8f;
+  --color-brand-200: var(--ws-magenta-200);
+  --color-brand-300: var(--ws-magenta-300);
+  --color-brand-400: var(--ws-magenta-400);
   --color-brand-500: var(--ux-brand-600);
   --color-brand-600: var(--ux-brand);
   --color-brand-700: var(--ux-brand-700);
@@ -243,9 +243,9 @@
 
 /* The document itself, so nothing outside the root — a taller scroller, a
    portal — shows the theme engine's canvas around the dashboard. Literal hex
-   because `--ux-canvas` is declared on `.ux`, which body is outside of. */
-body:has(.ux-admin) { background: #fcf8f7; }
-.dark body:has(.ux-admin) { background: #14122a; }
+   because `--ux-canvas` is declared on `.ux`, which body is outside of; `--ws-canvas` is on :root. */
+body:has(.ux-admin) { background: var(--ws-canvas); }
+.dark body:has(.ux-admin) { background: var(--ws-canvas); }
 
 /* Phone admin workspace: actions stay reachable and wide data stays inside
    its own surface instead of widening the entire application. */

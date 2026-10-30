@@ -250,6 +250,13 @@ class MentorModel:
             "rating_count": doc.get("rating_count", 0),
             "sessions_done": doc.get("sessions_done", 0),
             "requested": requested,
+            # A member who mentors (routes/mentoring.py) runs her own sessions:
+            # she sets the price (0 = free), how they meet, and how long.
+            "owner_kind": doc.get("owner_kind") or "staff",
+            "owner_id": doc.get("owner_id", ""),
+            "price_minor": int(doc.get("price_minor") or 0),
+            "session_mode": doc.get("session_mode") or "Video call",
+            "session_minutes": int(doc.get("session_minutes") or 0),
         }
 
 
@@ -298,6 +305,11 @@ class MentorshipRequestModel:
             "preferred_time": doc.get("preferred_time", ""),
             "status": doc.get("status", "pending"),
             "when": created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",
+            # Set by a member mentor when she accepts.
+            "scheduled_for": doc.get("scheduled_for", ""),
+            "mentor_note": doc.get("mentor_note", ""),
+            "payment_status": (doc.get("payment") or {}).get("status", ""),
+            "price_minor": int((doc.get("payment") or {}).get("amount_minor") or doc.get("price_minor") or 0),
         }
 
 
@@ -306,6 +318,8 @@ class OpportunityModel:
 
     collection_name = "opportunities"
 
+    #: The starting values of the `opportunity_types` master (app/core/masters.py),
+    #: which is what routes check against. Kept for the seeders.
     TYPES = ["Job", "Internship", "Freelance", "Craft order", "Training"]
 
     @staticmethod
@@ -327,6 +341,10 @@ class OpportunityModel:
         pay_low_minor: Optional[int] = None,
         pay_high_minor: Optional[int] = None,
         pay_period: Optional[str] = None,
+        category: str = "",
+        skill_keys: Optional[list] = None,
+        owner_kind: str = "staff",
+        owner_id: str = "",
     ) -> dict:
         now = datetime.now(timezone.utc)
         # Derived from the display string unless the caller states them. Staff
@@ -345,7 +363,9 @@ class OpportunityModel:
         return {
             "title": title,
             "org": org,
-            "kind": kind if kind in OpportunityModel.TYPES else "Job",
+            # Checked against the `opportunity_types` master by the routes that
+            # write it (app/core/masters.py); staff can add types there.
+            "kind": (kind or "").strip() or "Job",
             "desc": desc,
             "location": location,
             "mode": mode,               # On-site | Remote | Hybrid
@@ -355,6 +375,14 @@ class OpportunityModel:
             "pay_high_minor": high,
             "pay_period": period,       # month | year | week | day | hour | word | piece | ""
             "skills": skills or [],
+            # From the work masters (routes/work_talent.py): what it is, by key,
+            # so "jobs for my skills" is a match on keys, not a guess on words.
+            # `skills` above stays as their names, for every screen that reads it.
+            "category": category,
+            "skill_keys": skill_keys or [],
+            # Who posted it: the WomSakhi team, or a verified member hiring.
+            "owner_kind": owner_kind,
+            "owner_id": owner_id,
             "openings": openings,
             "deadline": deadline,
             "experience": experience,
@@ -385,6 +413,9 @@ class OpportunityModel:
             "pay_high_minor": int(doc.get("pay_high_minor", 0) or 0),
             "pay_period": doc.get("pay_period", "") or "",
             "skills": doc.get("skills", []) or [],
+            "category": doc.get("category", "") or "",
+            "skill_keys": doc.get("skill_keys", []) or [],
+            "owner_kind": doc.get("owner_kind", "staff") or "staff",
             "openings": doc.get("openings", 1),
             "deadline": doc.get("deadline", ""),
             "deadline_label": _pretty_date(doc.get("deadline", "")),
@@ -415,6 +446,8 @@ class ApplicationModel:
     STATUS_OFFERED = "offered"
     STATUS_CLOSED = "closed"
     STATUS_WITHDRAWN = "withdrawn"
+    #: The work was done — past the ladder's last rung (app/core/work_done.py).
+    STATUS_COMPLETED = "completed"
     LADDER = [STATUS_APPLIED, STATUS_SHORTLISTED, STATUS_INTERVIEW, STATUS_OFFERED]
 
     @staticmethod
@@ -426,10 +459,14 @@ class ApplicationModel:
         org: str = "",
         note: str = "",
         phone: str = "",
+        skills: Optional[list] = None,
     ) -> dict:
         now = datetime.now(timezone.utc)
         return {
             "user_id": user_id,
+            # Her matching skills when she applied — name, level, verified —
+            # so whoever reads the application sees why she fits, as it was.
+            "skills": skills or [],
             "member_id": member_id,
             "opportunity_id": opportunity_id,
             "opportunity_title": opportunity_title,
@@ -454,8 +491,14 @@ class ApplicationModel:
             "org": doc.get("org", ""),
             "note": doc.get("note", ""),
             "status": status,
-            "step": ApplicationModel.LADDER.index(status) + 1 if status in ApplicationModel.LADDER else 0,
+            # Work done has climbed the whole ladder.
+            "step": (len(ApplicationModel.LADDER) if status == ApplicationModel.STATUS_COMPLETED
+                     else ApplicationModel.LADDER.index(status) + 1 if status in ApplicationModel.LADDER else 0),
             "steps": len(ApplicationModel.LADDER),
             "staff_note": doc.get("staff_note", ""),
             "applied_on": created.strftime("%b %d, %Y") if isinstance(created, datetime) else "",
+            "skills": doc.get("skills", []) or [],
+            #: Work done: whether the poster has confirmed it ("" while not done).
+            "done": ("confirmed" if (doc.get("completion") or {}).get("confirmed") else "mine")
+                    if status == ApplicationModel.STATUS_COMPLETED else "",
         }

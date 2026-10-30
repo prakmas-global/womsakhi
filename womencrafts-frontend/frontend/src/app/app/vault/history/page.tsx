@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -74,8 +75,11 @@ export default function HistoryPage() {
         <header className="flex flex-wrap items-end gap-4">
           <div className="min-w-0 flex-1">
             <p className={EYEBROW}>{tr("vaultHistory.everyMovement")}</p>
-            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>{tr("vaultHistory.whatCameInWhatWentOut")}</h1>
+            <div className="mt-2 flex min-w-0 items-center gap-3">
+              <PlaceMark size={44} />
+              <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                  style={{ color: v("--ux-ink") }}>{tr("vaultHistory.whatCameInWhatWentOut")}</h1>
+            </div>
           </div>
           <Btn variant="outline" icon={shown ? "EyeOff" : "Eye"} className="max-lg:w-full" onClick={() => setRevealed((s) => !s)}>
             {shown ? tr("vaultHistory.hideAmounts")

@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -41,7 +42,10 @@ export function PhoneTitle({
 }) {
   return (
     <header className={`lg:hidden ${className}`}>
-      <h1 className="ux-screen-title" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title min-w-0" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+      </div>
       {sub && (
         <p className="mt-1.5 text-[15px] leading-snug" style={{ color: "var(--ux-ink-2)" }}>{sub}</p>
       )}

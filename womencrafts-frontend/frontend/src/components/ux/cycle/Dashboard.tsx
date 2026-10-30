@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 import { useT } from "@/i18n";
 import { useCallback, useState } from "react";
@@ -123,9 +124,12 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/leaves-pink.webp" alt="" aria-hidden className="pointer-events-none absolute -bottom-10 end-[30%] h-[190px] w-auto opacity-40 mix-blend-multiply" />
           <div className="relative z-[1] max-w-[440px]">
-            <h1 className="ux-display text-[34px] font-bold leading-[1.1]" style={{ color: "var(--ux-ink)" }}>
-              {tr("dashboard.understandYourCycle")}<br />{tr("dashboard.embraceYour")} <span style={{ color: "var(--cy-period-ink)" }}>Power</span>
-            </h1>
+            <div className="flex min-w-0 items-center gap-3">
+              <PlaceMark size={44} />
+              <h1 className="ux-display text-[34px] font-bold leading-[1.1] min-w-0" style={{ color: "var(--ux-ink)" }}>
+                {tr("dashboard.understandYourCycle")}<br />{tr("dashboard.embraceYour")} <span style={{ color: "var(--cy-period-ink)" }}>Power</span>
+              </h1>
+            </div>
             <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
               {tr("dashboard.trackLearnGetPersonalisedInsights")}<br />{tr("dashboard.becauseAHealthierYouCreatesA")}
             </p>
@@ -337,7 +341,7 @@ export function CycleDashboard({ cycle }: { cycle: ReturnType<typeof useCycle> &
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/ux/art/scene-two-women-support.webp" alt="" aria-hidden className="pointer-events-none absolute -bottom-2 end-0 h-[200px] w-auto object-contain" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/womsakhi-main-text-logo.png" alt="" aria-hidden className="brand-wordmark absolute bottom-4 start-5 z-[1] h-[22px] w-auto opacity-80" />
+          <img src="/ux/brand/womsakhi-wordmark.webp" alt="" aria-hidden className="brand-wordmark absolute bottom-4 start-5 z-[1] h-[22px] w-auto opacity-80" />
         </section>
       </A>
 

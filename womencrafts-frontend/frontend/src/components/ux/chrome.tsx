@@ -30,6 +30,8 @@ import { usePathname } from "next/navigation";
 export interface PageChrome {
   rail?: React.ReactNode;
   wide?: boolean;
+  /** The page draws its own columns (a module home): no default side column. */
+  columns?: boolean;
   bare?: boolean;
   /**
    * This screen is sized to the window and must not scroll.
@@ -100,9 +102,9 @@ export function usePageChrome(c: PageChrome) {
   const { set, clear } = useContext(ChromeContext);
   const pathname = usePathname() ?? "";
   const [owner] = useState(() => Symbol("page-chrome"));
-  const { rail, wide, bare, fit, name, immersive } = c;
+  const { rail, wide, bare, fit, name, immersive, columns } = c;
   useLayoutEffect(() => {
-    set(pathname, { rail, wide, bare, fit, name, immersive }, owner);
+    set(pathname, { rail, wide, bare, fit, name, immersive, columns }, owner);
     return () => clear(pathname, owner);
-  }, [set, clear, pathname, rail, wide, bare, fit, name, immersive, owner]);
+  }, [set, clear, pathname, rail, wide, bare, fit, name, immersive, columns, owner]);
 }

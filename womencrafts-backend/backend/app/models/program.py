@@ -1,11 +1,22 @@
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.core.media import media_url
+
 
 class ProgramModel:
     """
-    The 'programs' collection — the learning/development programs shown on the
-    Programs screen (list + grid cards, detail modal, create/edit modal).
+    The 'programs' collection — every course in Learn, whoever wrote it.
+
+    Staff create programmes from the dashboard. A verified MEMBER can also teach
+    one (routes/teach.py): it carries `owner_kind: "member"`, her `owner_id` and
+    `teacher_name`, and may have a price. A paid member course is paid to HER,
+    directly by UPI — WomSakhi never holds the money (see routes/market.py) —
+    so the course stores the UPI id the learner pays and the teacher confirms
+    each payment herself. Courses with no `owner_kind` are staff courses.
+
+    A lesson (`curriculum[i]`) is {title, detail, duration} and, for courses
+    with real content, `body` (the lesson text) and `video_url` (a link).
     """
 
     collection_name = "programs"
@@ -17,7 +28,15 @@ class ProgramModel:
         "Handicrafts",
         "Personal Development",
         "Sustainability",
+        "Health & Wellness",
+        "Cooking & Food",
+        "Beauty & Care",
+        "Money & Savings",
+        "Languages",
     ]
+
+    OWNER_STAFF = "staff"
+    OWNER_MEMBER = "member"
     MODES = ["Online", "Offline", "Hybrid"]
     STATUSES = ["Active", "Upcoming", "Completed", "Draft", "Archived"]
 
@@ -28,6 +47,11 @@ class ProgramModel:
         "Handicrafts": "amber",
         "Personal Development": "sky",
         "Sustainability": "emerald",
+        "Health & Wellness": "emerald",
+        "Cooking & Food": "amber",
+        "Beauty & Care": "brand",
+        "Money & Savings": "sky",
+        "Languages": "violet",
     }
     CAT_BAR = {
         "Digital Literacy": "#8b5cf6",
@@ -35,6 +59,11 @@ class ProgramModel:
         "Handicrafts": "#f59e0b",
         "Personal Development": "#3b82f6",
         "Sustainability": "#14b8a6",
+        "Health & Wellness": "#10b981",
+        "Cooking & Food": "#f59e0b",
+        "Beauty & Care": "#e6117e",
+        "Money & Savings": "#0ea5e9",
+        "Languages": "#8b5cf6",
     }
 
     @staticmethod
@@ -104,7 +133,31 @@ class ProgramModel:
             "status": doc.get("status", "Draft"),
             "note": doc.get("note", ""),
             "bar": doc.get("bar", "#8b5cf6"),
-            # Empty until somebody writes one. The detail screen hides the
-            # section rather than filling it with another course's lessons.
-            "curriculum": doc.get("curriculum") or [],
+            # The OUTLINE only — titles, a line, a length. A lesson's text and
+            # video are hers to read once she has joined, so they are served by
+            # /me/programs/{id}/detail and never by the open catalogue.
+            "curriculum": ProgramModel.outline(doc),
+            "owner_kind": doc.get("owner_kind") or ProgramModel.OWNER_STAFF,
+            "owner_id": doc.get("owner_id", ""),
+            "teacher_name": doc.get("teacher_name") or "WomSakhi team",
+            "price_minor": int(doc.get("price_minor") or 0),
+            # Its thumbnail, when it has one; screens fall back to its category's.
+            "cover": media_url(doc.get("cover") or ""),
         }
+
+    @staticmethod
+    def outline(doc: dict) -> list[dict]:
+        return [
+            {
+                "title": (m or {}).get("title", ""),
+                "detail": (m or {}).get("detail", ""),
+                "duration": (m or {}).get("duration", ""),
+                # A free preview lesson anyone can open before joining.
+                "preview": bool((m or {}).get("preview")),
+            }
+            for m in (doc.get("curriculum") or [])
+        ]
+
+    @staticmethod
+    def is_paid(doc: dict) -> bool:
+        return int(doc.get("price_minor") or 0) > 0

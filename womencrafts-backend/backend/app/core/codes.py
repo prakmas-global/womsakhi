@@ -49,7 +49,9 @@ COLLECTION = "auth_codes"
 SIGNIN = "signin"
 SIGNUP = "signup"
 PHONE_VERIFY = "phone_verify"
-PURPOSES = {SIGNIN, SIGNUP, PHONE_VERIFY}
+#: Adding an email to an account that joined with a mobile number.
+EMAIL_VERIFY = "email_verify"
+PURPOSES = {SIGNIN, SIGNUP, PHONE_VERIFY, EMAIL_VERIFY}
 
 # Channels.
 EMAIL = "email"
@@ -175,6 +177,9 @@ def _send_sms_file(destination: str, code: str) -> bool:
         json.dumps({"to": destination, "subject": f"{code} is your WomSakhi code (SMS)", "text": code}),
         encoding="utf-8",
     )
+    # Printed like the file email adapter does, so local testing can read the
+    # code from the server log. Development only: this provider refuses production.
+    print(f"📱 [outbox] '{code} is your WomSakhi code (SMS)' → {destination}")
     return True
 
 

@@ -1,8 +1,10 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { ForYou } from "@/components/ux/cycle/ForYou";
-
-/** Workouts — "For you today", opened on its own tab. See components/ux/cycle/ForYou.tsx. */
-export default function Page() {
-  return <ForYou initial="activity" title="Workouts" />;
+/**
+ * Workouts now live in Health & Wellness → Fitness (guided routines, a log,
+ * plans, progress and challenges). This address forwards there so old links
+ * and bookmarks still work.
+ */
+export default function WorkoutsMoved() {
+  redirect("/app/health/fitness?tab=workouts");
 }

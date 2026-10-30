@@ -37,6 +37,8 @@ env:
   # server-to-server has no reason to leave Google's network.
   INTERNAL_API_URL: https://womsakhi-api-574825618745.asia-south1.run.app/api/v1
   WEB_URL: https://app.womsakhi.com
+  # Optional existing Secret Manager secret name, never its token value.
+  MONITORING_SECRET_NAME: ${{ vars.MONITORING_SECRET_NAME }}
 
 permissions:
   contents: read
@@ -116,13 +118,20 @@ jobs:
       # APP_KEY_ENABLED stays false until the WomSakhi mobile app ships.
       - name: Deploy API
         run: |
+          api_secrets="MONGODB_URI=mongodb-uri:latest,JWT_SECRET_KEY=jwt-secret-key:latest,DOCUMENT_ENCRYPTION_KEY=document-encryption-key:latest,SMTP_PASSWORD=brevo-smtp-password:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,AZURE_SPEECH_KEY=azure-speech-key:latest,LANGFUSE_PUBLIC_KEY=langfuse-public-key:latest,LANGFUSE_SECRET_KEY=langfuse-secret-key:latest,ENGINES_TICK_SECRET=engines-tick-secret:latest,TEST_LOGIN_EMAILS=test-login-emails:latest,TEST_LOGIN_CODE=test-login-code:latest"
+          if [ -n "$MONITORING_SECRET_NAME" ]; then
+            api_secrets="$api_secrets,MONITORING_TOKEN=$MONITORING_SECRET_NAME:latest"
+          fi
           gcloud run deploy womsakhi-api \
             --image "$REGISTRY/api:$TAG" \
             --region "$REGION" --project "$PROJECT_ID" \
             --service-account womsakhi-run@womsakhi.iam.gserviceaccount.com \
             --allow-unauthenticated \
+            --startup-probe httpGet.path=/health/ready,httpGet.port=8080,periodSeconds=10,timeoutSeconds=5,failureThreshold=12 \
+            --liveness-probe httpGet.path=/health/live,httpGet.port=8080,periodSeconds=30,timeoutSeconds=2,failureThreshold=3 \
+            --readiness-probe httpGet.path=/health/ready,httpGet.port=8080,periodSeconds=10,timeoutSeconds=5,failureThreshold=3,successThreshold=2 \
             --port 8080 --cpu 1 --memory 2Gi --min-instances 1 --max-instances 10 --cpu-boost \
-            --set-secrets MONGODB_URI=mongodb-uri:latest,JWT_SECRET_KEY=jwt-secret-key:latest,DOCUMENT_ENCRYPTION_KEY=document-encryption-key:latest,SMTP_PASSWORD=brevo-smtp-password:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,AZURE_SPEECH_KEY=azure-speech-key:latest,LANGFUSE_PUBLIC_KEY=langfuse-public-key:latest,LANGFUSE_SECRET_KEY=langfuse-secret-key:latest,ENGINES_TICK_SECRET=engines-tick-secret:latest,TEST_LOGIN_EMAILS=test-login-emails:latest,TEST_LOGIN_CODE=test-login-code:latest \
+            --set-secrets "$api_secrets" \
             --set-env-vars "DB_NAME=womencrafts,JWT_ALGORITHM=HS256,ACCESS_TOKEN_EXPIRE_MINUTES=30,EMAIL_PROVIDER=smtp,SMTP_HOST=smtp-relay.brevo.com,SMTP_PORT=587,SMTP_USER=bb43f3001@smtp-brevo.com,SMTP_USE_TLS=true,SMTP_USE_SSL=false,EMAIL_FROM=no-reply@womsakhi.com,EMAIL_FROM_NAME=WomSakhi,AZURE_SPEECH_REGION=centralindia,LANGFUSE_HOST=https://cloud.langfuse.com,LANGFUSE_ENV=production,ALLOWED_ORIGINS=$WEB_URL,APP_BASE_URL=$WEB_URL,MEDIA_BASE_URL=$API_HOST,COOKIE_SECURE=true,COOKIE_SAMESITE=lax,DEMO_SEED_ENABLED=false,MEDIA_DIR=/mnt/media/media,PRIVATE_MEDIA_DIR=/mnt/media/private_media,ENGINES_ENABLED=true,PHONE_CODES_ENABLED=true,PHONE_PROVIDER=firebase,FIREBASE_PROJECT_ID=womsakhi,FIREBASE_AUTH_DOMAIN=womsakhi.firebaseapp.com,FIREBASE_WEB_API_KEY=AIzaSyDQFfTaC8ytFDdGvirpRwmcau-EaLehKQc,FIREBASE_APP_ID=1:574825618745:web:f1f4e34c323b7528e8dce8,SMS_DAILY_LIMIT=10,SMS_PER_NUMBER_DAILY=5,TEST_LOGIN_ALLOW_STAFF=true,APP_KEY_ENABLED=false" \
             --add-volume name=media,type=cloud-storage,bucket=womsakhi-media \
             --add-volume-mount volume=media,mount-path=/mnt/media
@@ -149,6 +158,9 @@ jobs:
             --region "$REGION" --project "$PROJECT_ID" \
             --service-account womsakhi-run@womsakhi.iam.gserviceaccount.com \
             --allow-unauthenticated \
+            --startup-probe httpGet.path=/health/ready,httpGet.port=8080,periodSeconds=10,timeoutSeconds=5,failureThreshold=12 \
+            --liveness-probe httpGet.path=/health/live,httpGet.port=8080,periodSeconds=30,timeoutSeconds=2,failureThreshold=3 \
+            --readiness-probe httpGet.path=/health/ready,httpGet.port=8080,periodSeconds=10,timeoutSeconds=5,failureThreshold=3,successThreshold=2 \
             --port 8080 --cpu 1 --memory 512Mi --min-instances 1 --max-instances 10 --cpu-boost
 
       # ── and prove it actually came up ────────────────────────────────────
@@ -161,26 +173,15 @@ jobs:
           api=$(gcloud run services describe womsakhi-api --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
           web=$(gcloud run services describe womsakhi-web --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')
           echo "api=$api"; echo "web=$web"
-          # `-L`, and this is the whole fix.
-          #
-          # This step failed a deploy that had worked. Both services came up,
-          # the API answered 200, and `/` answered **307** — because `/` is
-          # supposed to redirect: an anonymous visitor is sent to /dashboard
-          # and bounced to /signin by the app's own middleware. The test
-          # demanded a bare 200 from a path whose correct answer is a redirect,
-          # so a healthy rollout was reported as needing a rollback.
-          #
-          # Following redirects tests the thing that matters — does the web app
-          # serve a page — instead of asserting the shape of the route table.
-          # `%{url_effective}` is printed so a redirect to somewhere WRONG is
-          # still visible rather than silently passing.
+          # A process returning 200 is insufficient: both services must pass
+          # dependency readiness before this release is considered healthy.
           for i in $(seq 1 10); do
-            a=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 30 "$api/health" || true)
-            w=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 30 "$web/" || true)
-            wu=$(curl -s -o /dev/null -w '%{url_effective}' -L --max-time 30 "$web/" || true)
+            a=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 30 "$api/health/ready" || true)
+            w=$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 30 "$web/health/ready" || true)
+            wu=$(curl -s -o /dev/null -w '%{url_effective}' -L --max-time 30 "$web/health/ready" || true)
             echo "  attempt $i: api=$a web=$w ($wu)"
             [ "$a" = "200" ] && [ "$w" = "200" ] && exit 0
             sleep 10
           done
-          echo "::error::Deployed revision is not serving 200 after redirects — roll back with the previous tag"
+          echo "::error::Deployed revision is not ready — inspect dependency health and roll back the application revision when appropriate"
           exit 1

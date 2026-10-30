@@ -53,6 +53,8 @@ class ListingModel:
         rate: str = "",
         stock: int | None = None,
         category: str = "",
+        category_key: str = "",
+        subcategory_key: str = "",
         place: str = "",
         travels_km: int = 0,
         photo: str = "",
@@ -105,6 +107,9 @@ class ListingModel:
             # storing 0 would render as "out of stock" on a tailor's listing.
             "stock": None if stock is None else max(0, int(stock)),
             "category": category.strip(),
+            # Filed under the staff-controlled tree (app/core/market_categories.py).
+            "category_key": category_key,
+            "subcategory_key": subcategory_key,
             "place": place.strip(),
             "travels_km": int(travels_km),
             "photo": photo or (photos[0] if photos else ""),
@@ -159,6 +164,10 @@ class ListingModel:
             "low_stock": stock is not None and 0 < stock <= int(doc.get("low_stock_at", 3) or 3),
             "out_of_stock": stock == 0,
             "category": doc.get("category", ""),
+            "category_key": doc.get("category_key", "") or "",
+            "subcategory_key": doc.get("subcategory_key", "") or "",
+            #: Why it is paused, when the system paused it ("category_changed").
+            "paused_reason": doc.get("paused_reason", "") or "",
             "place": doc.get("place", ""),
             "travels_km": int(doc.get("travels_km", 0)),
             "photo": media_url(doc.get("photo", "")),

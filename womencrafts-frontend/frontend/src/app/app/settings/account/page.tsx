@@ -18,6 +18,46 @@ import { Group, SaveBar } from "../_parts/Group";
 import { useMe } from "@/components/ux/me";
 import { useT } from "@/i18n";
 import { PhotoSheet } from "@/components/ux/profile/PhotoSheet";
+import { UsernameSheet } from "@/components/ux/profile/UsernameSheet";
+import * as Icons from "@/components/ux/icons";
+import { Picks, Select } from "@/components/ux/kit/form";
+
+/**
+ * Chosen, not typed. Date of birth is three dropdowns that write the same
+ * "12 Aug 1995" the profile has always stored; the state is a dropdown and
+ * only the town is typed, written back as "Town, State".
+ */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
+const THIS_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: 73 }, (_, i) => String(THIS_YEAR - 18 - i));
+const STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi", "Goa", "Gujarat",
+  "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Ladakh",
+  "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Puducherry",
+  "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
+  "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Lakshadweep",
+];
+/** Lines women most often start with — one tap, then change any word. */
+const ABOUT_STARTERS = [
+  "I stitch blouses, kurtas and alterations",
+  "I cook home food and run a tiffin service",
+  "I do mehendi and beauty work at home",
+  "I teach children after school",
+  "I make handmade crafts and gifts",
+  "I am looking for work I can do from home",
+];
+
+function splitDob(dob: string) {
+  const m = dob.trim().match(/^(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})$/);
+  return m ? { d: m[1].padStart(2, "0"), m: m[2][0].toUpperCase() + m[2].slice(1, 3).toLowerCase(), y: m[3] }
+           : { d: "", m: "", y: "" };
+}
+function splitPlace(place: string) {
+  const i = place.lastIndexOf(",");
+  const state = i >= 0 ? place.slice(i + 1).trim() : "";
+  return STATES.includes(state) ? { town: place.slice(0, i).trim(), state } : { town: place.trim(), state: "" };
+}
 
 /**
  * Your details.
@@ -55,15 +95,37 @@ export default function AccountSettings() {
     about: edited.about ?? profile?.bio ?? "",
   };
 
-  const set = (k: Field) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEdited((f) => ({ ...f, [k]: e.target.value }));
-    setSaved(false);
+  const locked = !!(profile?.name_locked ?? user?.name_locked);
+  const username = profile?.username ?? user?.username ?? "";
+  const [nameOpen, setNameOpen] = useState(false);
+  const nextChange = profile?.username_next_change_at
+    ? new Date(profile.username_next_change_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })
+    : "";
+
+  const put = (k: Field, value: string) => { setEdited((f) => ({ ...f, [k]: value })); setSaved(false); };
+  const set = (k: Field) => (e: React.ChangeEvent<HTMLInputElement>) => put(k, e.target.value);
+
+  const dob = splitDob(form.born);
+  // Keeps a half-picked date in place until all three are chosen.
+  const [dobDraft, setDobDraft] = useState<{ d: string; m: string; y: string } | null>(null);
+  const shownDob = dobDraft ?? dob;
+  const pickDob = (part: "d" | "m" | "y", value: string) => {
+    const next = { ...shownDob, [part]: value };
+    setDobDraft(next);
+    if (next.d && next.m && next.y) put("born", `${next.d} ${next.m} ${next.y}`);
   };
+  const place = splitPlace(form.place);
+  const putPlace = (town: string, state: string) =>
+    put("place", [town.trim(), state].filter(Boolean).join(", "));
 
   const save = useAction(
     async () => {
       await apiUpdateMeProfile({
-        full_name: form.name.trim(),
+        // Empty until our team approves her and enters it from her ID card;
+        // the server refuses an empty name, so an empty one is left out.
+        // Once she is verified her name is the one on her ID, and only staff
+        // change it — so it is not sent at all.
+        ...(!locked && form.name.trim() ? { full_name: form.name.trim() } : {}),
         phone: form.phone.trim(),
         location: form.place.trim(),
         dob: form.born.trim(),
@@ -71,7 +133,7 @@ export default function AccountSettings() {
       });
     },
     {
-      onDone: () => { setSaved(true); setEdited({}); refetch(); },
+      onDone: () => { setSaved(true); setEdited({}); setDobDraft(null); refetch(); },
       fallbackError: "That did not save. Your details are as they were — try again in a moment.",
     },
   );
@@ -125,14 +187,49 @@ export default function AccountSettings() {
 
       <PhotoSheet open={photoOpen} onClose={() => setPhotoOpen(false)}
                   name={form.name || ME.name} avatar={avatar} onChanged={refetch} />
+      <UsernameSheet key={nameOpen ? "open" : "shut"} open={nameOpen} onClose={() => setNameOpen(false)}
+                     current={username} fullName={form.name} onSaved={refetch} />
 
       <Group title={tr("settingsAccount.shownToEveryone")} chip="Public" inset="form">
         <div className="space-y-4">
-          <Field label={tr("settingsAccount.yourName")} hint={tr("settingsAccount.onYourProfileYourShopAnd")}>
-            <TextInput value={form.name} onChange={set("name")} />
+          {locked ? (
+            <Field label={tr("settingsAccount.yourName")}
+                   hint="Checked against your ID when you were verified. To correct it, ask WomSakhi from Help.">
+              <div className="flex min-h-[46px] items-center gap-2 rounded-[12px] border px-4 text-xsm font-semibold"
+                   style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface-2)", color: "var(--ux-ink)" }}
+                   data-name-locked>
+                <span className="min-w-0 flex-1 truncate">{form.name}</span>
+                <Icons.BadgeCheck className="h-4 w-4 shrink-0" style={{ color: "var(--ux-blue)" }} />
+                <Icons.Lock className="h-4 w-4 shrink-0" style={{ color: "var(--ux-muted)" }} />
+              </div>
+            </Field>
+          ) : (
+            <Field label={tr("settingsAccount.yourName")} hint={tr("settingsAccount.onYourProfileYourShopAnd")}>
+              <TextInput value={form.name} onChange={set("name")} />
+            </Field>
+          )}
+          <Field label="Username"
+                 hint={username ? "Other women see this instead of your name. You can change it once every 90 days."
+                                : "Until you pick one, other women see your verified name."}>
+            <div className="flex min-h-[46px] items-center gap-2 rounded-[12px] border px-4 text-xsm"
+                 style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}>
+              <span className="min-w-0 flex-1 truncate font-semibold" style={{ color: username ? "var(--ux-ink)" : "var(--ux-faint)" }}>
+                {username ? `@${username}` : "Not picked yet"}
+              </span>
+              {nextChange ? (
+                <span className="shrink-0 text-xs" style={{ color: "var(--ux-muted)" }}>Can change on {nextChange}</span>
+              ) : (
+                <button type="button" onClick={() => setNameOpen(true)}
+                        className="ux-press -me-2 min-h-[36px] shrink-0 rounded-full px-3 text-xs font-bold"
+                        style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
+                  {username ? "Change" : "Pick one"}
+                </button>
+              )}
+            </div>
           </Field>
           <Field label={tr("settingsAccount.aLineAboutYou")} hint={tr("settingsAccount.theFirstThingAnEmployerOr")}>
-            <TextInput value={form.about} onChange={set("about")} />
+            <TextInput value={form.about} onChange={set("about")} placeholder="Tap a line below, then change any word" />
+            <Picks options={ABOUT_STARTERS} value={form.about} onPick={(x) => put("about", x)} label="Lines to start from" />
           </Field>
         </div>
       </Group>
@@ -141,13 +238,22 @@ export default function AccountSettings() {
              noteIcon="Lock" noteGap="mt-4" note={tr("settingsAccount.yourExactAddressIsNeverStored")}>
         <div className="space-y-4">
           <Field label={tr("settingsAccount.phoneNumber")} hint={tr("settingsAccount.neverShownToBuyersOrEmployers")}>
-            <TextInput value={form.phone} onChange={set("phone")} placeholder="+91 00000 00000" />
+            <TextInput value={form.phone} onChange={set("phone")} placeholder="+91 00000 00000" type="tel" inputMode="tel" />
           </Field>
           <Field label={tr("settingsAccount.whereYouLive")} hint={tr("settingsAccount.onlyTheCityIsUsedTo")}>
-            <TextInput value={form.place} onChange={set("place")} placeholder={tr("settingsAccount.cityState")} />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Select value={place.state} onChange={(st) => putPlace(place.town, st)} label="State"
+                      placeholder="Choose your state" options={STATES} />
+              <TextInput value={place.town} onChange={(e) => putPlace(e.target.value, place.state)}
+                         placeholder="Town or city" aria-label="Town or city" />
+            </div>
           </Field>
           <Field label={tr("settingsAccount.dateOfBirth")} hint={tr("settingsAccount.someSchemesHaveAnAgeLimit")}>
-            <TextInput value={form.born} onChange={set("born")} placeholder="DD MMM YYYY" />
+            <div className="grid grid-cols-[1fr_1.2fr_1.3fr] gap-2">
+              <Select value={shownDob.d} onChange={(x) => pickDob("d", x)} label="Day" placeholder="Day" options={DAYS} />
+              <Select value={shownDob.m} onChange={(x) => pickDob("m", x)} label="Month" placeholder="Month" options={MONTHS} />
+              <Select value={shownDob.y} onChange={(x) => pickDob("y", x)} label="Year" placeholder="Year" options={YEARS} />
+            </div>
           </Field>
         </div>
       </Group>

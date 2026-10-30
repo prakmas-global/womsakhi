@@ -44,6 +44,14 @@ class MentorResponse(BaseModel):
     rating_count: int
     sessions_done: int
     requested: bool
+    owner_kind: str = "staff"
+    owner_id: str = ""
+    price_minor: int = 0
+    session_mode: str = "Video call"
+    session_minutes: int = 0
+    is_mine: bool = False
+    #: Skills a member mentor proved by passing a WomSakhi test.
+    verified_skills: list[dict] = []
 
 
 class MentorshipRequestCreate(BaseModel):
@@ -68,6 +76,14 @@ class MentorshipRequestResponse(BaseModel):
     preferred_time: str
     status: str
     when: str
+    scheduled_for: str = ""
+    mentor_note: str = ""
+    payment_status: str = ""
+    price_minor: int = 0
+    #: How to meet — only once the session is accepted and (if paid) paid for.
+    meeting: str = ""
+    #: The mentor's UPI id — only while an accepted paid session is unpaid.
+    upi_id: str = ""
 
 
 # --- opportunities -----------------------------------------------------------
@@ -91,6 +107,15 @@ class OpportunityResponse(BaseModel):
     #: so a caller that sorts must pin this first.
     pay_period: str = ""
     skills: list[str]
+    #: Work masters: the category key and skill keys (names are in `skills`).
+    category: str = ""
+    category_name: str = ""
+    skill_keys: list[str] = []
+    #: "staff" (the WomSakhi team) or "member" (a verified member hiring).
+    owner_kind: str = "staff"
+    is_mine: bool = False
+    #: Against HER work profile: {"have": [...], "missing": [...], "verified": [...]}.
+    match: dict = {}
     openings: int
     deadline: str
     deadline_label: str
@@ -127,3 +152,6 @@ class ApplicationResponse(BaseModel):
     steps: int
     staff_note: str
     applied_on: str
+    skills: list[dict] = []
+    #: "" | mine (she said it is done) | confirmed (the poster confirmed it).
+    done: str = ""

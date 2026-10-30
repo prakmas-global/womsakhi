@@ -1,6 +1,10 @@
 "use client";
 
-import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { PlaceBadge } from "@/components/ux/nav/Place";
+import { QuoteCard } from "./inspiration/QuoteCard";
+import { SectionBanner } from "@/components/ux/nav/SectionBanner";
+import { DefaultRail, MoreForYou } from "./fill/MoreForYou";
+import { Fragment, memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,6 +26,7 @@ import { PageTransition } from "./mobile/PageTransition";
 import { MobileBack } from "./mobile/BackButton";
 import { MoreSheet } from "./mobile/MoreSheet";
 import { NotificationsPopover } from "./NotificationsPopover";
+import { useHiddenHealth } from "@/components/ux/health/nav-prefs";
 
 /**
  * The search panel is a ⌘K surface — most sessions never open it, and it drags
@@ -138,7 +143,8 @@ const RailSection = memo(function RailSection({
   label: (n: Pick<NavNode, "label" | "k">) => string;
   onOpen: (id: string, href: string) => void;
 }) {
-  const kids = (s.children ?? []).filter((c) => !c.unlisted);
+  const hiddenHealth = useHiddenHealth();
+  const kids = (s.children ?? []).filter((c) => !c.unlisted && !(hiddenHealth && hiddenHealth.split(",").includes(c.id)));
   const onPath = useMemo(() => new Set(trailKey.split("/")), [trailKey]);
 
   return (
@@ -185,7 +191,9 @@ const RailSection = memo(function RailSection({
               className="absolute inset-y-1.5 start-0 w-[3px] rounded-full"
               style={{ background: isOpen ? "var(--ux-brand)" : "transparent",
                        transition: "background var(--ux-t) var(--ux-ease)" }} />
-        <Icon name={s.icon} className="ux-ico h-[16px] w-[16px] shrink-0" />
+        {/* The section's picture in its colour, not a thin line icon: the
+            rail is read by the picture first (components/ux/nav/places.ts). */}
+        <PlaceBadge node={s} size={28} radius={9} />
         <span className="min-w-0 flex-1 truncate text-xsm"
               style={{ fontWeight: isOpen ? 700 : 500 }}>
           {label(s)}
@@ -205,11 +213,16 @@ const RailSection = memo(function RailSection({
         <div className="ux-reveal" data-open={isOpen ? "true" : "false"}>
           <div>
             <div className="ux-branch mb-1 ms-[18px] mt-0.5">
-              {kids.map((c) => {
+              {kids.map((c, i) => {
                 const on = onPath.has(c.id);
+                const heading = c.group && c.group !== kids[i - 1]?.group ? c.group : null;
                 return (
+                  <Fragment key={c.id}>
+                  {heading && (
+                    <p className="mb-0.5 mt-2 px-2.5 text-[10.5px] font-extrabold uppercase tracking-[0.12em]"
+                       style={{ color: "var(--ux-muted)" }}>{heading}</p>
+                  )}
                   <TransitionLink
-                    key={c.id}
                     href={c.href}
                     tabIndex={isOpen ? undefined : -1}
                     aria-current={on ? "page" : undefined}
@@ -217,12 +230,13 @@ const RailSection = memo(function RailSection({
                     className="ux-rail-link ux-twig ux-row ux-sq relative mb-0.5 flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 py-1.5"
                     style={{ color: on ? "var(--ux-brand)" : "var(--ux-ink-2)" }}
                   >
-                    <Icon name={c.icon} className="ux-ico h-[15px] w-[15px] shrink-0" />
+                    <PlaceBadge node={c} size={24} radius={7} />
                     <span className="min-w-0 flex-1 truncate text-xsm"
                           style={{ fontWeight: on ? 700 : 500 }}>
                       {label(c)}
                     </span>
                   </TransitionLink>
+                  </Fragment>
                 );
               })}
             </div>
@@ -261,7 +275,28 @@ export function ModeRail({ path, footer }: { path: string; footer?: React.ReactN
   }, [here]);
 
   const trailKey = trail.map((t) => t.id).join("/");
+  // The open section, readable from the handler without making the handler
+  // new on every change (which would re-render every memoised section).
+  const openRef = useRef(open);
+  useEffect(() => { openRef.current = open; }, [open]);
+  /**
+   * Tap a closed section: open it and go to its home. Tap the open one again:
+   * fold it away and stay where she is — the rail is hers to tidy, and a
+   * second tap that only re-opened the same list gave her no way to.
+   */
+  const pathRef = useRef(path);
+  useEffect(() => { pathRef.current = path; }, [path]);
   const openSection = useCallback((id: string, href: string) => {
+    if (openRef.current === id) {
+      // Health & Wellness: from inside one of its sections, the name goes back
+      // to its dashboard rather than folding the list away.
+      if (id === "wellness" && pathRef.current !== href) {
+        requestAnimationFrame(() => router.push(href));
+        return;
+      }
+      setOpen(undefined);
+      return;
+    }
     setOpen(id);
     requestAnimationFrame(() => router.push(href));
   }, [router, setOpen]);
@@ -578,7 +613,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
 
       {/* The full search box needs ~300px. On a phone it is an icon, and the
           palette it opens is the same palette. */}
-      <div className={`ms-auto hidden min-w-0 flex-1 justify-end sm:flex ${here === "/app/circle" ? "max-w-[590px]" : "max-w-[300px]"}`}>
+      <div className={`ms-auto hidden min-w-0 flex-1 justify-end sm:flex ${here === "/app/community" ? "max-w-[590px]" : "max-w-[300px]"}`}>
         <div className="w-full">
         {/* A button, not an input: typing happens in the palette, which has the
             results, the keyboard handling and somewhere to put focus. */}
@@ -655,8 +690,8 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
             onClick={() => { setBell(false); setMenu((v) => !v); }}
             aria-haspopup="menu"
             aria-expanded={menu}
-            aria-label="Your account"
-            title="Your account"
+            aria-label="My account"
+            title="My account"
             data-account-button
             className="ux-press flex h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-[12px] px-[3px] transition-colors hover:bg-[var(--ux-surface-2)] lg:pe-1.5"
           >
@@ -685,6 +720,7 @@ export function Topbar({ user, onMore }: { user: { name: string; avatar: string;
                 { label: tr("rem.title"), icon: "AlarmClock", href: "/app/reminders" },
                 { label: "Notifications", icon: "Bell", href: "/app/notifications" },
                 { label: "Saved", icon: "Bookmark", href: "/app/saved" },
+                { label: "Health settings", icon: "HeartPulse", href: "/app/wellness?tab=settings" },
                 { label: "Settings", icon: "Settings", href: "/app/settings" },
                 { label: "Questions", icon: "HelpCircle", href: "/app/help" },
                 { label: tr("refer.referAFriend"), icon: "Gift", href: "/app/refer" },
@@ -785,6 +821,8 @@ export function Shell({
   wide,
   fit,
   immersive,
+  fill = true,
+  columns = false,
 }: {
   /** Accepted and ignored — kept so callers need not all change at once. */
   nav?: unknown;
@@ -793,6 +831,14 @@ export function Shell({
   user: { name: string; avatar: string; unread?: number };
   children: React.ReactNode;
   rail?: React.ReactNode;
+  /**
+   * No empty screen: end every page with "More for you" (other modules as
+   * pictures, and a quote), and give a page with no column of its own the
+   * default one on a wide screen. Off for chats, boards and full-screen pages.
+   */
+  fill?: boolean;
+  /** The page draws its own columns — a module home — so no default side column. */
+  columns?: boolean;
   /**
    * Drop the side rail and give the screen the whole width.
    *
@@ -951,8 +997,19 @@ export function Shell({
                     to a custom property, so `.ux-swap`'s own animation still
                     rides on the element the router inserts. Nothing about it
                     sits between the tap and the navigation. */}
+                {/* The section's banner — its photo or a line on its colour —
+                    above every screen in the tree (components/ux/nav/banners.ts
+                    decides where, and is the one place a sponsor would go). */}
+                {!immersive && !fit && <SectionBanner />}
                 <PageTransition>{children}</PageTransition>
+                <div className="mt-6 pb-2"><QuoteCard compact={fit || immersive} /></div>
+                {fill && !fit && !immersive && <MoreForYou />}
               </main>
+              {fill && !rail && !wide && !columns && !fit && !immersive && (
+                <div className="ux-swap hidden w-[320px] shrink-0 pb-[64px] xl:block">
+                  <div className="ux-sticky-col"><DefaultRail /></div>
+                </div>
+              )}
               {/*
                 ── The rail is not desktop-only any more ────────────────────
                 It held the helplines on Health, Rights and Travel — 112, 181,
@@ -967,7 +1024,8 @@ export function Shell({
               {rail && (
                 <div data-rail className="ux-swap w-full shrink-0 pb-24 lg:pb-[64px] xl:w-[320px]">
                   <div className="mb-4 border-t pt-4 xl:hidden" style={{ borderColor: "var(--ux-line)" }} aria-hidden />
-                  {rail}
+                  {/* Fixed beside the scrolling middle from `xl` (see .ux-sticky-col). */}
+                  <div className="ux-sticky-col">{rail}</div>
                 </div>
               )}
             </div>

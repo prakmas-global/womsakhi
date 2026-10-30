@@ -1,5 +1,6 @@
 "use client";
 
+import { useMaster } from "@/lib/masters-api";
 import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -38,6 +39,12 @@ const MIN = 10;
 const MAX = 1000;
 
 export default function ReportPersonPage() {
+  // Reasons are the second level of the staff-controlled
+  // `safety_report_categories` master, each under the category it files to.
+  // The built-in reasons show until it loads.
+  const { items: cats, loaded } = useMaster("safety_report_categories");
+  const fromMaster = cats.flatMap((c) => (c.children ?? []).map((ch) => ({ id: ch.key, label: ch.label, category: c.label })));
+  const reasons: { id: string; label: string; category: string }[] = loaded && fromMaster.length ? fromMaster : [...REASONS];
   const params = useParams<{ id: string }>();
   const id = String(params?.id ?? "");
   const [conv, setConv] = useState<ConvDetail | null>(null);
@@ -64,7 +71,7 @@ export default function ReportPersonPage() {
 
   const len = details.trim().length;
   const detailsOk = len >= MIN && len <= MAX;
-  const chosen = REASONS.find((r) => r.id === reason);
+  const chosen = reasons.find((r) => r.id === reason);
   const ready = Boolean(chosen) && detailsOk && !busy;
   const name = conv?.name ?? "this person";
   const first = name.split(" ")[0];
@@ -147,7 +154,7 @@ export default function ReportPersonPage() {
               <fieldset aria-describedby={touched && !chosen ? `${groupId}-err` : undefined}>
                 <legend className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>What happened?</legend>
                 <div className="mt-2 grid gap-1.5">
-                  {REASONS.map((r) => {
+                  {reasons.map((r) => {
                     const on = reason === r.id;
                     return (
                       <label key={r.id}

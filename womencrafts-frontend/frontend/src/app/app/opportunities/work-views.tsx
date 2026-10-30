@@ -5,7 +5,10 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, IconTile, v } from "@/components/ux/kit";
 import { payLabel, type Job } from "@/components/ux/work/data";
-import { matchFor, matchTone } from "@/services/job-match";
+import { matchFor } from "@/services/job-match";
+import { MediaCard, Fact } from "@/components/ux/media/MediaCard";
+import { jobPicture, useWorkTaxonomy } from "@/components/ux/work/pictures";
+import { FitLine, PostedBy } from "@/components/ux/work/parts";
 import { useT } from "@/i18n";
 
 /* ------------------------------------------------------------------ */
@@ -56,120 +59,74 @@ export function FamilyStrip({ active, onPick }: {
 /**
  * A job, as she has to judge it.
  *
- * The order is deliberate and it is not the order a job board usually uses.
- * Money and the match are on the right where the eye lands last but stays,
- * because they are the two things that decide whether she reads the rest. The
- * match percentage is honest: it comes from her skills against the listing's,
- * and `job-match.ts` computes it from what she HAS rather than what she lacks.
- *
- * Pay is shown per month, never as a "LPA" figure. A woman deciding whether to
- * take a stitching order does not convert annual salaries in her head, and the
- * whole listing set here is comparable only in monthly terms.
+ * A big picture of the WORK itself (tailoring, kitchen, data entry — picked
+ * by `artFor` from the job's title and skills), with the two things that
+ * decide a tap on it: what kind of work it is, and what it pays, exactly as the
+ * listing words it. Under it: who posted it, where, when it closes, and the
+ * honest fit — the server compares her My work profile skills with the skill
+ * keys the job was posted with, and the card says which ones she has.
  */
 export function JobCard({ job, saved, onSave }: {
   job: Job; saved: boolean; onSave: () => void;
 }) {
   const tr = useT();
-  // Computed from her skills against this listing's, not carried by the API —
-  // which sends no score, so the card was printing a flat "0% match" on every
-  // opening. `matchFor` returns null when there is nothing to compare, and the
-  // badge is then not shown at all rather than shown as a zero.
-  const match = matchFor(job.skills);
-  const tone = matchTone(match.pct);
+  const workCats = useWorkTaxonomy();
+  // Her work-profile skills against this listing's skill keys, from the
+  // server. `matchFor` returns pct null when there is nothing to compare,
+  // and the fit line and badge are then left out rather than shown as zero.
+  const match = matchFor(job);
+  const of = match.have.length + match.missing.length;
+  const kind = job.kind === "Order" ? "Order to make" : job.kind;
   return (
-    <Card pad={18}>
-      {/*
-        One column on a phone.
-
-        `min-w-[240px]` on the middle block and fixed 172/140px columns beside
-        it means that at 390 the three blocks wrap into an uneven stack with
-        the pay figure and the two buttons sitting in half-width stubs. Below
-        `lg` they are simply stacked full width, in the order she reads them:
-        what the work is, what it pays, what she can do about it.
-      */}
-      <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:flex-wrap lg:items-start">
-        <div className="flex items-start gap-4 lg:contents">
-        {/* Who is hiring */}
-        <IconTile icon={job.icon} tint={job.logoTint} ink={job.logoInk} size={52} radius={14} />
-
-        {/* What the work is */}
-        <div className="min-w-0 flex-1 lg:min-w-[240px]">
-          <h3 className="text-base font-bold leading-snug" style={{ color: v("--ux-ink") }}>
-            {job.title}
-          </h3>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xsm"
-             style={{ color: v("--ux-muted") }}>
-            <span className="font-semibold" style={{ color: v("--ux-ink-2") }}>{job.org}</span>
-            <span aria-hidden>·</span>
-            <span>{job.place}</span>
-            <span aria-hidden>·</span>
-            <span>{job.mode}</span>
-            {job.verified && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-bold lg:text-2xs"
-                    style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>
-                <Icons.BadgeCheck className="h-[11px] w-[11px]" />{tr("workviews.theyPaidLastTime")}</span>
-            )}
-          </p>
-          <p className="mt-2 max-w-[62ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-            {job.about}
-          </p>
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {job.skills.slice(0, 3).map((s) => (
-              <span key={s} className="rounded-full px-2.5 py-1 text-[13px] font-semibold lg:rounded-[8px] lg:px-2 lg:text-2xs"
-                    style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-                {s}
-              </span>
-            ))}
-            {job.skills.length > 3 && (
-              <span className="rounded-full px-2.5 py-1 text-[13px] font-semibold lg:rounded-[8px] lg:px-2 lg:text-2xs"
-                    style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>
-                +{job.skills.length - 3}
-              </span>
-            )}
-          </div>
-        </div>
-        </div>
-
-        {/* What it pays, and how well it fits */}
-        <div className="w-full lg:w-[172px] lg:shrink-0">
-          {/* Hidden at zero, not shown as "0%". `matchTone` says it plainly: a
-              low score here measures how much she has written down, not what
-              she can do, and a column of "0%" badges is a discouraging machine
-              pointed at exactly the women this exists for. */}
-          {match.pct !== null && match.pct > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-bold lg:text-2xs"
-                  title={match.because}
-                  style={{ background: v("--ux-surface-2"), color: v(tone.ink) }}>
-              <Icons.BadgeCheck className="h-[12px] w-[12px]" />
-              {match.pct}% · {tone.label}
-            </span>
+    <MediaCard
+      href={`/app/opportunities/${job.id}`}
+      image={jobPicture(job, workCats)}
+      alt={job.title}
+      topLeft={{ text: kind, tone: "light" }}
+      topRight={{ text: payLabel(job), tone: "dark" }}
+      overlay={match.pct !== null && match.have.length > 0 ? (
+        <><Icons.BadgeCheck className="h-[13px] w-[13px]" />{match.have.length} of {of} of your skills match</>
+      ) : job.applied ? (<><Icons.CheckCircle2 className="h-[13px] w-[13px]" />You applied</>) : null}
+      highlight={match.pct !== null && match.pct >= 80}
+      title={job.title}
+      subtitle={<PostedBy job={job} />}
+      meta={<>
+        {job.place && <Fact icon="MapPin">{job.place}</Fact>}
+        <Fact icon="Laptop">{job.mode === "Remote" ? "From home" : job.mode}</Fact>
+        <Fact icon="Clock">{job.deadline ? `Closes ${new Date(job.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : `Posted ${job.posted}`}</Fact>
+      </>}
+      footer={
+        <div className="grid grid-cols-2 gap-2">
+          {job.isMine ? (
+            <>
+              <Btn size="sm" variant="outline" href={`/app/opportunities/${job.id}`} full>{tr("workviews.viewDetails")}</Btn>
+              <Btn size="sm" href={`/app/work/posts?job=${job.id}`} full icon="Users">See applicants</Btn>
+            </>
+          ) : (
+            <>
+              <Btn size="sm" variant={saved ? "soft" : "outline"} icon="Bookmark" full onClick={onSave}>
+                {saved ? "Saved" : "Save"}
+              </Btn>
+              <Btn size="sm" href={`/app/opportunities/${job.id}`} full iconEnd="ArrowRight">{tr("workviews.viewDetails")}</Btn>
+            </>
           )}
-          <p className="mt-2 text-[17px] font-extrabold lg:text-sm" style={{ color: v("--ux-ink") }}>
-            {payLabel(job)}
-          </p>
-          {/* Side by side on a phone: two facts, one line, rather than two
-              lines of 12px in a column with nothing beside it. */}
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 lg:block">
-            <span className="inline-flex items-center gap-1.5 text-[13px] lg:text-xs" style={{ color: v("--ux-muted") }}>
-              <Icons.Briefcase className="h-[12px] w-[12px]" /> {job.kind}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[13px] lg:mt-1 lg:flex lg:text-xs" style={{ color: v("--ux-faint") }}>
-              <Icons.Clock className="h-[12px] w-[12px]" /> Posted {job.posted}
-            </span>
-          </p>
         </div>
-
-        {/* What she can do about it */}
-        {/* Two halves of the full width on a phone — a stacked pair of
-            50px buttons is a lot of screen for one card in a list of them. */}
-        <div className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-[140px] lg:shrink-0 lg:flex-col">
-          <Btn size="sm" variant={saved ? "soft" : "outline"} icon="Bookmark" full onClick={onSave}>
-            {saved ? "Saved" : "Save"}
-          </Btn>
-          <Btn size="sm" href={`/app/opportunities/${job.id}`} full iconEnd="ArrowRight">{tr("workviews.viewDetails")}</Btn>
+      }
+    >
+      {match.pct !== null && <FitLine fit={match} />}
+      {job.skills.length > 0 && (
+        <div className={`flex flex-wrap gap-1.5 ${match.pct !== null ? "mt-2" : ""}`}>
+          {job.skills.slice(0, 3).map((s) => (
+            <span key={s} className="rounded-full px-2.5 py-1 text-2xs font-semibold"
+                  style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>{s}</span>
+          ))}
+          {job.skills.length > 3 && (
+            <span className="rounded-full px-2.5 py-1 text-2xs font-semibold"
+                  style={{ background: v("--ux-surface-2"), color: v("--ux-muted") }}>+{job.skills.length - 3}</span>
+          )}
         </div>
-      </div>
-    </Card>
+      )}
+    </MediaCard>
   );
 }
 

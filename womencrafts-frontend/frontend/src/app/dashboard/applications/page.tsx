@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  Award, Briefcase, Check, History, Loader2, Mail, MessagesSquare, MoreHorizontal, Phone, Send,
+  Award, BadgeCheck, Briefcase, Check, History, Loader2, Mail, MessagesSquare, MoreHorizontal, Phone, Send,
   Sparkles, Star, X, XCircle,
 } from "lucide-react";
 import {
@@ -26,10 +26,12 @@ import { memberError } from "@/lib/member-api";
 
 const TONE: Record<string, "brand" | "violet" | "amber" | "emerald" | "slate" | "rose"> = {
   applied: "brand", shortlisted: "violet", interview: "amber", offered: "emerald", closed: "rose", withdrawn: "slate",
+  completed: "emerald",
 };
 
 const LABEL: Record<string, string> = {
   applied: "New", shortlisted: "Shortlisted", interview: "Interview", offered: "Offered", closed: "Declined", withdrawn: "Withdrawn",
+  completed: "Work done",
 };
 
 const MOVE: Record<string, { title: string; verb: string; placeholder: string }> = {
@@ -38,15 +40,20 @@ const MOVE: Record<string, { title: string; verb: string; placeholder: string }>
   offered: { title: "Make her an offer", verb: "Offer and tell her", placeholder: "They'd like to offer you the position. We'll call to go through the details." },
   closed: { title: "Decline her application", verb: "Decline and tell her why", placeholder: "They've filled the position this time. Your application was strong — we'll tell you when something similar comes up." },
   applied: { title: "Put her back to New", verb: "Move back and tell her", placeholder: "We're reconsidering your application from the start." },
+  // The team listed this work, so the team confirms it was done — it then
+  // shows on her work profile with this note (backend: app/core/work_done.py).
+  completed: { title: "Confirm the work is done", verb: "Confirm and tell her", placeholder: "Delivered all 40 uniforms on time. The school was very happy." },
 };
 
 /** Where an application can go from where it is. */
-function nextSteps(status: string): string[] {
+function nextSteps(status: string, done = ""): string[] {
   switch (status) {
     case "applied": return ["shortlisted", "interview", "closed"];
     case "shortlisted": return ["interview", "offered", "closed", "applied"];
     case "interview": return ["offered", "closed", "shortlisted"];
-    case "offered": return ["closed"];
+    case "offered": return ["completed", "closed"];
+    // She said it is done; the team confirms it.
+    case "completed": return done === "mine" ? ["completed"] : [];
     default: return [];
   }
 }
@@ -113,6 +120,7 @@ function ApplicationsInner() {
     { value: "shortlisted", label: "Shortlisted", count: counts?.shortlisted },
     { value: "interview", label: "Interview", count: counts?.interview },
     { value: "offered", label: "Offered", count: counts?.offered },
+    { value: "completed", label: "Work done" },
     { value: "closed", label: "Declined", count: counts?.closed },
     { value: "withdrawn", label: "Withdrawn", count: counts?.withdrawn },
     { value: "all", label: "All" },
@@ -183,11 +191,35 @@ function ApplicationsInner() {
               </thead>
               <tbody>
                 {apps.map((a) => {
-                  const steps = nextSteps(a.status);
+                  const steps = nextSteps(a.status, a.done);
                   return (
                     <tr key={a.id} className="border-b border-line last:border-0 hover:bg-surface-2">
                       <td className="px-3 py-3">
                         <p className="text-sm font-semibold text-ink">{a.member_name}</p>
+                        {!!a.verified_skills?.length && (
+                          <p className="mt-1 flex flex-wrap gap-1">
+                            {a.verified_skills.map((s) => (
+                              <a key={s.title} href={`/verify/${s.code}`} target="_blank" rel="noopener noreferrer"
+                                 title={`${s.title} — passed with ${s.score}%`}
+                                 className="inline-flex items-center gap-1 rounded-full bg-status-ok-bg px-2 py-0.5 text-2xs font-semibold text-status-ok-ink hover:underline">
+                                <BadgeCheck className="h-3 w-3" /> Verified: {s.skill}
+                              </a>
+                            ))}
+                          </p>
+                        )}
+                        {/* Her skills this job needs, as they were when she applied. */}
+                        {!!a.matching_skills?.length && (
+                          <p className="mt-1 flex flex-wrap items-center gap-1">
+                            <span className="text-2xs font-semibold text-ink-subtle">Matching skills:</span>
+                            {a.matching_skills.map((s) => (
+                              <span key={s.key}
+                                    className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2 py-0.5 text-2xs font-medium text-ink-muted">
+                                {s.verified && <BadgeCheck className="h-3 w-3 text-status-ok-ink" aria-label="Verified" />}
+                                {s.name}{s.level ? ` · ${s.level}` : ""}
+                              </span>
+                            ))}
+                          </p>
+                        )}
                         <p className="flex flex-wrap items-center gap-x-3 text-xs text-ink-subtle">
                           <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{a.member_email}</span>
                           {a.member_phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{a.member_phone}</span>}
@@ -198,7 +230,7 @@ function ApplicationsInner() {
                         <p className="truncate text-xs text-ink-subtle">{a.org}</p>
                       </td>
                       <td className="px-3 py-3 text-sm text-ink-subtle">{a.applied_on}</td>
-                      <td className="px-3 py-3"><Badge tone={TONE[a.status] ?? "slate"}>{LABEL[a.status] ?? a.status}</Badge></td>
+                      <td className="px-3 py-3"><Badge tone={TONE[a.status] ?? "slate"}>{a.status === "completed" && a.done === "mine" ? "Done · to confirm" : LABEL[a.status] ?? a.status}</Badge></td>
                       <td className="max-w-xs px-3 py-3">
                         <p className="line-clamp-2 text-xs text-ink-muted">{a.staff_note || <span className="text-ink-subtle">Nothing yet</span>}</p>
                       </td>
@@ -208,6 +240,9 @@ function ApplicationsInner() {
                           {steps.includes("shortlisted") && <MenuItem icon={Star} onClick={() => open(a, "shortlisted")}>Shortlist</MenuItem>}
                           {steps.includes("interview") && <MenuItem icon={MessagesSquare} onClick={() => open(a, "interview")}>Invite to interview</MenuItem>}
                           {steps.includes("offered") && <MenuItem icon={Award} onClick={() => open(a, "offered")}>Make an offer</MenuItem>}
+                          {steps.includes("completed") && <MenuItem icon={BadgeCheck} onClick={() => open(a, "completed")}>
+                            {a.done === "mine" ? "Confirm she finished the work" : "Mark the work done"}
+                          </MenuItem>}
                           {steps.includes("applied") && <MenuItem onClick={() => open(a, "applied")}>Back to New</MenuItem>}
                           {steps.includes("closed") && <MenuItem icon={X} danger onClick={() => open(a, "closed")}>Decline with a reason</MenuItem>}
                         </Menu>

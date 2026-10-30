@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -83,7 +84,7 @@ function Results() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" src="/ux/art/mascot-robot-reading.webp" alt=""
                  className="ux-float pointer-events-none absolute -bottom-3 -end-3 h-[92px] w-[92px] object-contain" />
-            <h3 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("search.canTFindIt")}</h3>
+            <h2 className="relative w-[62%] text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>{tr("search.canTFindIt")}</h2>
             <p className="relative mt-2 w-[62%] text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>{tr("search.askSakhiInYourOwnWords")}</p>
             <div className="relative mt-3 w-[62%]">
               <Btn href="/app/sakhi" variant="soft" size="sm" iconEnd="ArrowRight">{tr("search.askSakhi")}</Btn>
@@ -93,9 +94,12 @@ function Results() {
       }
     >
       <div className="mb-6 lg:mb-[20px]">
-        <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
-          {q ? <>Results for “{q}”</> : "Search"}
-        </h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>
+            {q ? <>Results for “{q}”</> : "Search"}
+          </h1>
+        </div>
         <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
           {q
             ? `${all.length} match${all.length === 1 ? "" : "es"} across courses, work, mentors and circles.`
@@ -209,9 +213,9 @@ function Hit({ h, q, i }: { h: SearchHit; q: string; i: number }) {
             <IconTile icon={h.icon} tint={h.tint} ink={h.ink} size={54} radius={12} />
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
+            <h2 className="truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
               <Mark text={h.title} q={q} />
-            </h3>
+            </h2>
             <p className="mt-1 truncate text-xsm" style={{ color: "var(--ux-muted)" }}>{h.sub}</p>
           </div>
           <span className="shrink-0 rounded-full px-2.5 py-[4px] text-2xs font-semibold"

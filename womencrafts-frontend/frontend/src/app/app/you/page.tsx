@@ -1,10 +1,12 @@
 "use client";
 
+import { Img } from "@/components/ux/media/Img";
 import Image from "next/image";
 import { useT } from "@/i18n";
 import Link from "next/link";
-import { Accessibility, ArrowRight, Bell, BookOpen, CalendarDays, ChevronRight, CircleUserRound, Clock3, Edit3, Gift, Heart, Headphones, Languages, Mail, MapPin, MoonStar, Phone, Settings, ShieldCheck, Sparkles, UserRound, UsersRound } from "lucide-react";
+import { Accessibility, ArrowRight, Bell, BookOpen, CalendarDays, ChevronRight, CircleUserRound, Clock3, Edit3, Heart, Headphones, Languages, Mail, MapPin, MoonStar, Phone, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { SectionPictures } from "@/components/ux/nav/Hub";
 import styles from "./you.module.css";
 import { useAuth } from "@/context/AuthContext";
 import { useShell } from "@/components/ux/ShellProvider";
@@ -13,10 +15,6 @@ import { apiMyPrograms } from "@/lib/growth-api";
 import { useResource } from "@/lib/use-resource";
 import { useCallback } from "react";
 
-const shortcuts = [
-  [UserRound,"Your profile","Show your true self","/app/profile","violet"], [ShieldCheck,"Getting verified","Build trust & unlock more","/app/verify","mint"],
-  [Settings,"Settings","Personalize your experience","/app/settings","pink"], [Gift,"Bring a friend","Stronger together","/app/refer","rose"],
-] as const;
 const settings = [
   [Languages,"Language","English","/app/settings/language"], [Bell,"Notifications","Manage alerts","/app/settings/notifications"],
   [ShieldCheck,"Privacy & security","Keep your data safe","/app/settings/security"], [MoonStar,"Appearance","Light mode","/app/settings/appearance"],
@@ -77,16 +75,19 @@ export default function YouDashboard() {
     programs: programCount,
   });
 
-  return <HomeShell><div className={styles.page} data-dashboard="you">
-    <section className={styles.hero}>
+  return <HomeShell columns><div className={styles.page} data-dashboard="you">
+    <section data-banner data-page-hero className={styles.hero}>
       <Image src="/ux/you/you-hero-v2.webp" alt={tr("you.aWomanLookingHopefullyAcrossASunrise")} fill priority sizes="(max-width: 760px) 100vw, 80vw" />
       <div className={styles.heroShade}/><div className={styles.heroCopy}><h1>{tr("you.hiName", { name: firstName })}<br/><em>{tr("you.youMakeTheWorldBrighter")}</em></h1><p>Manage your profile, preferences and everything about your WomSakhi journey — all in one place.</p><blockquote>{tr("you.empoweredWomenEmpowerAKinderWorld")}<cite>— WomSakhi</cite></blockquote></div>
       <div className={styles.heroWords}>Learn<br/>Earn<br/>Connect<br/>Grow<br/>Together <Heart/></div>
       <Link href="/app/journey" className={styles.heroCard}><Sparkles/><b>A brighter<br/>you</b><span>A kinder<br/>world</span><i><ChevronRight/></i></Link>
     </section>
-    <nav className={styles.shortcuts} aria-label={tr("you.accountShortcuts")}>{shortcuts.map(([Icon,title,copy,href,tone])=><Link href={href} key={title}><span className={styles[tone]}><Icon/></span><b>{title}<small>{copy}</small>{title==="Getting verified"&&<i><ShieldCheck/> Verified</i>}</b><ChevronRight/></Link>)}</nav>
+    {/* Everything in You as pictures in its colour. This replaced four
+        hand-made shortcuts (profile, verified, settings, bring a friend) that
+        were the same links as words with small icons. */}
+    <div className="mt-4"><SectionPictures id="account" className="" /></div>
     <section className={styles.dashboardGrid}>
-      <article className={`${styles.panel} ${styles.profile}`}><header><h2>{tr("profile.title")}</h2><Link href="/app/profile">Edit <Edit3/></Link></header><div className={styles.identity}><Link href="/app/profile" aria-label={tr("you.openYourProfile")}><Image src={user?.avatar || "/ux/art/avatar-woman-purple-kurta.webp"} alt="" width={92} height={92} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /></Link><div><h3>{name || "—"} {verified && <ShieldCheck/>}</h3><p>{tr("you.memberSince", { since: sinceLabel })}</p><span>{tr("you.explorerLearnerChangemaker")}</span></div></div><div className={styles.details}>{user?.email && <a href={`mailto:${user.email}`}><Mail/>{user.email}</a>}{user?.phone ? <a href={`tel:${user.phone.replace(/\s+/g, "")}`}><Phone/>{user.phone}</a> : <Link href="/app/profile"><Phone/>{tr("you.addYourPhone")}</Link>}<Link href="/app/profile"><MapPin/>{tr("you.sayWhereYouAre")}</Link>{joinedLabel && <Link href="/app/journey"><CalendarDays/>{tr("you.joinedOn", { date: joinedLabel })}</Link>}<blockquote>“A healthier,<br/>{tr("you.happierMe")}<br/>{tr("you.aKinderWorld")}<cite>— WomSakhi</cite></blockquote></div><div className={styles.tags}><Link href="/app/learn">Learning</Link><Link href="/app/wellness">Health</Link><Link href="/app/earn">Entrepreneurship</Link><Link href="/app/travel">Travel</Link><Link href="/app/discover">+3</Link></div></article>
+      <article className={`${styles.panel} ${styles.profile}`}><header><h2>{tr("profile.title")}</h2><Link href="/app/profile">Edit <Edit3/></Link></header><div className={styles.identity}><Link href="/app/profile" aria-label={tr("you.openYourProfile")}><Img src={user?.avatar || "/ux/art/avatar-woman-purple-kurta.webp"} width={92} height={92} /></Link><div><h3>{name || "—"} {verified && <ShieldCheck/>}</h3><p>{tr("you.memberSince", { since: sinceLabel })}</p><span>{tr("you.explorerLearnerChangemaker")}</span></div></div><div className={styles.details}>{user?.email && <a href={`mailto:${user.email}`}><Mail/>{user.email}</a>}{user?.phone ? <a href={`tel:${user.phone.replace(/\s+/g, "")}`}><Phone/>{user.phone}</a> : <Link href="/app/profile"><Phone/>{tr("you.addYourPhone")}</Link>}<Link href="/app/profile"><MapPin/>{tr("you.sayWhereYouAre")}</Link>{joinedLabel && <Link href="/app/journey"><CalendarDays/>{tr("you.joinedOn", { date: joinedLabel })}</Link>}<blockquote>“A healthier,<br/>{tr("you.happierMe")}<br/>{tr("you.aKinderWorld")}<cite>— WomSakhi</cite></blockquote></div><div className={styles.tags}><Link href="/app/learn">Learning</Link><Link href="/app/wellness">Health</Link><Link href="/app/earn">Entrepreneurship</Link><Link href="/app/travel">Travel</Link><Link href="/app/discover">+3</Link></div></article>
       <article className={`${styles.panel} ${styles.settings}`}><header><h2>{tr("you.appSettings")}</h2><Link href="/app/settings">{tr("calendar.viewAll")} <ArrowRight/></Link></header><div>{settings.map(([Icon,title,value,href])=><Link href={href} key={title}><span><Icon/></span><b>{title}</b><small>{value}</small><ChevronRight/></Link>)}</div></article>
       <article className={`${styles.panel} ${styles.journey}`}><header><h2>{tr("you.yourJourney")}</h2><Link href="/app/journey">{tr("calendar.viewAll")} <ArrowRight/></Link></header><div>{journey.map(([Icon,title,value,href])=><Link href={href} key={title}><span><Icon/></span><b>{title}</b><small>{value}</small><ChevronRight/></Link>)}<Link href="/app/profile" className={styles.completion}><span><Clock3/></span><b>{tr("you.profileCompleteness")}</b><small>{profilePct}%</small><div><i style={{ width: `${profilePct}%` }}/></div></Link></div></article>
     </section>

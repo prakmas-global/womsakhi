@@ -1,8 +1,13 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { SkillBadges, type VerifiedSkill } from "@/components/ux/SkillBadges";
 
 import { Btn, Card, I, formatRupees, v } from "@/components/ux/kit";
+import { pictureFor } from "@/components/ux/media/art";
+import { CatThumb } from "@/components/ux/shop/categories";
+import { StoreGallery } from "@/components/ux/shop/StoreGallery";
+import { StoreCover } from "@/components/ux/shop/StoreBar";
 
 export type PublicListing = {
   id: string;
@@ -18,8 +23,21 @@ export type PublicShop = {
   handle: string;
   name: string;
   trade?: string;
+  /** The picture staff set for her store's category ("" = none; one is picked from `trade`). */
+  trade_image?: string;
   place?: string;
   listings: PublicListing[];
+  /** Skills she proved by passing a WomSakhi skill test — checkable certificates. */
+  verified_skills?: VerifiedSkill[];
+  /** Her store as she set it up in Store settings. */
+  shop_name?: string;
+  tagline?: string;
+  logo?: string;
+  cover?: string;
+  gallery?: string[];
+  /** False while she has closed her shop; nobody can ask her for anything. */
+  open?: boolean;
+  away_line?: string;
 };
 
 /**
@@ -49,6 +67,9 @@ export type PublicShop = {
  * back in the chat she is already in. Nothing is claimed on anyone's behalf.
  */
 export function ShopView({ shop }: { shop: PublicShop }) {
+  // She closed her shop in Store settings: what she makes stays visible, but
+  // there is no "tell her which one" — she said she is away.
+  const closed = shop.open === false;
   const [picked, setPicked] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
 
@@ -86,41 +107,72 @@ export function ShopView({ shop }: { shop: PublicShop }) {
     }
   }, [message]);
 
+  const tradeArt = shop.trade ? pictureFor({ key: shop.handle, image: shop.trade_image }, [shop.trade], null, "product") : "";
+
   return (
     <div className="flex flex-col gap-4">
       <Card pad={0} style={{ overflow: "hidden" }}>
+        {/* Her cover photo, when she has added one in Store settings; else a
+            picture of what her shop sells, so the page still says it. */}
+        {(shop.cover || tradeArt) && <StoreCover store={{ cover: shop.cover ?? "" }} height={140} fallback={tradeArt} />}
         <div
           className="px-5 pb-5 pt-6"
           style={{ background: `linear-gradient(150deg, ${v("--ux-brand-tint")}, ${v("--ux-surface")})` }}
         >
           <div className="flex items-start gap-4">
             <span
-              className="grid h-[58px] w-[58px] shrink-0 place-items-center rounded-full text-2xl font-bold"
+              className="grid h-[58px] w-[58px] shrink-0 place-items-center overflow-hidden rounded-[16px] text-2xl font-bold"
               style={{ background: v("--ux-fill"), color: v("--ux-on-brand") }}
             >
-              {shop.name.charAt(0)}
+              {shop.logo
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={shop.logo} alt="" className="h-full w-full object-cover" />
+                : (shop.shop_name || shop.name).charAt(0)}
             </span>
             <div className="min-w-0 flex-1">
               <h1
                 className="text-2xl font-extrabold leading-tight tracking-[-0.03em]"
                 style={{ color: v("--ux-ink") }}
               >
-                {shop.name}
+                {shop.shop_name || shop.name}
               </h1>
+              {shop.tagline && (
+                <p className="mt-0.5 text-xsm font-semibold" style={{ color: v("--ux-brand") }}>{shop.tagline}</p>
+              )}
               {/* Trade and place are the only two things the server knows about
                   her here, and both are hers to have typed. Anything more —
                   orders finished, buyers returning, years in business — would
                   be a claim to a stranger that nothing backs. */}
               {shop.trade && (
-                <p className="mt-0.5 text-xsm" style={{ color: v("--ux-ink-2") }}>{shop.trade}</p>
+                <p className="mt-1 inline-flex items-center gap-1.5 text-xsm" style={{ color: v("--ux-ink-2") }}>
+                  {tradeArt && <CatThumb src={tradeArt} size={20} />}{shop.trade}
+                </p>
               )}
               {shop.place && (
                 <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>{shop.place}</p>
+              )}
+              {/* The one claim this page makes about her that something backs:
+                  a test she passed, with a certificate the buyer can check. */}
+              {!!shop.verified_skills?.length && (
+                <div className="mt-2"><SkillBadges skills={shop.verified_skills} size="sm" /></div>
               )}
             </div>
           </div>
         </div>
       </Card>
+
+      {!!shop.gallery?.length && <Card><StoreGallery photos={shop.gallery} name={shop.shop_name || shop.name} /></Card>}
+
+      {closed && (
+        <div role="status" className="flex items-start gap-3 rounded-[16px] p-4"
+             style={{ background: v("--ux-tint-amber"), color: v("--ux-amber-ink") }}>
+          <I name="Moon" className="mt-0.5 h-5 w-5 shrink-0" />
+          <p className="text-sm font-semibold leading-snug">
+            {shop.away_line || "She is not taking orders right now."}
+            <span className="mt-1 block text-xs font-normal">You can still look at what she makes.</span>
+          </p>
+        </div>
+      )}
 
       <div>
         <p
@@ -138,9 +190,10 @@ export function ShopView({ shop }: { shop: PublicShop }) {
                   type="button"
                   onClick={() => toggle(l.id)}
                   aria-pressed={on}
-                  className="ux-press flex w-full items-start gap-3.5 p-4 text-left"
+                  disabled={closed}
+                  className="ux-press flex w-full items-start gap-3.5 p-4 text-left disabled:cursor-default"
                 >
-                  <span
+                  {!closed && <span
                     className="mt-[2px] grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border-2"
                     style={{
                       borderColor: v(on ? "--ux-brand" : "--ux-line"),
@@ -149,7 +202,7 @@ export function ShopView({ shop }: { shop: PublicShop }) {
                     }}
                   >
                     {on && <I name="Check" className="h-[13px] w-[13px]" sw={3} />}
-                  </span>
+                  </span>}
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-bold" style={{ color: v("--ux-ink") }}>
                       {l.title}
@@ -178,7 +231,7 @@ export function ShopView({ shop }: { shop: PublicShop }) {
         </div>
       </div>
 
-      {chosen.length > 0 && (
+      {!closed && chosen.length > 0 && (
         <Card pad={16} style={{ borderColor: v("--ux-brand") }}>
           <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>
             Tell her which one

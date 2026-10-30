@@ -1,15 +1,20 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
+import { useResource } from "@/lib/use-resource";
+import { apiShopOrders, type ShopOrder } from "@/lib/shop-api";
+import { apiBooks, type Books } from "@/lib/books-api";
+import { formatMoney } from "@/components/ux/kit/money";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
 import { Btn, Card, I, Pill, v } from "@/components/ux/kit";
 import { EYEBROW, Section } from "@/components/ux/earn/phone";
-import { BUYER_CHECKS as RAW_BUYER_CHECKS, SCAMS as RAW_SCAMS, riskCount, type ScamPattern } from "@/components/ux/reach/data";
+import { SCAMS as RAW_SCAMS, type ScamPattern } from "@/components/ux/reach/data";
 import { apiFileReport } from "@/lib/safety-api";
 import { Sheet } from "@/components/ux/kit/sheet";
-import { Label, Text } from "@/components/ux/kit/form";
+import { Label, Picks, Text } from "@/components/ux/kit/form";
 import { Area } from "@/components/ux/kit/form";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
@@ -41,11 +46,8 @@ import { useTranslated } from "@/i18n/data";
  */
 export default function SafeMoneyPage() {
   const SCAMS = useTranslated(RAW_SCAMS);
-  const BUYER_CHECKS = useTranslated(RAW_BUYER_CHECKS);
   const tr = useT();
   const [open, setOpen] = useState<string | null>(null);
-  const [checks] = useState(BUYER_CHECKS);
-  const risks = useMemo(() => riskCount(checks), [checks]);
   const [reported, setReported] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [who, setWho] = useState("");
@@ -87,8 +89,11 @@ export default function SafeMoneyPage() {
 
         <header>
           <p className={EYEBROW}>{tr("safemoney.moneyTraps")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("safemoney.theTricksAimedAtWomenWorking")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("safemoney.theTricksAimedAtWomenWorking")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             These are not general internet scams. Each one below is written for a woman who sews,
             cooks or does mehendi at home, and each is the exact message you will be sent.
@@ -121,41 +126,8 @@ export default function SafeMoneyPage() {
           </div>
         </div>
 
-        {/* Point-of-risk check on a live buyer */}
-        <div>
-          <Section title={tr("safemoney.beforeYouSendAnythingToA")}
-                       sub={tr("safemoney.kavitaRPiecesWantsThemCouriered")} icon="UserSearch" />
-          <Card pad={0} style={{ overflow: "hidden" }}>
-            <div className="flex flex-wrap items-center gap-3 px-4 py-4 lg:px-5"
-                 style={{ background: v(risks >= 2 ? "--ux-danger-tint" : "--ux-tint-green") }}>
-              <I name={risks >= 2 ? "AlertTriangle" : "ShieldCheck"} className="h-[19px] w-[19px] shrink-0"
-                 style={{ color: v(risks >= 2 ? "--ux-danger-solid" : "--ux-green-ink") }} />
-              <p className="min-w-0 flex-1 text-sm font-bold" style={{ color: v("--ux-ink") }}>
-                {risks >= 2
-                  ? `${risks} things here look wrong. Ask for the material cost before you make anything.`
-                  : "Nothing here looks wrong."}
-              </p>
-            </div>
-            {checks.map((c, i) => (
-              <div key={c.id} className="flex items-center gap-3.5 px-4 py-3.5 max-lg:flex-wrap max-lg:gap-y-0.5 lg:px-5"
-                   style={{ borderTop: `1px solid ${v("--ux-line")}` }}>
-                <I name={c.ok ? "Check" : "AlertCircle"} className="h-[16px] w-[16px] shrink-0"
-                   style={{ color: v(c.ok ? "--ux-green-ink" : "--ux-danger-solid") }} sw={2.4} />
-                <p className="min-w-0 flex-1 text-xsm font-semibold" style={{ color: v("--ux-ink") }}>
-                  {c.what}
-                </p>
-                <p className="shrink-0 text-xs max-lg:w-full max-lg:ps-[30px] max-lg:text-[13px]" style={{ color: v("--ux-muted") }}>{c.note}</p>
-              </div>
-            ))}
-            <div className="flex flex-wrap gap-2 border-t px-4 py-4 lg:px-5" style={{ borderColor: v("--ux-line") }}>
-              <Btn size="sm" icon="HandCoins" href="/app/collect" className="max-lg:w-full max-lg:px-4">{tr("safemoney.askForTheClothMoneyFirst")}</Btn>
-              <Btn size="sm" variant="outline" icon="Flag" disabled={reported} className="max-lg:w-full max-lg:px-4"
-                   onClick={() => { setReporting(true); setErr(null); }}>
-                {reported ? "Reported" : "Report this buyer"}
-              </Btn>
-            </div>
-          </Card>
-        </div>
+        {/* Point-of-risk check — from HER records and HER answers, nothing invented. */}
+        <BuyerCheck onReport={(name) => { setWho(name); setReporting(true); setErr(null); }} reported={reported} />
 
         {reported && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
@@ -195,9 +167,13 @@ export default function SafeMoneyPage() {
             <Text value={who} onChange={setWho} label="Who the buyer is"
                   placeholder="A name, a shop, or a number" max={120} /></div>
           <div><Label need>What happened</Label>
-            <Area value={what} onChange={setWhat} label="What happened"
-                  placeholder="They took the work and did not pay. It was ₹1,200, agreed on WhatsApp."
-                  max={1000} rows={5} /></div>
+            <Picks options={REPORT_PHRASES} value={what.split(". ")} multi label="What happened"
+                   onPick={(x) => setWhat(togglePhrase(what, x))} />
+            <div className="mt-2.5">
+              <Area value={what} onChange={setWhat} label="What happened"
+                    placeholder="They took the work and did not pay. It was ₹1,200, agreed on WhatsApp."
+                    max={1000} rows={4} />
+            </div></div>
           {err && (
             <p className="flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
                style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-ink") }}>
@@ -250,5 +226,154 @@ function Trap({ s, open, onFlip }: { s: ScamPattern; open: boolean; onFlip: () =
         </div>
       )}
     </Card>
+  );
+}
+
+const REPORT_PHRASES = [
+  "They took the goods and did not pay",
+  "They asked me to pay a fee first",
+  "They sent a fake payment screenshot",
+  "They asked for my PIN or OTP",
+  "They paid too much and asked for a refund",
+];
+
+function togglePhrase(note: string, phrase: string) {
+  const parts = note.split(". ").map((x) => x.trim()).filter(Boolean);
+  return (parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase]).join(". ");
+}
+
+const norm = (x: string) => x.trim().toLowerCase().replace(/\s+/g, " ");
+
+/**
+ * "Before you send anything to a buyer" — a real check.
+ *
+ * This used to show a fixed verdict about an invented buyer, "Kavita R", with
+ * five ticks and crosses nobody had checked — on the screen meant to stop her
+ * being cheated. A made-up "nothing looks wrong" could have sent her goods to
+ * a stranger. Now it reads only two true things: what HER OWN records say about
+ * this buyer (shop orders, and her money book), and what SHE answers about this
+ * order. WomSakhi has no register of buyers, and it does not pretend to.
+ */
+function BuyerCheck({ onReport, reported }: { onReport: (name: string) => void; reported: boolean }) {
+  const orders = useResource(useCallback((s: AbortSignal) => apiShopOrders(s).catch(() => []), []), [] as ShopOrder[]);
+  const books = useResource(useCallback((s: AbortSignal) => apiBooks(s).catch(() => null), []), null as Books | null);
+  const [buyer, setBuyer] = useState("");
+  const [answers, setAnswers] = useState<Record<string, boolean | undefined>>({});
+
+  const names = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const o of orders.data) if (o.buyer_name?.trim()) seen.set(norm(o.buyer_name), o.buyer_name.trim());
+    for (const e of books.data?.entries ?? []) if (e.who?.trim()) seen.set(norm(e.who), e.who.trim());
+    return [...seen.values()].slice(0, 12);
+  }, [orders.data, books.data]);
+
+  const record = useMemo(() => {
+    const key = norm(buyer);
+    if (!key) return null;
+    const hit = (n: string) => norm(n) === key || (key.length >= 3 && norm(n).includes(key));
+    const os = orders.data.filter((o) => hit(o.buyer_name || ""));
+    const es = (books.data?.entries ?? []).filter((e) => hit(e.who || ""));
+    const paid = es.filter((e) => e.state === "paid");
+    const owed = es.filter((e) => e.state !== "paid");
+    const late = owed.filter((e) => e.late_days > 0);
+    return {
+      orders: os.length,
+      delivered: os.filter((o) => /done|delivered|complete/i.test(o.state)).length,
+      paidCount: paid.length,
+      paidMinor: paid.reduce((n, e) => n + e.minor, 0),
+      owedMinor: owed.reduce((n, e) => n + e.minor, 0),
+      lateDays: late.reduce((n, e) => Math.max(n, e.late_days), 0),
+      known: os.length + es.length > 0,
+    };
+  }, [buyer, orders.data, books.data]);
+
+  const QUESTIONS = [
+    { id: "goodsFirst", ask: "Do they want the goods before they pay?", warn: "Ask for the material cost first. A real buyer expects that." },
+    { id: "askedToPay", ask: "Have they asked YOU to pay anything — a fee, a deposit, a kit?", warn: "Money should come to you, never from you. This is the most common trick." },
+    { id: "hurry", ask: "Are they in a hurry — \u201ccourier it today\u201d?", warn: "Hurry is how tricks work. Slow it down; ask your circle." },
+  ];
+  const warnings = [
+    ...(record && record.owedMinor > 0 ? [`They already owe you ${formatMoney(record.owedMinor)}${record.lateDays ? ` — ${record.lateDays} days late` : ""}. Get that first.`] : []),
+    ...QUESTIONS.filter((q) => answers[q.id] === true).map((q) => q.warn),
+  ];
+  const answered = QUESTIONS.every((q) => answers[q.id] !== undefined);
+
+  return (
+    <div>
+      <Section title="Before you send anything to a buyer" sub="Check what your own records say, and answer three questions" icon="UserSearch" />
+      <Card pad={18}>
+        <Label>Who is the buyer?</Label>
+        <Text value={buyer} onChange={(x) => { setBuyer(x); }} label="Buyer name" placeholder="A name from your orders or your money book" max={80} />
+        {names.length > 0 && <Picks options={names} value={buyer} onPick={(x) => setBuyer(buyer === x ? "" : x)} label="Your buyers" />}
+
+        {record && (
+          <div className="mt-4 rounded-[12px] p-4" style={{ background: v("--ux-surface-2") }}>
+            <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: v("--ux-faint") }}>What your records say</p>
+            {record.known ? (
+              <ul className="mt-2 space-y-1.5 text-xsm" style={{ color: v("--ux-ink") }}>
+                {record.orders > 0 && <li>• {record.orders} {record.orders === 1 ? "order" : "orders"} in your shop{record.delivered ? `, ${record.delivered} delivered` : ""}</li>}
+                {record.paidCount > 0 && <li style={{ color: v("--ux-green-ink") }}>• Paid you {record.paidCount} {record.paidCount === 1 ? "time" : "times"} — {formatMoney(record.paidMinor)}</li>}
+                {record.owedMinor > 0 && <li style={{ color: v("--ux-danger-ink") }}>• Owes you {formatMoney(record.owedMinor)}{record.lateDays ? `, ${record.lateDays} days late` : ""}</li>}
+                {record.paidCount === 0 && record.owedMinor === 0 && <li>• Nothing in your money book with them yet.</li>}
+              </ul>
+            ) : (
+              <p className="mt-2 text-xsm" style={{ color: v("--ux-ink-2") }}>
+                No orders or money with this buyer in your records — a first time. That is not a problem by itself; the questions below matter more.
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-col gap-3">
+          {QUESTIONS.map((q) => (
+            <div key={q.id} className="flex flex-wrap items-center gap-3">
+              <p className="min-w-0 flex-1 text-xsm font-semibold" style={{ color: v("--ux-ink") }}>{q.ask}</p>
+              <div className="flex gap-1.5">
+                {[["Yes", true], ["No", false]].map(([label, val]) => {
+                  const on = answers[q.id] === val;
+                  return (
+                    <button key={String(label)} type="button" aria-pressed={on}
+                            onClick={() => setAnswers((a) => ({ ...a, [q.id]: val as boolean }))}
+                            className="ux-press min-h-[38px] rounded-full px-4 text-xs font-bold"
+                            style={{ background: v(on ? (val ? "--ux-danger-tint" : "--ux-tint-green") : "--ux-surface-2"),
+                                     color: v(on ? (val ? "--ux-danger-ink" : "--ux-green-ink") : "--ux-ink-2") }}>
+                      {String(label)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {(answered || warnings.length > 0) && (
+          <div className="mt-4 flex items-start gap-3 rounded-[12px] px-4 py-3.5"
+               style={{ background: v(warnings.length ? "--ux-danger-tint" : "--ux-tint-green") }}>
+            <I name={warnings.length ? "AlertTriangle" : "ShieldCheck"} className="mt-[2px] h-[18px] w-[18px] shrink-0"
+               style={{ color: v(warnings.length ? "--ux-danger-solid" : "--ux-green-ink") }} />
+            {warnings.length ? (
+              <ul className="space-y-1 text-xsm font-semibold" style={{ color: v("--ux-ink") }}>
+                {warnings.map((w) => <li key={w}>{w}</li>)}
+              </ul>
+            ) : (
+              <p className="text-xsm font-semibold" style={{ color: v("--ux-ink") }}>
+                Nothing you told us looks wrong. Still: take the material money first on a big first order.
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="mt-4 flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: v("--ux-line") }}>
+          <Btn size="sm" icon="HandCoins" href="/app/collect" className="max-lg:w-full max-lg:px-4">Ask for the money first</Btn>
+          <Btn size="sm" variant="outline" icon="Flag" disabled={reported} className="max-lg:w-full max-lg:px-4"
+               onClick={() => onReport(buyer.trim())}>
+            {reported ? "Reported" : "Report this buyer"}
+          </Btn>
+          <Btn size="sm" variant="ghost" icon="BadgeCheck" href="/app/verified" className="max-lg:w-full max-lg:px-4">
+            Employer? Did they pay other women
+          </Btn>
+        </div>
+      </Card>
+    </div>
   );
 }

@@ -1,0 +1,164 @@
+/* A circle's chat is an app screen, not a page: exactly the height of the
+   window, with the message list scrolling inside it.
+
+   Phone: the screen is `immersive` (no top bar, no tab bar), so the frame is
+   the whole viewport less the shell's 24px bottom padding and the notch.
+   Laptop: the top bar stays; the shell keeps 96px clear under immersive
+   screens for the floating assistant, which this screen hides, so the frame
+   claws 64px of it back with a negative margin. */
+.frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  margin-inline: -20px;
+}
+@media (min-width: 1024px) {
+  .frame {
+    height: calc(100dvh - var(--ux-topbar-h, 72px) - 18px - 32px);
+    margin-bottom: -64px;
+    margin-inline: 0;
+  }
+}
+@media (min-width: 1280px) {
+  .frame.withInfo { grid-template-columns: minmax(0, 1fr) 340px; }
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ux-surface);
+}
+@media (min-width: 1024px) {
+  .chat { border: 1px solid var(--ux-line); border-radius: var(--ux-r-card, 18px); }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ux-line);
+  background: var(--ux-surface);
+}
+
+/* The wallpaper: a quiet tint, so bubbles read as bubbles in both themes. */
+.list {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 12px 16px;
+  background:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--ux-brand) 6%, transparent) 0 2px, transparent 3px) 0 0 / 28px 28px,
+    var(--ux-surface-2);
+}
+
+.bubble {
+  max-width: min(78%, 520px);
+  padding: 7px 11px 6px;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  cursor: pointer;
+}
+@media (min-width: 1024px) { .bubble { font-size: 14px; } }
+.in { background: var(--ux-surface); color: var(--ux-ink); border: 1px solid var(--ux-line); border-bottom-left-radius: 6px; }
+.out { background: var(--ux-brand); color: var(--ux-ink-on-brand); border-bottom-right-radius: 6px; }
+.out .meta { color: color-mix(in srgb, var(--ux-ink-on-brand) 78%, transparent); }
+.meta { display: block; margin-top: 2px; text-align: end; font-size: 11px; color: var(--ux-muted); }
+.quote {
+  display: block;
+  margin: 2px 0 5px;
+  padding: 5px 8px;
+  border-left: 3px solid var(--ux-brand);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ux-ink) 6%, transparent);
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+.out .quote { border-left-color: var(--ux-ink-on-brand); background: color-mix(in srgb, #000 14%, transparent); }
+.photo { display: block; max-width: 240px; max-height: 280px; margin: 2px 0 4px; border-radius: 12px; object-fit: cover; }
+.flash { outline: 2px solid var(--ux-brand); outline-offset: 2px; }
+
+.system {
+  margin: 10px auto;
+  width: fit-content;
+  max-width: 85%;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--ux-surface);
+  border: 1px solid var(--ux-line);
+  color: var(--ux-muted);
+  font-size: 12px;
+  text-align: center;
+}
+.day {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 10px auto;
+  width: fit-content;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--ux-surface);
+  border: 1px solid var(--ux-line);
+  color: var(--ux-ink-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+.newLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  color: var(--ux-brand);
+  font-size: 12px;
+  font-weight: 700;
+}
+.newLine::before, .newLine::after { content: ""; flex: 1; height: 1px; background: color-mix(in srgb, var(--ux-brand) 45%, transparent); }
+
+.composer {
+  border-top: 1px solid var(--ux-line);
+  background: var(--ux-surface);
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) { .composer { padding-bottom: 10px; } }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 8px; }
+.chips::-webkit-scrollbar { display: none; }
+.input {
+  flex: 1;
+  min-width: 0;
+  max-height: 120px;
+  min-height: 44px;
+  padding: 11px 14px;
+  border-radius: 22px;
+  border: 1px solid var(--ux-line);
+  background: var(--ux-surface-2);
+  color: var(--ux-ink);
+  font-size: 15px;
+  line-height: 1.35;
+  resize: none;
+  outline: none;
+}
+.input:focus { border-color: var(--ux-brand); }
+
+.info {
+  display: none;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--ux-line);
+  border-radius: var(--ux-r-card, 18px);
+  background: var(--ux-surface);
+}
+@media (min-width: 1280px) { .withInfo .info { display: block; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fresh { animation: pop .22s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}

@@ -5,7 +5,7 @@ import { COPY } from "@/components/ux/copy";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { Back, ActionBtn, Btn, Card, copy, EmptyState, NoteBtn, Pill, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
+import { Back, Btn, Card, copy, EmptyState, NoteBtn, Pill, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBookings } from "@/components/ux/live";
 import { useAction } from "@/lib/use-action";
@@ -185,10 +185,19 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
                 <Btn variant="ghost" onClick={() => setAsking(true)}>{tr("bookings.cancelBooking")}</Btn>
               </>
             )}
-            {live && b.kind === "Mentor" && (
-              <ActionBtn variant="primary" icon="Video" doneIcon="Copy"
-                         done={COPY.linkCopied}
-                         act={() => copy(`https://meet.womsakhi.com/${b.id}`, COPY.linkCopied, "Copy it by hand: meet.womsakhi.com/" + b.id)}>{tr("bookings.joinTheCall")}</ActionBtn>
+            {/* The real way in, as the team wrote it — never an invented link. */}
+            {live && /^https:\/\//i.test(b.meeting ?? "") && (
+              <Btn href={b.meeting} variant="primary" icon="Video">{tr("bookings.joinTheCall")}</Btn>
+            )}
+            {live && !!b.meeting && !/^https:\/\//i.test(b.meeting) && (
+              <span className="inline-flex items-center gap-1.5 text-xsm font-semibold" style={{ color: "var(--ux-ink-2)" }}>
+                <Icons.MapPin className="h-4 w-4" /> {b.meeting}
+              </span>
+            )}
+            {live && !b.meeting && (
+              <span className="text-xs" style={{ color: "var(--ux-muted)" }}>
+                The joining link will appear here once the team adds it — you will get a notification.
+              </span>
             )}
             {cancelled && <Btn href={b.kind === "Mentor" ? "/app/mentors" : "/app/events"} variant="soft" icon="RotateCcw">{tr("bookings.bookAgain")}</Btn>}
             {/* Went nowhere, and named a recipient who would never have seen
@@ -217,7 +226,7 @@ export default function BookingDetail({ params }: { params: Promise<{ id: string
         )}
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
+      <div className="ux-split-lg grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
         <Card>
           <SectionHead title={tr("bookings.whatToExpect")} />
           <ol className="ux-stagger space-y-3.5">

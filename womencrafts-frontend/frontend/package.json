@@ -46,7 +46,8 @@
     "check:icons": "node checks/icons.mjs",
     "check:nav": "node checks/nav.mjs",
     "check:phone-nav": "node checks/phone-nav.mjs",
-    "check:nav-persist": "node checks/nav-persist.mjs"
+    "check:nav-persist": "node checks/nav-persist.mjs",
+    "check:journeys": "node checks/core-journeys.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

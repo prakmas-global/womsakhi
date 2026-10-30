@@ -38,7 +38,7 @@ export type Entry = {
   state: "paid" | "owed" | "promised";
   on: string;
   /** Where the sale actually happened. Most of it is not on the platform. */
-  via: "whatsapp" | "shop" | "person" | "circle";
+  via: "whatsapp" | "shop" | "person" | "circle" | "course";
   /** Days since it was due, when it is owed. */
   lateDays?: number;
 };
@@ -60,6 +60,8 @@ export const VIA_LABEL: Record<Entry["via"], string> = {
   shop: "A shop",
   person: "In person",
   circle: "Your circle",
+  // A learner's payment for a course she teaches, confirmed in Teach.
+  course: "A course you teach",
 };
 
 /* ── proof of income ─────────────────────────────────────────────────────── */
@@ -76,12 +78,7 @@ export const MONTHS: MonthRow[] = [
 ];
 
 /** What a statement is actually FOR. Naming the use changes what goes in it. */
-export const PROOF_USES = [
-  { id: "u1", label: "Renting a room", note: "Six months, and how many people pay you", icon: "Home" },
-  { id: "u2", label: "A child's school admission", note: "Yearly total, and that it is steady", icon: "GraduationCap" },
-  { id: "u3", label: "A loan or a scheme", note: "Everything, with the ups and downs shown honestly", icon: "Landmark" },
-  { id: "u4", label: "Standing as a guarantor", note: "That you have earned for six months without a gap", icon: "Handshake" },
-];
+
 
 /* ── the season ──────────────────────────────────────────────────────────── */
 

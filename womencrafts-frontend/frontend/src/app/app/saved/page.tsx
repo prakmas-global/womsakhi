@@ -1,7 +1,16 @@
 "use client";
 
+import { Img } from "@/components/ux/media/Img";
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Image from "next/image";
 import { useT } from "@/i18n";
+import { artFor, type ArtKind } from "@/components/ux/media/art";
+
+/** Each saved thing gets a picture of what it is about, not one per kind. */
+const SAVED_ART: Record<string, ArtKind> = {
+  job: "job", program: "course", event: "event", scheme: "scheme", mentor: "mentor",
+  service: "service", listing: "product", post: "story",
+};
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import * as Icons from "@/components/ux/icons";
@@ -14,7 +23,7 @@ import styles from "./saved.module.css";
 type Item = { id:string; kind:string; title:string; sub:string; href:string; art:string; gone:boolean; savedOn:string; refKind:SavedKind; refId:string };
 const LOOK: Record<SavedKind,{route:string;label:string;art:string}> = {
   job:{route:"/app/opportunities",label:"Opportunities",art:"/ux/art/work-dashboard-writing.webp"}, program:{route:"/app/programs",label:"Learning",art:"/ux/art/learn-dashboard-business.webp"},
-  event:{route:"/app/events",label:"Events",art:"/ux/art/circle-study-group.webp"}, scheme:{route:"/app/support-fund",label:"Resources",art:"/ux/art/course-counting-coins-calculator.webp"},
+  event:{route:"/app/events",label:"Events",art:"/ux/art/circle-study-group.webp"}, scheme:{route:"/app/haq",label:"Resources",art:"/ux/art/course-counting-coins-calculator.webp"},
   mentor:{route:"/app/mentors",label:"People",art:"/ux/art/avatar-woman-teal-shirt.webp"}, service:{route:"/app/explore",label:"Resources",art:"/ux/art/scene-woman-reading-document.webp"},
   listing:{route:"/app/market",label:"Products",art:"/ux/art/earn-market.webp"}, post:{route:"/app/circles",label:"Community",art:"/ux/art/circle-women-talking.webp"},
 };
@@ -26,21 +35,21 @@ function Rail({items}:{items:Item[]}){
   const tr = useT();const groups=["Learning","Opportunities","Events","People","Products","Resources"];return <div className={styles.rail}>
   <section className={styles.railCard}><div className={styles.savedTotal}><span><Icons.Heart fill="currentColor"/></span><div><h2>You&apos;ve saved {items.length} items</h2><p>{tr("saved.ideasOpportunitiesAndPeopleForYour")}</p></div></div><div className={styles.countGrid}>{groups.map(g=>{const I=FILTER_ICONS[g];return <div key={g}><I/><b>{items.filter(i=>i.kind===g).length}</b><small>{g}</small></div>})}</div></section>
   <section className={styles.promo}><Image src="/ux/saved/saved-promo-v1.webp" alt={tr("saved.womanOrganisingIdeasSheWantsTo")} fill sizes="300px"/><div><h2>{tr("saved.saveWhat")}<br/>{tr("saved.inspiresYou")}</h2><p>{tr("saved.yourFutureSelf")}<br/>{tr("saved.willThankYou")}</p></div></section>
-  {items.length>0&&<section className={styles.railCard}><header><h2>{tr("saved.recentlySaved")}</h2></header><div className={styles.recent}>{items.slice(0,4).map(i=><Link key={i.id} href={(i.href||"/app/saved") as never}><Image src={i.art} alt="" width={48} height={38} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><span><b>{i.title}</b><small>{i.kind}</small></span></Link>)}</div></section>}
+  {items.length>0&&<section className={styles.railCard}><header><h2>{tr("saved.recentlySaved")}</h2></header><div className={styles.recent}>{items.slice(0,4).map(i=><Link key={i.id} href={(i.href||"/app/saved") as never}><Img src={i.art} width={48} height={38} /><span><b>{i.title}</b><small>{i.kind}</small></span></Link>)}</div></section>}
   <blockquote className={styles.quote}>{tr("saved.aSmallSaveTodayCanLead")}<cite>— WomSakhi</cite></blockquote>
  </div>}
 
 export default function SavedPage(){
   const tr = useT();
  const{data:rows,refetch}=useSavedItems();const[filter,setFilter]=useState("All");const[sort,setSort]=useState("newest");const[removed,setRemoved]=useState<string[]>([]);const[menu,setMenu]=useState<string|null>(null);
- const items=useMemo<Item[]>(()=>rows.map(r=>{const l=LOOK[r.kind];return{id:r.id,kind:l.label,title:r.title,sub:r.sub||"Saved for later",href:r.gone?"":(r.href||`${l.route}/${r.ref_id}`),art:l.art,gone:r.gone,savedOn:r.saved_on,refKind:r.kind,refId:r.ref_id}}).filter(i=>!removed.includes(i.id)),[rows,removed]);
+ const items=useMemo<Item[]>(()=>rows.map(r=>{const l=LOOK[r.kind];return{id:r.id,kind:l.label,title:r.title,sub:r.sub||"Saved for later",href:r.gone?"":(r.href||`${l.route}/${r.ref_id}`),art:artFor([r.title,r.sub],SAVED_ART[r.kind]??"generic",null,r.ref_id),gone:r.gone,savedOn:r.saved_on,refKind:r.kind,refId:r.ref_id}}).filter(i=>!removed.includes(i.id)),[rows,removed]);
  const shown=useMemo(()=>{const list=filter==="All"?items:items.filter(i=>i.kind===filter);return[...list].sort((a,b)=>sort==="title"?a.title.localeCompare(b.title):sort==="oldest"?a.savedOn.localeCompare(b.savedOn):b.savedOn.localeCompare(a.savedOn))},[items,filter,sort]);
  const remove=(i:Item)=>{setRemoved(v=>[...v,i.id]);void apiUnsave(i.refKind,i.refId).catch(()=>{setRemoved(v=>v.filter(x=>x!==i.id));refetch()})};
  return <HomeShell skeleton="list" loadFailed="your saved things" rail={<Rail items={items}/>}> <main className={styles.page}>
-  <section className={styles.hero}><Image src="/ux/saved/saved-hero-v1.webp" alt={tr("saved.womanHoldingANotebookOfSaved")} fill priority sizes="(max-width:900px) 100vw,900px"/><div><p className={styles.breadcrumb}>Home <Icons.ChevronRight/> Saved</p><h1>Saved</h1><p>All the opportunities, resources and people you&apos;ve saved, ready whenever you need them.</p></div></section>
+  <section data-banner data-page-hero className={styles.hero}><Image src="/ux/saved/saved-hero-v1.webp" alt={tr("saved.womanHoldingANotebookOfSaved")} fill priority sizes="(max-width:900px) 100vw,900px"/><div><p className={styles.breadcrumb}>Home <Icons.ChevronRight/> Saved</p><div className="mb-2"><PlaceMark size={44} /></div><h1>Saved</h1><p>All the opportunities, resources and people you&apos;ve saved, ready whenever you need them.</p></div></section>
   <div className={styles.toolbar}><div className={styles.filters} role="group" aria-label={tr("saved.savedItemType")}>{FILTERS.map(f=>{const I=FILTER_ICONS[f];const count=f==="All"?items.length:items.filter(i=>i.kind===f).length;return <button key={f} aria-pressed={filter===f} onClick={()=>setFilter(f)}><I/><span>{f}</span><small>{count}</small></button>})}</div><label className={styles.sort}>{tr("findwork.sortBy")}<select aria-label="Sort saved items" value={sort} onChange={e=>setSort(e.target.value)}><option value="newest">{tr("saved.newestFirst")}</option><option value="oldest">{tr("saved.oldestFirst")}</option><option value="title">Title A–Z</option></select></label></div>
   <section className={styles.list} aria-live="polite">{shown.length?shown.map(i=><article className={styles.item} key={i.id} data-gone={i.gone||undefined}>
-   <Link href={(i.href||"/app/saved") as never} className={styles.itemLink} aria-disabled={!i.href}><Image src={i.art} alt="" width={132} height={88} sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" /><div className={styles.itemCopy}><span className={styles.kind}>{i.kind}</span><h2>{i.title}</h2><p>{i.sub}</p><div className={styles.meta}><span><Icons.MapPin/> {i.kind==="Opportunities"?"Remote":"Available online"}</span><span><Icons.Clock/> Flexible</span><span><Icons.BadgeCheck/> Verified</span></div></div></Link>
+   <Link href={(i.href||"/app/saved") as never} className={styles.itemLink} aria-disabled={!i.href}><Img src={i.art} width={132} height={88} /><div className={styles.itemCopy}><span className={styles.kind}>{i.kind}</span><h2>{i.title}</h2><p>{i.sub}</p><div className={styles.meta}><span><Icons.Clock/> Saved {i.savedOn}</span>{i.gone&&<span><Icons.X/> No longer open</span>}</div></div></Link>
    <div className={styles.itemActions}><small>{relativeDate(i.savedOn)}</small><div><button className={styles.iconButton} onClick={()=>remove(i)} aria-label={`Remove ${i.title} from saved`} title={tr("saved.removeFromSaved")}><Icons.Bookmark fill="currentColor"/></button><button className={styles.iconButton} onClick={()=>setMenu(menu===i.id?null:i.id)} aria-label={`More actions for ${i.title}`} aria-expanded={menu===i.id}><Icons.MoreHorizontal/></button></div>{menu===i.id&&<div className={styles.menu}><Link href={(i.href||"/app/saved") as never}>{tr("saved.openItem")}</Link><button onClick={()=>remove(i)}>{tr("saved.removeFromSaved")}</button></div>}</div>
   </article>):<div className={styles.empty}><Icons.Bookmark/><h2>{tr("saved.noSavedItemsHereYet")}</h2><p>{tr("saved.saveSomethingUsefulAndItWill")}</p><Link href="/app/discover">{tr("saved.exploreRecommendations")} <Icons.ArrowRight/></Link></div>}</section>
  </main></HomeShell>}

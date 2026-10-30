@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -8,17 +9,25 @@ import { Btn, Card, I, IconTile, Pill, SectionHead, Stat, v } from "@/components
 import { useResource } from "@/lib/use-resource";
 import { apiSisters, apiTogether, type Sister, type Together } from "@/lib/life-api";
 import { useT } from "@/i18n";
-import { ListGroup } from "@/components/ux/mobile/ListRow";
-import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
+import { MessageHer } from "@/components/ux/MessageHer";
+import { MediaCard, MediaGrid } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
+import { GroupLabel, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
 
 /** The three places the circle does together, besides assisting. */
 const PLACES = [
-  { href: "/app/library", icon: "GraduationCap", tint: "--ux-tint-blue", ink: "--ux-blue-ink",
+  { href: "/app/library", icon: "GraduationCap", tint: "--ux-tint-blue", ink: "--ux-blue-ink", art: "/ux/art/course-teaching-another-woman.webp",
     title: "Learn it from her", body: "Women teach what they actually do — and you learn it beside a friend, which is the only way it sticks." },
-  { href: "/app/circles", icon: "Users", tint: "--ux-tint-pink", ink: "--ux-pink-ink",
-    title: "Who is missing", body: "A circle works when the money can go round it. Four women near you would close the loop." },
-  { href: "/app/together/move", icon: "MapPin", tint: "--ux-tint-violet", ink: "--ux-violet",
-    title: "If you move", body: "Marriage, work, or something worse. Everything you built comes with you." },
+  { href: "/app/circles", icon: "Users", tint: "--ux-tint-pink", ink: "--ux-pink-ink", art: "/ux/art/circle-vision-board.webp",
+    title: "Who is missing", body: "A circle works when the money can go round it. See the trades in your circles, and which are missing." },
+  { href: "/app/together/move", icon: "MapPin", tint: "--ux-tint-violet", ink: "--ux-violet", art: "/ux/art/circle-dashboard-hero-v2.webp",
+    title: "If you move", body: "Marriage, work, or something worse. A checklist so you keep what you built." },
+];
+
+/** Lines she can tap instead of typing to a woman from her circle. */
+const PHRASES = (trade: string) => [
+  ...(trade ? [`I need help with ${trade.toLowerCase()}`] : []),
+  "Can we work on an order together?", "Do you know someone who can help?", "Hello from our circle!",
 ];
 
 /**
@@ -33,7 +42,7 @@ const PLACES = [
 export default function TogetherHub() {
   const tr = useT();
   const router = useRouter();
-  const [note, setNote] = useState<string | null>(null);
+  const [note] = useState<string | null>(null);
 
   /**
    * Hers, and her circles'.
@@ -76,8 +85,11 @@ export default function TogetherHub() {
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
             Together
           </p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("together.thingsOnlyACircleCanDo")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("together.thingsOnlyACircleCanDo")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Not a group chat. The four things that genuinely work better with women you already
             trust than alone.
@@ -121,25 +133,14 @@ export default function TogetherHub() {
           </div>
         </Card>
 
-        {/* The other three. On a phone they are destinations, so they are rows
-            of one grouped list rather than three floating cards. */}
-        <ListGroup className="lg:hidden">
+        {/* The other three, each with a picture of what happens there. */}
+        <MediaGrid>
           {PLACES.map((t) => (
-            <PhoneRow key={t.href} href={t.href} icon={t.icon} tint={t.tint} ink={t.ink}
-                      title={t.title} body={t.body} />
-          ))}
-        </ListGroup>
-        <div className="hidden gap-3 md:grid-cols-3 lg:grid">
-          {PLACES.map((t) => (
-            <button key={t.href} type="button" onClick={() => router.push(t.href)}
-                    className="ux-press ux-sq flex flex-col items-start gap-3 rounded-[var(--ux-r-card)] border p-5 text-left"
-                    style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
-              <IconTile icon={t.icon} tint={t.tint} ink={t.ink} size={44} radius={13} />
-              <p className="text-base font-bold" style={{ color: v("--ux-ink") }}>{t.title}</p>
+            <MediaCard key={t.href} href={t.href} image={t.art} alt="" title={t.title}>
               <p className="text-xsm leading-relaxed" style={{ color: v("--ux-muted") }}>{t.body}</p>
-            </button>
+            </MediaCard>
           ))}
-        </div>
+        </MediaGrid>
 
         {/* Seeding — who would close the cycle */}
         <div>
@@ -154,36 +155,17 @@ export default function TogetherHub() {
               is six women waiting for the same customer.
             </p>
           </Card>
-          {/* The women who would close the loop, as one grouped list. */}
-          <ListGroup className="mt-3 lg:hidden">
+          {/* The women who would close the loop — each shown with her trade. */}
+          <MediaGrid className="mt-3">
             {SEEDS.map((s) => (
-              <PhoneRow key={s.id} icon="UserRound" tint="--ux-tint-green" ink="--ux-green-ink"
-                        title={s.name} meta={[s.trade, s.where].filter(Boolean).join(" · ")}
-                        body="In a circle with you">
-                {/* Goes where she can actually say something. The old button
-                    announced "Invited her" and sent nothing to anybody. */}
-                <Btn size="sm" variant="outline" full className="mt-3 max-lg:px-4" icon="MessageCircle"
-                     href="/app/messages">Message her</Btn>
-              </PhoneRow>
+              <MediaCard key={s.id} image={artFor([s.trade], "generic", null, s.id)} alt="" ratio="3/2"
+                         topLeft={s.trade ? { text: s.trade } : null}
+                         title={s.name}
+                         avatar={{ name: s.name }}
+                         subtitle={[s.where, "In a circle with you"].filter(Boolean).join(" · ")}
+                         footer={<MessageHer userId={s.id} name={s.name} full about="From your circle" phrases={PHRASES(s.trade)} />} />
             ))}
-          </ListGroup>
-          <div className="mt-3 hidden gap-3 sm:grid-cols-2 lg:grid">
-            {SEEDS.map((s) => (
-              <Card key={s.id} pad={16}>
-                <div className="flex items-start gap-3.5">
-                  <IconTile icon="UserRound" tint="--ux-tint-green" ink="--ux-green-ink" size={40} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
-                    <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-                      {[s.trade, s.where].filter(Boolean).join(" · ") || "In a circle with you"}
-                    </p>
-                  </div>
-                </div>
-                <Btn size="sm" variant="outline" full className="mt-3" icon="MessageCircle"
-                     href="/app/messages">Message her</Btn>
-              </Card>
-            ))}
-          </div>
+          </MediaGrid>
         </div>
       </div>
     </HomeShell>

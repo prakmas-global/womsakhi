@@ -1,5 +1,6 @@
 "use client";
 
+import { topicPicture, useCircleTopics } from "@/components/ux/circle/topics";
 import Link from "next/link";
 import { FormEvent, useCallback, useState } from "react";
 
@@ -14,6 +15,7 @@ import { useResource } from "@/lib/use-resource";
 import { toast } from "@/components/ux/mobile/Toast";
 import { apiUploadImage, uploadErrorMessage, validateImage } from "@/lib/uploads-api";
 import { members as niceCount, readPost, topicOf } from "@/components/ux/circle/data";
+import { Picks } from "@/components/ux/kit/form";
 
 /* ------------------------------------------------------------------ */
 /*  The banner                                                         */
@@ -27,8 +29,9 @@ export function CircleBanner({ c, posts, events }: {
   posts: number;
   events: number;
 }) {
+  const live = useCircleTopics();
   const tr = useT();
-  const t = topicOf(c.topic);
+  const t = topicOf(c.topic, live);
   const shownPosts = Math.max(posts, c.post_count);
 
   /** Four short claims a reader can check, in the wireframe's order. */
@@ -83,9 +86,10 @@ export function CircleBanner({ c, posts, events }: {
         </div>
 
         <div className="relative hidden lg:block">
-          {c.cover ? (
+          {/* Its cover; else its topic's picture (Masters → Circle topics). */}
+          {c.cover || t.pic ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={c.cover} alt="" aria-hidden loading="lazy" decoding="async"
+            <img src={c.cover || topicPicture(t)} alt="" aria-hidden loading="lazy" decoding="async"
                  className="h-full w-[260px] object-cover xl:w-[320px]"
                  style={{ maskImage: "linear-gradient(100deg, transparent, #000 28%)",
                           WebkitMaskImage: "linear-gradient(100deg, transparent, #000 28%)" }} />
@@ -451,8 +455,9 @@ function PostAct({ icon, label, onClick, on, tone = "--ux-muted", disabled }: {
 export function AboutCircle({ c, posts, onEdit }: {
   c: ApiCircleDetail; posts: number; onEdit: () => void;
 }) {
+  const live = useCircleTopics();
   const tr = useT();
-  const t = topicOf(c.topic);
+  const t = topicOf(c.topic, live);
   const facts = [
     { k: "What it is about", val: t.label,                                   icon: "Tag",      tint: "--ux-brand-tint-2", ink: "--ux-brand" },
     { k: "Who can come in",  val: c.is_private ? "Members only" : "Anyone",  icon: "Lock",     tint: "--ux-tint-violet",  ink: "--ux-violet-ink" },
@@ -634,6 +639,8 @@ export function EventsRail({ rows, busy, onGo }: {
 /* ------------------------------------------------------------------ */
 
 const EMPTY_RESOURCES: ApiCircleResource[] = [];
+/** What most shared links are — so only the link itself has to be pasted. */
+const RESOURCE_NAMES = ["Video lesson", "Price list", "Pricing worksheet", "Government scheme", "Recipe", "Design ideas"];
 
 export function ResourcesRail({ circleId }: { circleId: string }) {
   const tr = useT();
@@ -679,6 +686,7 @@ export function ResourcesRail({ circleId }: { circleId: string }) {
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder="Pricing worksheet"
                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }} />
           </label>
+          <Picks options={RESOURCE_NAMES} value={name} onPick={setName} label="Resource name" />
           <label className="block text-xs font-semibold" style={{ color: v("--ux-ink-2") }}>Link
             <input value={url} onChange={(e) => setUrl(e.target.value)} type="url" placeholder="https://…"
                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }} />

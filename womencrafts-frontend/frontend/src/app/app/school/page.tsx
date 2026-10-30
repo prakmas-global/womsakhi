@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 import { useResource } from "@/lib/use-resource";
 import {
@@ -7,7 +8,7 @@ import {
   type School, type SchoolKind,
 } from "@/lib/life-api";
 import { Sheet } from "@/components/ux/kit/sheet";
-import { Label, Select, Text } from "@/components/ux/kit/form";
+import { Label, More, Picks, Select, Text } from "@/components/ux/kit/form";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -37,6 +38,35 @@ import { useTranslated } from "@/i18n/data";
  * single most motivating goal a mother has. And mothers at one school are
  * already a circle, so it seeds itself.
  */
+/**
+ * Answers most mothers give, one tap each — the keyboard is for her child's
+ * name and little else.
+ */
+const CLASSES = ["Anganwadi", "Nursery", "LKG", "UKG",
+  ...Array.from({ length: 12 }, (_, i) => `Class ${i + 1}`), "College"];
+const SCHOOL_TYPES = ["Government school", "Private school", "Anganwadi", "Madrasa"];
+const FEE_IDEAS = [2000, 5000, 10000, 20000];
+const WHAT_IDEAS: Record<SchoolKind, string[]> = {
+  fee: ["School fees", "Exam fee", "Bus fee", "Tuition fee"],
+  form: ["Scholarship form", "Admission form", "RTE form"],
+  date: ["Exams start", "Parent-teacher meeting", "School reopens"],
+  buy: ["Uniform", "Books", "School bag", "Shoes"],
+  paper: ["Birth certificate", "Aadhaar copy", "Caste certificate", "Passport photos"],
+};
+const COST_IDEAS = [100, 500, 1000, 5000];
+const rupee = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+/** `type="date"` value for a day from now. */
+const dayFrom = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+const DUE_IDEAS: { label: string; days: number }[] = [
+  { label: "Tomorrow", days: 1 }, { label: "In a week", days: 7 },
+  { label: "In 2 weeks", days: 14 }, { label: "In a month", days: 30 },
+];
+
 /** Nothing invented, ever. A woman with no children sees no children. */
 const EMPTY_SCHOOL: School = {
   children: [], tasks: [], due_minor: 0, fee_minor: 0, saved_minor: 0, pending: 0,
@@ -163,8 +193,11 @@ export default function SchoolPage() {
           <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("school.theSchoolYear")}</p>
           {/* `.ux-screen-title` makes this the one 34px large title on a phone;
               the clamp is what desktop keeps. */}
-          <h1 className="ux-screen-title mt-1 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] lg:mt-2"
-              style={{ color: v("--ux-ink") }}>{tr("school.everyDateInOnePlace")}</h1>
+          <div className="mt-1 lg:mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("school.everyDateInOnePlace")}</h1>
+          </div>
           <p className="mt-2 max-w-[56ch] text-sm leading-relaxed lg:mt-1.5" style={{ color: v("--ux-muted") }}>
             Fees, exams, forms, uniforms, the scholarship that has to be renewed or it stops.
             You have been holding all of it. You should not have to.
@@ -350,11 +383,14 @@ export default function SchoolPage() {
           <div><Label need>Her name</Label>
             <Text value={kName} onChange={setKName} label="Her name" placeholder="Meena" max={60} /></div>
           <div><Label>Class</Label>
-            <Text value={kCls} onChange={setKCls} label="Which class" placeholder="Class 8" max={40} /></div>
+            <Select value={kCls} onChange={setKCls} label="Which class" placeholder="Choose one" options={CLASSES} /></div>
           <div><Label>School</Label>
-            <Text value={kSchool} onChange={setKSchool} label="Which school" placeholder="Govt. High School" max={120} /></div>
+            <Text value={kSchool} onChange={setKSchool} label="Which school" placeholder="Govt. High School" max={120} />
+            <Picks options={SCHOOL_TYPES} value={kSchool} onPick={setKSchool} label="Kind of school" /></div>
           <div><Label hint="Leave blank if there are none">Fees for the year</Label>
-            <Text value={kFee} onChange={setKFee} label="Fees for the year, in rupees" placeholder="8400" prefix="₹" /></div>
+            <Text value={kFee} onChange={setKFee} label="Fees for the year, in rupees" placeholder="8400" prefix="₹" />
+            <Picks options={FEE_IDEAS.map(rupee)} value={kFee ? rupee(Number(kFee.replace(/[^0-9]/g, "")) || 0) : ""}
+                   onPick={(x) => setKFee(x.replace(/[^0-9]/g, ""))} label="Usual fees" /></div>
           {err && (
             <p className="flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
                style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-ink") }}>
@@ -377,11 +413,7 @@ export default function SchoolPage() {
         }
       >
         <div className="flex flex-col gap-4">
-          <div><Label need>What is it</Label>
-            <Text value={tWhat} onChange={setTWhat} label="What it is" placeholder="Second term fees" max={120} /></div>
-          <div><Label>Which child</Label>
-            <Select value={tChild} onChange={setTChild} label="Which child"
-                    options={CHILDREN.map((c) => ({ value: c.id, label: c.name }))} /></div>
+          {/* Kind first: then "what is it" is one tap from that kind's usual list. */}
           <div><Label>What kind</Label>
             <Select value={tKind} onChange={(x) => setTKind(x as SchoolKind)} label="What kind of thing"
                     options={[
@@ -391,13 +423,27 @@ export default function SchoolPage() {
                       { value: "buy", label: "Something to buy" },
                       { value: "paper", label: "A paper to take" },
                     ]} /></div>
+          <div><Label need>What is it</Label>
+            <Text value={tWhat} onChange={setTWhat} label="What it is" placeholder="Second term fees" max={120} />
+            <Picks options={WHAT_IDEAS[tKind] ?? []} value={tWhat} onPick={setTWhat} label="Usual things" /></div>
+          <div><Label>Which child</Label>
+            <Select value={tChild} onChange={setTChild} label="Which child"
+                    options={CHILDREN.map((c) => ({ value: c.id, label: c.name }))} /></div>
           <div><Label>By when</Label>
-            <Text value={tDue} onChange={setTDue} label="The date it is due" type="date" /></div>
-          <div><Label hint="Only if it costs money">How much</Label>
-            <Text value={tCost} onChange={setTCost} label="How much, in rupees" placeholder="4200" prefix="₹" /></div>
-          <div><Label hint="So it makes sense later">A note</Label>
+            <Text value={tDue} onChange={setTDue} label="The date it is due" type="date" />
+            <Picks options={DUE_IDEAS.map((d) => d.label)}
+                   value={DUE_IDEAS.find((d) => dayFrom(d.days) === tDue)?.label ?? ""}
+                   onPick={(l) => setTDue(dayFrom(DUE_IDEAS.find((d) => d.label === l)!.days))} label="By when" /></div>
+          {(tKind === "fee" || tKind === "buy" || tCost) && (
+            <div><Label hint="Only if it costs money">How much</Label>
+              <Text value={tCost} onChange={setTCost} label="How much, in rupees" placeholder="4200" prefix="₹" />
+              <Picks options={COST_IDEAS.map(rupee)} value={tCost ? rupee(Number(tCost.replace(/[^0-9]/g, "")) || 0) : ""}
+                     onPick={(x) => setTCost(x.replace(/[^0-9]/g, ""))} label="Usual amounts" /></div>
+          )}
+          <More label="A note, so it makes sense later (optional)" open={!!tDetail}>
             <Text value={tDetail} onChange={setTDetail} label="A note about it"
-                  placeholder="Late after the 10th, then ₹50 a day" max={200} /></div>
+                  placeholder="Late after the 10th, then ₹50 a day" max={200} />
+          </More>
           {err && (
             <p className="flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
                style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-ink") }}>

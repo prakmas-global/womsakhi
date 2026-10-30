@@ -64,22 +64,35 @@ export function SafetyPin() {
   const pathname = usePathname();
   if (pathname.startsWith("/app/safety")) return null;
 
+  /*
+    A red SOS, not a white pill.
+
+    The pill said "Get help now" in 11px type with a 16px shield — fine for a
+    woman who reads, invisible to one who does not, and grey enough to be
+    mistaken for any other chip. This is the one control that has to be found
+    in a panic, by anyone: a big red circle with SOS on it is understood in
+    every language the app speaks, and by those who read none of them.
+
+    It opens Get help (112, the helplines, her trusted people as big picture
+    buttons); it never dials on its own, because a shared phone in a pocket
+    must not call the police by accident.
+  */
   return (
     <Link
       href="/app/safety"
-      aria-label={tr("ch.safety.label")}
-      className="ux-press ux-sq ux-dock-bottom fixed bottom-0 left-3 z-[var(--ux-z-sticky)] mb-3 flex min-h-[44px] items-center gap-1.5 rounded-full px-3 lg:hidden"
+      aria-label={`SOS — ${tr("ch.safety.label")}`}
+      className="ux-press ux-dock-bottom fixed bottom-0 left-3 z-[var(--ux-z-sticky)] mb-3 grid h-[62px] w-[62px] place-items-center rounded-full lg:hidden"
       style={{
-        background: "var(--ux-surface)",
-        border: "1px solid var(--ux-line-strong)",
-        boxShadow: "var(--ux-shadow-card)",
-        color: "var(--ux-ink-2)",
+        background: "radial-gradient(circle at 35% 30%, #ff5a5a 0%, #e01e1e 55%, #b30f0f 100%)",
+        boxShadow: "0 0 0 3px var(--ux-surface), 0 10px 24px -6px rgba(200,20,20,.55)",
+        color: "#fff",
       }}
     >
-      <span style={{ color: "var(--ux-danger-solid)" }}>
-        <Icon name="ShieldAlert" className="h-[16px] w-[16px]" />
+      <span aria-hidden className="ux-sos-ring absolute inset-0 rounded-full" />
+      <span className="relative flex flex-col items-center leading-none">
+        <Icon name="ShieldAlert" className="h-[20px] w-[20px]" />
+        <span className="mt-[3px] text-[13px] font-extrabold tracking-[0.06em]">SOS</span>
       </span>
-      <span className="text-2xs font-bold">{tr("ch.safety.label")}</span>
     </Link>
   );
 }

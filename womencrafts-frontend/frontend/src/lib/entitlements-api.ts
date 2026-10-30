@@ -126,6 +126,8 @@ export interface GroupBuy {
   closes: string;
   closed: boolean;
   joined_by_me: boolean;
+  /** She asked to be told when the next round of this item opens. */
+  watching?: boolean;
 }
 
 export const apiGroupBuys = (s?: AbortSignal) => get<GroupBuy[]>("/group-buy", s);
@@ -137,6 +139,11 @@ export async function apiJoinBuy(id: string, quantity = 1) {
 
 export const apiLeaveBuy = (id: string) =>
   apiClient.delete(`/group-buy/${id}/join`).then(() => undefined);
+
+/** "Tell me next time": notified once when staff open the next round of this item. */
+export const apiWatchBuy = (id: string, on: boolean) =>
+  on ? apiClient.post<GroupBuy>(`/group-buy/${id}/notify-me`).then((r) => r.data)
+     : apiClient.delete(`/group-buy/${id}/notify-me`).then(() => undefined);
 
 /* ── Prove your skills ───────────────────────────────────────────────── */
 
@@ -162,6 +169,8 @@ export const apiAssessment = (id: string, s?: AbortSignal) => get<Assessment>(`/
 export async function apiSubmitAttempt(id: string, answers: number[]) {
   const { data } = await apiClient.post<{
     id: string; assessment_id: string; score: number; passed: boolean; taken_on: string;
+    /** Her certificate for this skill once passed — Certificates, and /verify/<code>. */
+    certificate_code?: string;
   }>(`/assess/${id}/attempt`, { answers });
   return data;
 }

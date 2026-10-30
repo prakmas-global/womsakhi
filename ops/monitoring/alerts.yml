@@ -1,0 +1,32 @@
+groups:
+  - name: womsakhi-availability
+    rules:
+      - alert: WomSakhiApiScrapeUnavailable
+        expr: up{job="womsakhi-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: API monitoring has failed for two minutes
+          description: Check readiness, network access and the monitoring credential before restarting services.
+      - alert: WomSakhiApiErrorRate
+        expr: >-
+          (sum(rate(womsakhi_http_requests_total{status_class="5xx"}[5m]))
+          / clamp_min(sum(rate(womsakhi_http_requests_total[5m])), 0.01)) > 0.02
+          and sum(increase(womsakhi_http_requests_total[5m])) > 20
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: More than 2% of API responses are server errors
+          description: Inspect request IDs and release changes; avoid a database restore for an application regression.
+      - alert: WomSakhiApiLatency
+        expr: >-
+          histogram_quantile(0.95, sum by (le) (rate(womsakhi_http_request_duration_seconds_bucket[5m]))) > 1
+          and sum(increase(womsakhi_http_requests_total[5m])) > 20
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: API p95 latency has exceeded one second for ten minutes
+          description: Check database readiness, query timing, traffic and instance resources.

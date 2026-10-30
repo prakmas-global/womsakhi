@@ -173,8 +173,9 @@ class EnrolmentStatusUpdate(BaseModel):
 # The member-side `schemas/program.py` pins `category` to five literals, but
 # the catalogue seeded since then carries "Business", "Career", "Food",
 # "Tailoring" and more. Editing any of those through a five-literal schema
-# fails validation on a field the admin never touched, so the admin side takes
-# any non-empty category and lets the model derive its tone and bar colour.
+# fails validation on a field the admin never touched, so the schema takes any
+# non-empty category. The route then checks a NEW or CHANGED category against
+# the course categories master (app/core/masters.py); an untouched old one stays.
 
 from app.schemas.program import Mode, ProgramStatus  # noqa: E402
 

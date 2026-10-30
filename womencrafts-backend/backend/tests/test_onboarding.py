@@ -431,7 +431,9 @@ async def test_setup_needs_consent_and_is_idempotent(api):
     assert listing["state"] == "draft" and listing["visibility"] == "only_you"
     assert listing["reason"] == "Because you chose Earn · Tailoring"
     doc = await db["shop_listings"].find_one({"_id": ObjectId(listing["id"])})
-    assert doc["status"] == "draft" and doc["kind"] == "service" and doc["category"] == "Tailoring"
+    assert doc["status"] == "draft" and doc["kind"] == "service"
+    # Filed under the staff-controlled tree (app/core/market_categories.py).
+    assert (doc["category_key"], doc["subcategory_key"], doc["category"]) == ("clothing", "alterations", "Tailoring and alterations")
     assert items["saved_search:jobs"]["state"] == "saved"
     assert items["goal:earn"]["state"] == "proposed" and items["goal:find_job"]["state"] == "proposed"
     reminder = items["reminder:evening"]

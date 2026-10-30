@@ -57,6 +57,8 @@ export interface Booking {
   note: string;
   status: "upcoming" | "completed" | "cancelled";
   cancelled_reason: string;
+  /** How to join (https:// link or a place), set by the team. "" until then. */
+  meeting?: string;
   booked_on: string;
   created_at: string;
 }
@@ -91,6 +93,12 @@ export interface MeSummary {
 export interface MeProfile {
   id: string;
   full_name: string;
+  username?: string;
+  display_name?: string;
+  /** Verified member: her name came off her ID and only staff change it. */
+  name_locked?: boolean;
+  /** ISO date she may change her username again; "" when she may now. */
+  username_next_change_at?: string;
   email: string;
   role: string;
   member_id: string;
@@ -107,6 +115,8 @@ export interface MeProfile {
   dob: string;
   /** A line she writes about herself. */
   bio: string;
+  /** Skills she proved by passing a skill test. */
+  verified_skills?: { skill: string; title: string; score: number; code: string }[];
 }
 
 // --- catalogue ---

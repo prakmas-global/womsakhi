@@ -1,11 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { PlaceMark } from "@/components/ux/nav/Place";
+import { useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ReadAloud } from "@/components/ux/reach/ReadAloud";
-import { Btn, Card, I, Pill, SectionHead, v } from "@/components/ux/kit";
-import { OBJECTIONS as RAW_OBJECTIONS, SPEAKERS as RAW_SPEAKERS, type Objection } from "@/components/ux/reach/data";
+import { Btn, Card, EmptyState, I, NoteBtn, Pill, SectionHead, v } from "@/components/ux/kit";
+import { OBJECTIONS as RAW_OBJECTIONS, type Objection } from "@/components/ux/reach/data";
+import { useMentors } from "@/components/ux/live";
+import { apiRequestMentor } from "@/lib/growth-api";
+import type { Mentor } from "@/components/ux/mentors/data";
 import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { GroupLabel, PhoneRow, PhoneTitle } from "@/components/ux/PhoneParts";
@@ -40,32 +44,39 @@ import { useTranslated } from "@/i18n/data";
  * wrong*. She is not being coached against her family. She is being handed
  * something to show.
  */
+/** Mentors whose experience fits "come and speak to my family" best go first. */
+const FITS = /communication|getting started|confidence|family|business|tailoring|career/i;
+
+/** "Ask her" — a real mentoring request (POST /growth/mentors/{id}/request). */
+function AskHer({ m }: { m: Mentor }) {
+  if (m.requested) return <Pill tone="green" size="sm">Asked</Pill>;
+  return (
+    <NoteBtn label="Ask her" icon="MessageCircle" variant="outline" size="sm"
+             title={`Ask ${m.name.split(" ")[0]} to speak to your family`} to={m.name.split(" ")[0]}
+             placeholder="Say what you would like her to do"
+             phrases={["Could you come and speak to my family about my work?",
+                       "Could you talk to them on a phone call?",
+                       "They worry it is not safe", "They think it will not earn money",
+                       "Weekends are best"]}
+             send={async (n) => { await apiRequestMentor(m.id, n.text); }}
+             sent={`Your request is with ${m.name.split(" ")[0]}`}
+             sentBody="She replies with a time. Nobody at your home is contacted — you decide when she meets them."
+             sentLink={{ href: "/app/mentors", label: "See your requests" }} />
+  );
+}
+
 export default function BringingPage() {
-  const SPEAKERS = useTranslated(RAW_SPEAKERS);
   const OBJECTIONS = useTranslated(RAW_OBJECTIONS);
   const tr = useT();
   const [open, setOpen] = useState<string | null>("ob2");
-  const [asked, setAsked] = useState<string | null>(null);
+  // Real women who chose to mentor — not a list of invented names.
+  const { data: mentors, source: mentorSource } = useMentors();
+  const SPEAKERS = useMemo(() => [...mentors.filter((m) => !m.is_mine)]
+    .sort((a, b) => Number(FITS.test(b.expertise.join(" "))) - Number(FITS.test(a.expertise.join(" ")))
+                  || b.experience_years - a.experience_years)
+    .slice(0, 4), [mentors]);
 
   const answer = useMemo(() => OBJECTIONS.find((o) => o.id === open) ?? null, [open, OBJECTIONS]);
-
-  /**
-   * Asking a woman to come and speak to her household.
-   *
-   * This used to print "<name> has been asked. She will message you first" —
-   * and send nothing to anybody. A woman would then wait for a visitor who
-   * was never contacted, on the one screen whose evidence base is strongest
-   * (in the Delhi trial, someone who physically went with her raised
-   * follow-through to 70%, against 41% for paperwork help alone).
-   *
-   * It also contradicted this screen's own rule, four paragraphs above:
-   * *nothing is ever sent to anyone on her behalf.* So it does not send
-   * anything now either — it hands her the message to send herself, which is
-   * what the rule requires and what actually reaches the other woman.
-   */
-  const ask = useCallback((name: string) => {
-    setAsked(`Open your messages and ask ${name} yourself — nothing is sent for you, and nobody at your home is contacted.`);
-  }, []);
 
   return (
     <HomeShell active="/app/bringing">
@@ -77,8 +88,11 @@ export default function BringingPage() {
         </PhoneTitle>
         <header className="hidden lg:block">
           <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("bringing.atHome")}</p>
-          <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("bringing.whenSomeoneAtHomeIsNot")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("bringing.whenSomeoneAtHomeIsNot")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             For about half the women doing this, the hardest part was never the work — it was
             somebody at home. This page does not tell you what to say to them. It gives you
@@ -137,13 +151,20 @@ export default function BringingPage() {
                         title={
                           <span className="flex flex-wrap items-center gap-2">
                             {s.name}
-                            <Pill tone="neutral" size="sm">{s.years} years</Pill>
+                            <Pill tone="neutral" size="sm">{s.experience_years} years</Pill>
                           </span>
                         }
-                        meta={`${s.trade} · ${s.note}`}
-                        trailing={<Btn size="sm" variant="outline" icon="MessageCircle" href="/app/messages" onClick={() => ask(s.name)}>{tr("bringing.askHer")}</Btn>} />
+                        meta={`${s.headline}${s.location ? ` · ${s.location}` : ""}`}
+                        trailing={<AskHer m={s} />} />
             ))}
           </ListGroup>
+          {mentorSource !== "loading" && SPEAKERS.length === 0 && (
+            <Card>
+              <EmptyState icon="UserRoundCheck" title="No mentors yet"
+                          body="When women further along start mentoring, they appear here. You can still show them the answers above."
+                          action={<Btn size="sm" variant="outline" href="/app/mentors">See mentors</Btn>} />
+            </Card>
+          )}
           <div className="hidden flex-col gap-2.5 lg:flex">
             {SPEAKERS.map((s) => (
               <Card key={s.id} pad={16}>
@@ -155,27 +176,18 @@ export default function BringingPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.name}</p>
-                      <Pill tone="neutral" size="sm">{s.years} years</Pill>
+                      <Pill tone="neutral" size="sm">{s.experience_years} years</Pill>
                     </div>
                     <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                      {s.trade} · {s.note}
+                      {s.headline}{s.location ? ` · ${s.location}` : ""}
                     </p>
                   </div>
-                  <Btn size="sm" variant="outline" icon="MessageCircle" href="/app/messages" onClick={() => ask(s.name)}>{tr("bringing.askHer")}</Btn>
+                  <AskHer m={s} />
                 </div>
               </Card>
             ))}
           </div>
         </div>
-
-        {asked && (
-          <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-start gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="mt-[1px] h-[16px] w-[16px] shrink-0" />
-              {asked}
-            </p>
-          </Card>
-        )}
 
         {/* The line that has to be on this screen. */}
         <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>

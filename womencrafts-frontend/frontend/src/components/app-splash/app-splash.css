@@ -1,7 +1,4 @@
-/* ── S1 splash: the logo reveal on its own night-blue, app-wide ──
-   Hidden unless the pre-paint check marks <html data-app-splash="on">.
-   Plays in full for everyone, reduced motion included (the owner's call:
-   a slow logo reveal, not a moving interface). */
+/* A brief first-open welcome; no video download and no replay on tab return. */
 .app-splash {
   --u: clamp(1.2px, calc(100vw / 258), 1.5px);
   --serif: var(--wsa-serif), Fraunces, Georgia, serif;
@@ -12,7 +9,7 @@
 }
 html[data-app-splash="on"] .app-splash,
 html[data-app-splash="leaving"] .app-splash { display: grid; }
-html[data-app-splash="leaving"] .app-splash { animation: app-splash-out .32s ease forwards; }
+html[data-app-splash="leaving"] .app-splash { animation: app-splash-out .18s ease forwards; }
 @keyframes app-splash-out { to { opacity: 0; visibility: hidden; pointer-events: none; } }
 /* No page scroll behind it while it plays. */
 html[data-app-splash="on"] { overflow: hidden; }
@@ -24,7 +21,7 @@ html[data-app-splash="on"] { overflow: hidden; }
   mask: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent), linear-gradient(transparent, #000 12%, #000 88%, transparent);
   mask-composite: intersect;
 }
-.app-splash-vid video { display: block; width: 100%; height: 100%; object-fit: contain; background: #121724; }
+.app-splash-vid img { display: block; width: 100%; height: 100%; object-fit: contain; background: #121724; }
 .app-splash-foot { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 70 * var(--u)); display: grid; justify-items: center; gap: calc(16 * var(--u)); }
 .app-splash-tagline { display: flex; align-items: center; gap: calc(6 * var(--u)); font: italic 500 calc(11.5 * var(--u)) var(--serif); color: #f5cb96; letter-spacing: .01em; white-space: nowrap; }
 .app-splash-tagline::before, .app-splash-tagline::after { content: ""; width: calc(12 * var(--u)); height: 1px; background: linear-gradient(90deg, rgba(245,203,150,0), #d99362); }

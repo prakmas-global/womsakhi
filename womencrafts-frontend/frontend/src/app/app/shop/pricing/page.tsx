@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -57,14 +58,17 @@ export default function PricingPage() {
   const unpriced = useMemo(() => rows.filter((l) => l.price_minor <= 0), [rows]);
 
   return (
-    <HomeShell active="/app/shop">
+    <HomeShell active="/app/shop/pricing">
       <div className="flex flex-col gap-6 lg:gap-5">
-        <Back to="/app/shop" label={tr("shopBuyers.backToWaysToSell")} />
+        <Back to="/app/documents" label={tr("shopBuyers.backToWaysToSell")} />
 
         <header>
           <p className={EYEBROW}>{tr("shopPricing.yourPrices")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("shopPricing.whatYouChargeInOnePlace")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("shopPricing.whatYouChargeInOnePlace")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[56ch] text-[15px] leading-snug lg:text-sm lg:leading-relaxed"
              style={{ color: v("--ux-muted") }}>
             Every price you have set, side by side. Seeing them together is usually enough to notice

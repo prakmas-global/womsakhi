@@ -11,6 +11,7 @@ import {
   Badge, Card, EmptyState, Input, Menu, MenuItem, Modal, Pagination, Select, Spinner, StatCard, Tabs, Textarea, useToast,
 } from "@/design-system";
 import { ResizableColumns } from "@/layout-engine";
+import { useMaster } from "@/lib/masters-api";
 import {
   apiRaiseTicket, apiStaffTickets, TICKET_CATEGORIES, TICKET_PRIORITIES, type Ticket,
 } from "@/lib/staff-api";
@@ -63,6 +64,8 @@ export default function SupportPage() {
   const [sent, setSent] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  // Categories are the `support_ticket_categories` master (Settings → Masters).
+  const { labels: categoryLabels } = useMaster("support_ticket_categories", [...TICKET_CATEGORIES]);
   const [category, setCategory] = useState<string>(TICKET_CATEGORIES[0]);
   const [priority, setPriority] = useState<string>("Normal");
 
@@ -245,7 +248,7 @@ export default function SupportPage() {
                 <Input label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)}
                        placeholder="Members aren't receiving verification emails" />
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Select label="What's it about?" value={category} onChange={(e) => setCategory(e.target.value)} options={[...TICKET_CATEGORIES]} />
+                  <Select label="What's it about?" value={category} onChange={(e) => setCategory(e.target.value)} options={categoryLabels.includes(category) ? categoryLabels : [category, ...categoryLabels]} />
                   <Select label="How urgent?" value={priority} onChange={(e) => setPriority(e.target.value)} options={[...TICKET_PRIORITIES]} />
                 </div>
                 <Textarea label="What's happening?" value={message} onChange={(e) => setMessage(e.target.value)}

@@ -41,6 +41,39 @@ def _joiners():
     return get_database()[GroupBuyJoinerModel.collection_name]
 
 
+#: "Tell me next time" — one row per woman per item, removed once she is told.
+WATCHERS = "group_buy_watchers"
+
+
+def _watchers():
+    return get_database()[WATCHERS]
+
+
+def item_key(item: str) -> str:
+    """The same thing bought again, whatever the round: case and spacing ignored."""
+    return " ".join((item or "").casefold().split())
+
+
+async def notify_watchers(buy: dict) -> int:
+    """A new round of something she asked about has opened: tell her, once."""
+    from app.models.conversation import notify
+
+    key = item_key(buy.get("item", ""))
+    if not key:
+        return 0
+    rows = await _watchers().find({"item_key": key}).to_list(1000)
+    for w in rows:
+        await notify(
+            get_database(), w["user_id"],
+            f"Buying together: {buy.get('item', '')} is open again",
+            f"{buy.get('unit', '')} — join before it closes.".strip(" —"),
+            "market", "/app/group-buy",
+        )
+    if rows:
+        await _watchers().delete_many({"_id": {"$in": [w["_id"] for w in rows]}})
+    return len(rows)
+
+
 @router.get("", response_model=list[GroupBuyResponse], summary="What is being bought together")
 async def list_buys(
     open_only: bool = Query(True, description="Hide buys that have closed"),
@@ -54,15 +87,48 @@ async def list_buys(
         return await _buys().find(query).sort("closes_at", 1).to_list(100)
 
     uid = str(me["_id"])
-    docs, mine = await asyncio.gather(
+    docs, mine, watching = await asyncio.gather(
         cache.cached(f"groupbuy:{int(open_only)}", cache.SHARED_TTL, _load),
         _joiners().find({"user_id": uid}, {"buy_id": 1}).to_list(200),
+        _watchers().find({"user_id": uid}, {"item_key": 1}).to_list(200),
     )
     joined = {j["buy_id"] for j in mine}
+    watched = {w["item_key"] for w in watching}
     return [
-        GroupBuyResponse(**GroupBuyModel.to_response(d, joined_by_me=str(d["_id"]) in joined))
+        GroupBuyResponse(**GroupBuyModel.to_response(d, joined_by_me=str(d["_id"]) in joined),
+                         watching=item_key(d.get("item", "")) in watched)
         for d in docs
     ]
+
+
+@router.post("/{buy_id}/notify-me", response_model=GroupBuyResponse, summary="Tell me when the next round opens")
+async def notify_me(buy_id: str, me: dict = Depends(require_active_member)):
+    """
+    For a buy that is already full (or closing): "Tell me next time" used to
+    say "We will tell you" and record nothing. Now it is a row, and the next
+    round of the same item — opened by staff — notifies her and clears it.
+    """
+    buy = await _buys().find_one({"_id": to_object_id(buy_id)})
+    if not buy:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That buy is not listed")
+    uid = str(me["_id"])
+    key = item_key(buy.get("item", ""))
+    await _watchers().update_one(
+        {"user_id": uid, "item_key": key},
+        {"$setOnInsert": {"user_id": uid, "item_key": key, "item": buy.get("item", ""),
+                          "buy_id": buy_id, "created_at": datetime.now(timezone.utc)}},
+        upsert=True,
+    )
+    mine = await _joiners().find_one({"user_id": uid, "buy_id": buy_id})
+    return GroupBuyResponse(**GroupBuyModel.to_response(buy, joined_by_me=bool(mine)), watching=True)
+
+
+@router.delete("/{buy_id}/notify-me", status_code=status.HTTP_204_NO_CONTENT, summary="Stop telling me")
+async def stop_notify(buy_id: str, me: dict = Depends(require_active_member)):
+    buy = await _buys().find_one({"_id": to_object_id(buy_id)})
+    if buy:
+        await _watchers().delete_one({"user_id": str(me["_id"]), "item_key": item_key(buy.get("item", ""))})
+    return None
 
 
 @router.post("/{buy_id}/join", response_model=GroupBuyResponse, summary="Join this buy")

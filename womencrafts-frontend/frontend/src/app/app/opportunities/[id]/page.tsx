@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -8,8 +9,11 @@ import * as Icons from "@/components/ux/icons";
 import { apiApply, apiToggleSaveOpportunity } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 import { useAttemptKey } from "@/lib/idempotency";
-import { useJobs } from "@/components/ux/growth";
+import { useJob, useJobs } from "@/components/ux/growth";
 import { matchFor } from "@/services/job-match";
+import { jobPicture, useWorkTaxonomy } from "@/components/ux/work/pictures";
+import { FitLine, PostedBy } from "@/components/ux/work/parts";
+import { Picks } from "@/components/ux/kit/form";
 import { WORK_ART as RAW_WORK_ART, payLabel } from "@/components/ux/work/data";
 import {
   Back, Btn, Card, EmptyState, RailSkeleton, ScreenSkeleton, SourceNote, v,
@@ -39,16 +43,28 @@ import { useTranslated } from "@/i18n/data";
  * Benefits, a deadline and a reviews tab are absent for the same reason. An
  * empty "Deadline —" reads as "apply whenever", which is worse than not asking.
  */
+/** Tap-to-add lines for the optional note. */
+const APPLY_LINES = [
+  "I can start this week", "I have done this work before", "I live nearby",
+  "I can work from home", "Please call me in the evening",
+];
+
 export default function OpportunityDetail({ params }: { params: Promise<{ id: string }> }) {
+  const workCats = useWorkTaxonomy();
   const WORK_ART = useTranslated(RAW_WORK_ART);
   const tr = useT();
   const { id } = use(params);
-  const { data: JOBS, source, refetch } = useJobs();
-  const job = JOBS.find((j) => j.id === id);
+  // Fetched by id, so her own post and a closed one still open; the list is
+  // only for "similar work".
+  const { data: job, source, refetch } = useJob(id);
+  const { data: JOBS } = useJobs();
 
-  // The same computation the list uses, so the two screens can never disagree.
-  const fit = matchFor(job?.skills ?? []);
+  // The same server match the list shows, so the two screens can never disagree.
+  const fit = matchFor(job);
 
+  // An optional note, built by tapping — the application itself is one tap.
+  const [note, setNote] = useState("");
+  const [sentSkills, setSentSkills] = useState<string[] | null>(null);
   const [sentNow, setSentNow] = useState(false);
   const [savedNow, setSavedNow] = useState<boolean | null>(null);
   const attempt = useAttemptKey("apply");
@@ -57,7 +73,10 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
   const saved = savedNow ?? job?.saved ?? false;
 
   const apply = useAction(
-    async () => { await apiApply(id, ""); },
+    async () => {
+      const got = await apiApply(id, note.trim());
+      setSentSkills((got.skills ?? []).map((x) => x.name));
+    },
     {
       onDone: () => { attempt.settle(); setSentNow(true); refetch(); },
       fallbackError: "That did not go through. Your application has not been sent — try again in a moment.",
@@ -111,7 +130,17 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
           {/* Apply. The one thing this screen is for. */}
           <Card>
-            {applied ? (
+            {job.isMine ? (
+              <>
+                <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>This is your job post.</p>
+                <p className="mt-1 text-xs leading-snug" style={{ color: v("--ux-muted") }}>
+                  {job.applicants} {job.applicants === 1 ? "woman has" : "women have"} applied. See their skills and message them.
+                </p>
+                <div className="mt-3">
+                  <Btn href={`/app/work/posts?job=${job.id}`} variant="primary" full icon="Users">See applicants</Btn>
+                </div>
+              </>
+            ) : applied ? (
               <>
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -121,6 +150,11 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
                     <p className="text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                       It is with {job.org} now.
                     </p>
+                    {sentSkills && sentSkills.length > 0 && (
+                      <p className="mt-1 text-xs leading-snug" style={{ color: v("--ux-green-ink") }}>
+                        Shared your skills: {sentSkills.join(", ")}
+                      </p>
+                    )}
                     <p className="mt-1 text-xs leading-snug" style={{ color: v("--ux-muted") }}>
                       {tr("opportunities.mostEmployersReplyWithinThreeDays")}
                     </p>
@@ -134,12 +168,29 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               </>
             ) : (
               <>
+                {fit.have.length > 0 && (
+                  <p className="mb-3 rounded-[10px] px-3 py-2 text-xs leading-snug"
+                     style={{ background: v("--ux-tint-green"), color: v("--ux-green-ink") }}>
+                    We&apos;ll share your skills: {fit.have.map((h) => `${h}${fit.verified.includes(h) ? " ✓ Verified" : ""}`).join(", ")}
+                  </p>
+                )}
+                <p className="text-xs font-bold" style={{ color: v("--ux-ink-2") }}>Add a line (optional)</p>
+                <Picks options={APPLY_LINES} value={note.split(". ")} multi label="Add a line to your application"
+                       onPick={(x) => setNote((n) => {
+                         const parts = n.split(". ").map((p) => p.trim()).filter(Boolean);
+                         return (parts.includes(x) ? parts.filter((p) => p !== x) : [...parts, x]).join(". ");
+                       })} />
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={2000}
+                          placeholder="Or say it in your own words"
+                          aria-label="Your note"
+                          className="ux-sq mt-2 mb-3 w-full rounded-[12px] border px-3 py-2 text-xsm outline-none"
+                          style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }} />
                 <Btn
                   variant="primary"
                   full
                   iconEnd={apply.busy ? undefined : "ArrowRight"}
                   icon={apply.busy ? "Loader" : undefined}
-                  disabled={apply.busy}
+                  disabled={apply.busy || job.closed}
                   onClick={() => void apply.run()}
                 >
                   {apply.busy ? "Sending…" : "Apply now"}
@@ -216,14 +267,25 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
       <Back to="/app/opportunities" label={tr("opportunities.allWork")} className="mb-4" />
 
       {/* ── Who is hiring, and for what ─────────────────────────────────── */}
-      <Card className="mb-[16px]" pad={20}>
-        <div className="flex flex-wrap items-start gap-4">
-          <span className="grid h-[62px] w-[62px] shrink-0 place-items-center rounded-[16px]"
-                style={{ background: v(job.logoTint) }}>
-            <Icons.Briefcase className="h-[26px] w-[26px]" style={{ color: v(job.logoInk) }} />
+      <Card className="mb-[16px] overflow-hidden" pad={0}>
+        {/* The work itself, big — the same picture as its card in Find work. */}
+        <div className="relative h-[180px] w-full overflow-hidden sm:h-[230px]" style={{ background: v("--ux-surface-2") }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={jobPicture(job, workCats)} alt={job.title}
+               className="h-full w-full object-cover" />
+          <span aria-hidden className="absolute inset-0"
+                style={{ background: "linear-gradient(180deg, rgba(16,6,24,.15), rgba(16,6,24,0) 40%, rgba(16,6,24,.5))" }} />
+          <span className="absolute start-4 top-4 rounded-full px-3 py-1 text-xs font-bold shadow-sm"
+                style={{ background: "rgba(255,255,255,.92)", color: "#2a1a24" }}>
+            {job.kind === "Order" ? "Order to make" : job.kind}
           </span>
+          <span className="absolute end-4 top-4 rounded-full px-3 py-1 text-xs font-bold shadow-sm"
+                style={{ background: "rgba(24,10,34,.8)", color: "#fff" }}>{payLabel(job)}</span>
+        </div>
+        <div className="flex flex-wrap items-start gap-4 p-5">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
+              <PlaceMark size={44} />
               <h1 className="ux-screen-title text-2xl font-extrabold leading-tight tracking-[-0.02em]"
                   style={{ color: v("--ux-ink") }}>
                 {job.title}
@@ -231,10 +293,11 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
               {fit.pct !== null && fit.pct > 0 && (
                 <Tag tone="green" size="sm">{fit.pct}% match</Tag>
               )}
+              {job.closed && <Tag tone="neutral" size="sm">Closed</Tag>}
             </div>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xsm"
                style={{ color: v("--ux-muted") }}>
-              <span className="font-bold" style={{ color: v("--ux-ink-2") }}>{job.org}</span>
+              <PostedBy job={job} />
               {job.verified && (
                 <Icons.BadgeCheck className="h-[15px] w-[15px]" style={{ color: v("--ux-green-ink") }} />
               )}
@@ -258,7 +321,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
             {job.womenLed && <div className="mt-3"><Tag tone="pink" size="sm">{tr("opportunities.womenLed")}</Tag></div>}
           </div>
         </div>
-        <SourceNote source={source} what={tr("jobdetail.thisOpening")} />
+        <div className="px-5 pb-4"><SourceNote source={source} what={tr("jobdetail.thisOpening")} /></div>
       </Card>
 
       <div className="flex flex-col gap-6">
@@ -266,6 +329,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
           <p className="max-w-[70ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             {job.about}
           </p>
+          <FitLine fit={fit} className="mt-3" />
           {job.skills.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {job.skills.map((s) => {

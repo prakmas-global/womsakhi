@@ -11,9 +11,12 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
 import { EXCHANGE_ART as RAW_EXCHANGE_ART, SKILL_TAGS as RAW_SKILL_TAGS } from "@/components/ux/exchange/data";
+import { PicChip, pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
+import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
 
 /**
  * Skill Exchange — teaching each other, with no money involved.
@@ -23,7 +26,17 @@ import { useTranslated } from "@/i18n/data";
  * quietly tell her she is only one of the two.
  */
 export default function SkillExchangePage() {
-  const SKILL_TAGS = useTranslated(RAW_SKILL_TAGS);
+  // Skill swap tags are the "swap_skills" master (Masters → Skill swap tags);
+  // the built-in list shows until it loads. Shown translated, filtered in English.
+  const tagPics = useMasterPictures("swap_skills", RAW_SKILL_TAGS);
+  const tagLabels = tagPics.labels;
+  // An offer has no picture of its own: the swap tag its skill names, else
+  // what its words point to.
+  const swapPicture = (skill: string, wants: string, id: string) => {
+    const tag = tagLabels.find((t) => skill.toLowerCase().includes(t.toLowerCase()));
+    return tag ? pictureOr(null, [skill, wants], tagPics.of(tag)) : artFor([skill, wants], "swap", null, id);
+  };
+  const SKILL_TAGS = useTranslated(tagLabels);
   const EXCHANGE_ART = useTranslated(RAW_EXCHANGE_ART);
   const tr = useT();
   const { data: SWAPS, source } = useSwaps();
@@ -143,80 +156,45 @@ export default function SkillExchangePage() {
               <Chip key={s} selected={side === s} onClick={() => setSide(s)}>{s}</Chip>
             ))}
             <span className="mx-1 h-6 w-px" style={{ background: "var(--ux-line)" }} />
-            {SKILL_TAGS.slice(0, 5).map((t) => (
-              <Chip key={t} selected={tags.includes(t)}
-                    onClick={() => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])}>
-                {t}
-              </Chip>
+            {/* Filter on the English tag (what offers are written in); show it translated. */}
+            {tagLabels.slice(0, 8).map((t, i) => (
+              <PicChip key={t} src={tagPics.pic(t)} selected={tags.includes(t)}
+                       onClick={() => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])}>
+                {SKILL_TAGS[i] ?? t}
+              </PicChip>
             ))}
           </ChipRow>
 
           {shown.length ? (
-            <div className="ux-deck ux-stagger space-y-[12px]">
-              {shown.map((s, i) => (
-                <Card key={s.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }}>
-                  <div className="flex items-start gap-3.5">
-                    <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={48} radius={13} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start gap-2">
-                        <h2 className="min-w-0 flex-1 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-                          {s.skill}
-                        </h2>
-                        {/* Offer and ask are the same shape, told apart by one
-                            word — because the same woman is usually both. */}
-                        <Tag tone={s.side === "Offering" ? "green" : "blue"} size="sm">{s.side}</Tag>
-                      </div>
-                      <p className="mt-1.5 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.detail}</p>
-                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
-                         style={{ color: "var(--ux-muted)" }}>
-                        <span className="inline-flex items-center gap-1.5">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img loading="lazy" decoding="async" src={s.avatar} alt="" className="h-[20px] w-[20px] rounded-full object-cover" />
-                          {s.who}
-                        </span>
-                        <span className="inline-flex items-center gap-1"><Icons.MapPin className="h-3.5 w-3.5" /> {s.place}</span>
-                        <span className="inline-flex items-center gap-1">
-                          {s.online ? <Icons.Video className="h-3.5 w-3.5" /> : <Icons.Users className="h-3.5 w-3.5" />}
-                          {s.online ? tr("library.canDoItOnline")
-              : tr("library.inPerson")}
-                        </span>
-                        <span>{s.level}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="mt-4 rounded-[12px] px-4 py-3 text-smd leading-relaxed lg:mt-3.5 lg:p-3 lg:text-xsm"
-                     style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
-                    <span style={{ color: "var(--ux-muted)" }}>
-                      {s.side === "Offering" ? tr("library.sheWouldLikeInReturn")
-              : tr("library.sheCanTeachInReturn")}
-                    </span>
-                    <strong style={{ color: "var(--ux-ink)" }}>{s.wants}</strong>
-                  </p>
-
-                  {/* "0 womans already interested" was a three-line stub in a
-                      70px column beside two squeezed buttons — "Open the /
-                      exchange" broken in half. The count goes above the
-                      actions on a phone and the actions take the width. */}
-                  <div className="mt-4 flex flex-col gap-3 border-t pt-4 lg:mt-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:pt-3.5"
-                       style={{ borderColor: "var(--ux-line)" }}>
-                    <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
-                      {s.matches} {plural("woman", s.matches)} already interested
-                    </span>
-                    <span className="flex items-center gap-2 [&>*]:flex-1 lg:[&>*]:flex-none">
+            <MediaGrid>
+              {shown.map((s) => (
+                <MediaCard
+                  key={s.id}
+                  image={swapPicture(s.skill, s.wants, s.id)}
+                  topLeft={{ text: s.side, tone: s.side === "Offering" ? "green" : "light" }}
+                  topRight={{ text: "No money", tone: "dark" }}
+                  overlay={<>{s.online ? <Icons.Video className="h-[13px] w-[13px]" /> : <Icons.Users className="h-[13px] w-[13px]" />}
+                    {s.online ? tr("library.canDoItOnline") : tr("library.inPerson")}</>}
+                  title={s.skill}
+                  avatar={{ src: s.avatar, name: s.who }}
+                  subtitle={s.who}
+                  meta={<>
+                    {s.place && <Fact icon="MapPin">{s.place}</Fact>}
+                    {s.level && <Fact icon="BarChart3">{s.level}</Fact>}
+                    <Fact icon="Heart">{s.matches} {plural("woman", s.matches)} interested</Fact>
+                  </>}
+                  footer={
+                    <span className="flex items-center gap-2 [&>*]:flex-1">
                       {isAsked(s.id) ? (
                         <>
-                          <span className="ux-pop ux-sq inline-flex items-center justify-center gap-1.5 rounded-[12px] px-4 py-2 text-xsm font-semibold lg:justify-start lg:px-3.5"
+                          <span className="ux-pop ux-sq inline-flex items-center justify-center gap-1.5 rounded-[12px] px-3 py-2 text-xsm font-semibold"
                                 style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
                             <Icons.Check className="h-[15px] w-[15px]" strokeWidth={2.6} /> Asked
                           </span>
                           <Btn href={`/app/library/${s.id}`} variant="primary" size="sm" iconEnd="ArrowRight">{tr("library.openTheExchange")}</Btn>
                         </>
                       ) : (
-                        /* Her own words, not a canned line sent in her name.
-                           `POST /exchange/swaps/{id}/ask` requires text, and a
-                           message she did not write is the wrong thing to put
-                           in front of a stranger she wants to learn from. */
+                        /* Her own words, not a canned line sent in her name. */
                         <NoteBtn
                           label={tr("library.proposeASwap")}
                           variant="primary"
@@ -235,10 +213,19 @@ export default function SkillExchangePage() {
                         />
                       )}
                     </span>
-                  </div>
-                </Card>
+                  }
+                >
+                  {s.detail && <p className="line-clamp-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{s.detail}</p>}
+                  <p className="mt-2 rounded-[10px] px-3 py-2 text-xs leading-relaxed"
+                     style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+                    <span style={{ color: "var(--ux-muted)" }}>
+                      {s.side === "Offering" ? tr("library.sheWouldLikeInReturn") : tr("library.sheCanTeachInReturn")}
+                    </span>
+                    <strong style={{ color: "var(--ux-ink)" }}>{s.wants}</strong>
+                  </p>
+                </MediaCard>
               ))}
-            </div>
+            </MediaGrid>
           ) : (
             <Card>
               <EmptyState

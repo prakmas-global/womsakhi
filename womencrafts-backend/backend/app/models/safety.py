@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 
-# India-wide numbers, correct at the time of writing.
+# India-wide numbers, checked 2026-10-27 (india.gov.in helpline directory, NCW).
 #
 # This list is the FALLBACK, not the only copy. Staff holding `safety.edit` can
 # curate the live list in the `helplines` collection (see HelplineModel below
@@ -31,21 +31,39 @@ from typing import Optional
 # with no number to call.
 HELPLINES = [
     {
+        "name": "Emergency (Police / Fire / Ambulance)",
+        "number": "112",
+        "desc": "One number for every emergency, anywhere in India. Works from any phone.",
+        "urgent": True,
+    },
+    {
+        "name": "Police",
+        "number": "100",
+        "desc": "Police helpline. In many states it now connects to 112.",
+        "urgent": True,
+    },
+    {
         "name": "Women's Helpline (All India)",
         "number": "181",
         "desc": "Free, 24×7. Any woman in distress — violence, harassment, or if you just need someone.",
         "urgent": True,
     },
     {
-        "name": "Emergency (Police / Fire / Ambulance)",
-        "number": "112",
-        "desc": "One number for every emergency, anywhere in India.",
+        "name": "Women's Helpline (Police)",
+        "number": "1091",
+        "desc": "Police help for women — harassment, stalking, obscene calls.",
+        "urgent": False,
+    },
+    {
+        "name": "Ambulance",
+        "number": "108",
+        "desc": "Free emergency ambulance.",
         "urgent": True,
     },
     {
-        "name": "Domestic Abuse — NCW",
+        "name": "Violence against women — NCW",
         "number": "7827170170",
-        "desc": "National Commission for Women. WhatsApp and calls.",
+        "desc": "National Commission for Women, 24×7. Connects you to police, hospital, legal aid and counselling.",
         "urgent": False,
     },
     {
@@ -177,6 +195,8 @@ class SafetyReportModel:
 
     collection_name = "safety_reports"
 
+    #: The starting values of the `safety_report_categories` master
+    #: (app/core/masters.py), which is what the server checks against.
     CATEGORIES = [
         "Harassment or abuse",
         "A man on the platform",

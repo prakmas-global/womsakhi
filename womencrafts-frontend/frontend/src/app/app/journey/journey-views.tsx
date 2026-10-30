@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 
 import { useT } from "@/i18n";
@@ -27,7 +28,10 @@ export function JourneyHero() {
       fold. Every word of it is still here.
     */}
     <header className="mb-6 lg:hidden">
-      <h1 className="ux-screen-title" style={{ color: v("--ux-ink") }}>{tr("ch.journey.label")}</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title min-w-0" style={{ color: v("--ux-ink") }}>{tr("ch.journey.label")}</h1>
+      </div>
       <p className="mt-2 text-[15px] leading-snug" style={{ color: v("--ux-muted") }}>
         Small steps. Big possibilities. A guided journey to help you learn, build skills, find
         opportunities and create the life you deserve.
@@ -44,10 +48,13 @@ export function JourneyHero() {
           <p className="text-2xs font-extrabold uppercase tracking-[0.16em]" style={{ color: v("--ux-muted") }}>
             {tr("ch.journey.label")}
           </p>
-          <h1 className="mt-2.5 text-4xl font-extrabold leading-[1.06] tracking-[-0.035em] xl:text-4xlm"
-              style={{ color: v("--ux-ink") }}>
-            {tr("discover.smallSteps")}<br />{tr("discover.bigPossibilities")}
-          </h1>
+          <div className="mt-2.5 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-4xl font-extrabold leading-[1.06] tracking-[-0.035em] xl:text-4xlm min-w-0"
+                style={{ color: v("--ux-ink") }}>
+              {tr("discover.smallSteps")}<br />{tr("discover.bigPossibilities")}
+            </h1>
+          </div>
           <p className="mt-3 max-w-[420px] text-smd leading-relaxed" style={{ color: v("--ux-ink-2") }}>
             A guided journey to help you learn, build skills, find opportunities and create the
             life you deserve.
@@ -253,7 +260,7 @@ export function StepCard({ step, total, onCheck, onLater }: {
   const pct = stepPct(step);
   return (
     <Card className="mb-6 lg:mb-5" pad={22}>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
+      <div className="ux-split-lg grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="min-w-0">
           <div className="flex items-start gap-4">
             <IconTile icon={step.icon} tint={step.tint} ink={step.ink} size={54} radius={16} />

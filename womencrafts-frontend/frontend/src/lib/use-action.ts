@@ -52,8 +52,14 @@ export function messageFrom(e: unknown, fallback: string): string {
   if (typeof d?.detail === "string") return d.detail;
   if (Array.isArray(d?.detail) && d.detail[0]?.msg) return String(d.detail[0].msg);
   // A network failure has no response at all, and "check your connection" is
-  // more use than "request failed" to a woman on a train.
-  if (!r) return "We could not reach WomSakhi. Check your connection and try again.";
+  // more use than "request failed" to a woman on a train. But only a REQUEST
+  // that got no answer is that: a check the screen made itself ("write a
+  // little more") is a plain Error with its own sentence, and calling it a
+  // connection problem sent her looking at her Wi-Fi.
+  const isRequest = Boolean((e as { isAxiosError?: boolean; request?: unknown })?.isAxiosError
+    || (e as { request?: unknown })?.request);
+  if (!r && isRequest) return "We could not reach WomSakhi. Check your connection and try again.";
+  if (!r && e instanceof Error && e.message) return e.message;
   return fallback;
 }
 

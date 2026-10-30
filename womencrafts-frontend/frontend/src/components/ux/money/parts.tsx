@@ -94,7 +94,8 @@ export function EarningsBars({
   return (
     <div className="flex items-end gap-[8px]" style={{ height }}>
       {values.map((v, i) => {
-        const h = Math.max(3, Math.round((v / max) * plot));
+        // A year with nothing in it has max 0, and 0/0 is NaN — a stub, not an error.
+        const h = max > 0 ? Math.max(3, Math.round((v / max) * plot)) : 3;
         const last = i === values.length - 1;
         return (
           <div key={labels[i]} className="flex min-w-0 flex-1 flex-col items-center justify-end"

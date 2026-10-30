@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 import { useT } from "@/i18n";
 import { useParams } from "next/navigation";
@@ -37,7 +38,10 @@ export default function GuidePage() {
                className={g.art ? "absolute bottom-0 left-1/2 h-[172px] w-auto max-w-none -translate-x-1/2" : "h-full w-full object-cover"} />
         </div>
         <DeskTitle title={g.title} sub={`${g.sub} · ${g.minutes} min read`} />
-        <h1 className="ux-display text-[28px] font-bold leading-tight lg:hidden" style={{ color: "var(--ux-ink)" }}>{g.title}</h1>
+        <div className="lg:hidden flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-display text-[28px] font-bold leading-tight min-w-0" style={{ color: "var(--ux-ink)" }}>{g.title}</h1>
+        </div>
         <p className="mt-1 text-[13px] lg:hidden" style={{ color: "var(--ux-muted)" }}>{g.sub} · {g.minutes} min read</p>
 
         {g.urgent && (

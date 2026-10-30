@@ -73,7 +73,7 @@ def test_phone_action_rule():
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc)
     base = {"role": "Member", "phone": "+919812345678"}
-    assert UserModel.phone_action_required({**base, "phone": ""}) is True  # a missing number still counts
+    assert UserModel.phone_action_required({**base, "phone": ""}) is False  # missing: asked later, by the reminder
     assert UserModel.phone_action_required({**base, "email_verified_at": now}) is False
     assert UserModel.phone_action_required({**base, "phone_verified_at": now}) is False
 

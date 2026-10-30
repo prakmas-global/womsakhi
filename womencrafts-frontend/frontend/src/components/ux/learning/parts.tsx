@@ -1,101 +1,91 @@
 "use client";
 
-import { MediaRow, Tag } from "@/components/ux/learning/native";
-
-import { useT } from "@/i18n";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 
-import { AvatarStack, Btn, Card, IconTile, Progress, Rating, SectionHead, v } from "../kit";
-import { ACHIEVEMENTS as RAW_ACHIEVEMENTS, type Course, LEARNER as RAW_LEARNER, SKILLS as RAW_SKILLS, STREAK as RAW_STREAK } from "./data";
-import { useTranslated } from "@/i18n/data";
+import { Progress } from "../kit";
+import type { Course } from "./data";
 
-const TAG_TONE = { Bestseller: "pink", New: "brand", Popular: "orange", Trending: "green" } as const;
-
-/** The card the whole module is built around — grid and rail both use it. */
-export function CourseCard({ c, w }: { c: Course; w?: number }) {
-  return (
-    /* `/ux/learning/course/${c.id}` until the /ux preview tree was deleted on
-       2026-08-26. `c.id` is the catalogue programme id — `toPick` in growth.ts
-       carries it straight through — so this is the screen it always meant. */
-    /*
-      A row on a phone, the poster card it always was from `lg` up.
-
-      In a 3-column grid the poster is right; `.ux-deck` collapses that grid to
-      one column below 1024, and eight full-width posters with 110px covers is
-      1,900px of scrolling to see eight titles. The same eight as rows is 800px,
-      and every title is beside its own picture rather than under it. Only the
-      classes change — same markup, same link, same information.
-    */
-    <Link href={`/app/programs/${c.id}`}
-      /* `padding: 0` inline is what lets the picture reach the card's edge on
-         desktop, and an inline rule cannot be undone by a `lg:` class — so the
-         phone row's inset lives on the two children instead. */
-      className="ux-card ux-i ux-sq flex shrink-0 items-center gap-3 overflow-hidden lg:block"
-      style={{ width: w, padding: 0 }}>
-      <div className="relative m-2.5 me-0 shrink-0 overflow-hidden rounded-[10px] lg:m-0 lg:rounded-none">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img loading="lazy" decoding="async" src={c.thumb} alt=""
-             className="ux-art h-[84px] w-[84px] object-cover lg:h-[110px] lg:w-full" />
-        {/* The corner badge needs a corner. On the row it moves inline, under
-            the title, where it is legible against the card rather than against
-            whatever the photograph happens to be. */}
-        {c.tag && (
-          <span className="absolute start-2.5 top-2.5 hidden lg:block">
-            <Tag tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Tag>
-          </span>
-        )}
-      </div>
-      <div className="min-w-0 flex-1 py-2.5 pe-3 lg:p-3">
-        <h2 className="line-clamp-2 text-smd font-semibold leading-snug lg:text-xsm"
-            style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
-        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] lg:text-xs"
-           style={{ color: "var(--ux-muted)" }}>
-          <span>{c.lessons} Lessons <span aria-hidden>•</span> {c.level}</span>
-          {c.tag && <span className="lg:hidden"><Tag tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Tag></span>}
-        </p>
-        {typeof c.pct === "number" ? (
-          <div className="mt-2.5">
-            <Progress pct={c.pct} />
-            <p className="mt-1.5 text-end text-[13px] font-medium lg:text-2xs"
-               style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</p>
-          </div>
-        ) : (
-          <div className="mt-2 flex items-center justify-between">
-            <Rating value={c.rating} count={c.count} />
-            <Icons.Bookmark className="ux-ico hidden h-[15px] w-[15px] lg:block" style={{ color: "var(--ux-faint)" }} strokeWidth={1.9} />
-          </div>
-        )}
-      </div>
-    </Link>
-  );
-}
+const initialsOf = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "W";
 
 /**
- * A course as a grouped-list row — the phone's catalogue.
+ * The course card — the one shape a course takes in Learn, and the preview a
+ * teacher sees while she writes hers (`preview`: same card, not a link).
  *
- * A column of separately bordered cards, 16px apart, reads as a stack of
- * objects; the same courses as rows in one inset group read as a list, which
- * is what a catalogue is. Same link, same picture, same facts.
+ * The title and the teacher sit ON the photograph, over a dark fade, so they
+ * read the same in light and dark mode. Under it: what it costs, what kind of
+ * course it is, and one full-width button saying what tapping will do. Two
+ * across on a phone, three on a desktop.
  */
-export function CourseRow({ c }: { c: Course }) {
-  return (
-    <MediaRow
-      href={`/app/programs/${c.id}`}
-      media={
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img loading="lazy" decoding="async" src={c.thumb} alt="" className="ux-art h-full w-full object-cover" />
-      }
-      title={c.title}
-      lines={[
-        <>{c.lessons} Lessons <span aria-hidden>•</span> {c.level}</>,
-        typeof c.pct === "number"
-          ? <span style={{ color: "var(--ux-brand)" }}>{c.pct}% Complete</span>
-          : <Rating value={c.rating} count={c.count} />,
-      ]}
-      trailing={c.tag ? <Tag tone={TAG_TONE[c.tag]} size="sm">{c.tag}</Tag> : undefined}
-    />
+export function CourseCard({ c, w, preview = false }: { c: Course; w?: number; preview?: boolean }) {
+  const started = typeof c.pct === "number";
+  const finished = c.myStatus === "completed" || (started && (c.pct ?? 0) >= 100);
+  const waiting = c.myStatus === "pending";
+  const team = !c.byMember;
+  const teacher = c.teacher || "WomSakhi team";
+  const cta = finished ? "Look again" : started ? "Continue" : waiting ? "Payment being checked"
+    : c.priceMinor ? "See the course" : "Start free";
+  const facts = [c.category, c.lessons > 0 ? `${c.lessons} ${c.lessons === 1 ? "lesson" : "lessons"}` : c.hours]
+    .filter(Boolean).join(" · ");
+
+  const body = (
+    <>
+      <div className="relative aspect-[4/3] w-full overflow-hidden" style={{ background: "#1c1024" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img loading="lazy" decoding="async" src={c.thumb} alt=""
+             className="ux-art h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+        <span aria-hidden className="absolute inset-0"
+              style={{ background: "linear-gradient(180deg, rgba(16,6,24,0) 30%, rgba(16,6,24,.55) 58%, rgba(16,6,24,.92) 100%)" }} />
+        <div className="absolute inset-x-0 bottom-0 p-3 lg:p-3.5">
+          <h2 className="line-clamp-2 text-xsm font-bold leading-snug text-white lg:text-[15px]"
+              style={{ textShadow: "0 1px 8px rgba(0,0,0,.35)" }}>{c.title}</h2>
+          <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-2xs text-white/85 lg:text-xs">
+            <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-[8px] font-bold"
+                  style={{ background: "rgba(255,255,255,.22)", color: "#fff" }}>
+              {team ? <Icons.Sparkles className="h-[10px] w-[10px]" /> : initialsOf(teacher)}
+            </span>
+            <span className="truncate">{teacher}</span>
+            {team && <Icons.BadgeCheck className="h-[12px] w-[12px] shrink-0 text-white" />}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2.5 p-3 lg:p-3.5">
+        <p className="flex min-w-0 items-center gap-2 text-2xs lg:text-xs">
+          <span className="shrink-0 rounded-full px-2 py-[3px] font-bold"
+                style={c.priceMinor ? { background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }
+                                    : { background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
+            {c.priceMinor ? `₹${(c.priceMinor / 100).toLocaleString("en-IN")}` : "Free"}
+          </span>
+          <span className="truncate" style={{ color: "var(--ux-muted)" }}>{facts}</span>
+        </p>
+
+        {started && !finished && (
+          <div className="flex items-center gap-2">
+            <Progress pct={c.pct ?? 0} />
+            <span className="shrink-0 text-2xs font-bold tabular-nums" style={{ color: "var(--ux-brand)" }}>{c.pct}%</span>
+          </div>
+        )}
+
+        <span className="mt-auto flex min-h-[38px] items-center justify-center gap-1.5 rounded-[10px] px-3 text-2xs font-bold lg:text-xs"
+              style={finished ? { background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }
+                : waiting ? { background: "var(--ux-tint-orange)", color: "var(--ux-orange-ink)" }
+                : started ? { background: "linear-gradient(96deg, var(--ux-fill), var(--ux-fill-2))", color: "var(--ux-on-brand)" }
+                : { background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
+          {finished && <Icons.CheckCircle2 className="h-[13px] w-[13px]" />}
+          {cta}
+          {!finished && !waiting && <Icons.ArrowRight className="h-[13px] w-[13px] transition-transform group-hover:translate-x-0.5" />}
+        </span>
+      </div>
+    </>
   );
+
+  const cls = "ux-card ux-i ux-sq group flex shrink-0 flex-col overflow-hidden";
+  const style = { width: w, padding: 0 };
+  return preview
+    ? <div className={cls} style={style} aria-label={`Preview: ${c.title}`}>{body}</div>
+    : <Link href={`/app/programs/${c.id}`} className={`${cls} ux-hov`} style={style}>{body}</Link>;
 }
 
 /**
@@ -137,7 +127,7 @@ export function ResumeCard({ c }: { c: Course }) {
       <div className="flex min-w-0 flex-1 flex-col justify-center p-4 lg:p-0 lg:pe-5">
         <h2 className="text-[17px] font-semibold leading-tight lg:text-base" style={{ color: "var(--ux-ink)" }}>{c.title}</h2>
         <p className="mt-1 text-[15px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
-          Course <span aria-hidden>•</span> {c.lessons} Lessons
+          By {c.teacher ?? "WomSakhi team"} <span aria-hidden>•</span> {c.lessons || ""} {c.lessons ? "Lessons" : c.hours}
         </p>
         <div className="mt-3.5 flex items-center gap-3">
           <Progress pct={c.pct ?? 0} />
@@ -158,157 +148,3 @@ export function ResumeCard({ c }: { c: Course }) {
     </Link>
   );
 }
-
-/*
- * `PathRow` was here. It rendered a learning path and linked to
- * `/ux/learning/paths/{id}` — a route that has never existed in this codebase,
- * not even among the deleted prototypes, which had `/ux/learning/paths` and no
- * detail page. Its only caller was the Paths tab on `/app/programs`, which is
- * gone: there is no learning-path feature on the server to render.
- */
-
-export function SkillCard({ s }: { s: (typeof RAW_SKILLS)[number] }) {
-  return (
-    <div className="ux-card flex w-[176px] shrink-0 items-start gap-2.5" style={{ padding: 13 }}>
-      <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={34} radius={9} />
-      <div className="min-w-0">
-        <h2 className="text-xsm font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>{s.name}</h2>
-        <p className="mt-1 text-2xs" style={{ color: "var(--ux-muted)" }}>{s.level}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ── right rail ─────────────────────────────────────────────────────────── */
-
-export function LearnerCard() {
-  const LEARNER = useTranslated(RAW_LEARNER);
-  const pct = (LEARNER.xp / LEARNER.xpMax) * 100;
-  return (
-    <Card>
-      <div className="flex items-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img loading="lazy" decoding="async" src="/ux/art/avatar-woman-purple-kurta.webp" alt="" className="h-[52px] w-[52px] rounded-full object-cover" />
-        <div className="min-w-0 flex-1">
-          <h2 className="flex items-center gap-1.5 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
-            {LEARNER.name}
-            <Icons.BadgeCheck className="h-4 w-4" style={{ color: "var(--ux-brand)" }} />
-          </h2>
-          <p className="text-xs" style={{ color: "var(--ux-muted)" }}>
-            Level {LEARNER.level} <span aria-hidden>•</span> {LEARNER.title}
-          </p>
-        </div>
-      </div>
-      <div className="mt-3"><Progress pct={pct} /></div>
-      <p className="mt-1.5 text-end text-2xs" style={{ color: "var(--ux-muted)" }}>
-        {LEARNER.xp.toLocaleString()} / {LEARNER.xpMax.toLocaleString()} XP
-      </p>
-    </Card>
-  );
-}
-
-export function StreakCard() {
-  const STREAK = useTranslated(RAW_STREAK);
-  const tr = useT();
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
-  return (
-    <Card>
-      <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-          <Icons.Flame className="h-[16px] w-[16px]" style={{ color: "var(--ux-orange-ink)" }} aria-hidden /> {tr("parts.learningStreak")}
-        </h2>
-        <Btn variant="outline" size="sm">{tr("homeRail.viewCalendar")}</Btn>
-      </div>
-      <div className="mt-3.5 flex items-center gap-4">
-        <div className="shrink-0 text-center">
-          <p className="text-2xl font-bold leading-none" style={{ color: "var(--ux-ink)" }}>{STREAK.days}</p>
-          <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-muted)" }}>Days</p>
-        </div>
-        <div className="flex flex-1 justify-between">
-          {STREAK.marks.map((on, i) => (
-            <div key={i} className="flex flex-col items-center gap-1.5">
-              <span className="text-2xs" style={{ color: "var(--ux-muted)" }}>{days[i]}</span>
-              <span className="ux-pop grid h-[26px] w-[26px] place-items-center rounded-full border"
-                    style={{ ["--i" as string]: i,
-                             background: on ? "var(--ux-brand-600)" : "transparent",
-                             borderColor: on ? "transparent" : "var(--ux-line-strong)" }}>
-                {on && <Icons.Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-export function AchievementsCard() {
-  const ACHIEVEMENTS = useTranslated(RAW_ACHIEVEMENTS);
-  const tr = useT();
-  return (
-    <Card>
-      <SectionHead title="Achievements" action={tr("dashboard.viewAll")} />
-      <div className="grid grid-cols-3 gap-2">
-        {ACHIEVEMENTS.map((a) => (
-          <div key={a.name} className="text-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img loading="lazy" decoding="async" src={a.img} alt="" className="mx-auto h-[58px] w-[58px]" />
-            <p className="mt-1.5 text-2xs font-semibold leading-tight" style={{ color: "var(--ux-ink)" }}>{a.name}</p>
-            <p className="mt-0.5 text-2xs leading-tight" style={{ color: "var(--ux-muted)" }}>{a.body}</p>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-export function ReminderCard() {
-  const tr = useT();
-  return (
-    <Card>
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-            <Icons.Bell className="h-[16px] w-[16px]" style={{ color: "var(--ux-brand)" }} /> {tr("parts.studyReminder")}
-          </h2>
-          <p className="mt-2 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-            {tr("parts.keepTheMomentumGoingYouHave")}
-          </p>
-          <div className="mt-3"><Btn variant="soft" size="sm">{tr("parts.startLearningNow")}</Btn></div>
-        </div>
-        <IconTile icon="CalendarClock" tint="--ux-tint-violet" ink="--ux-violet" size={52} radius={14} />
-      </div>
-    </Card>
-  );
-}
-
-export function AskSakhiCard() {
-  const tr = useT();
-  return (
-    <div className="relative overflow-hidden rounded-[16px] p-[20px]"
-         style={{ background: "linear-gradient(150deg, var(--ux-tint-lilac), var(--ux-tint-pink))" }}>
-      <h2 className="text-base font-semibold" style={{ color: "var(--ux-ink)" }}>Hi, I&apos;m Sakhi!</h2>
-      <p className="mt-2 w-[76%] text-xs leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-        I&apos;m here to guide you to the best learning opportunities.
-      </p>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img loading="lazy" decoding="async" src="/ux/art/avatar-woman-pink-glasses.webp" alt=""
-           className="pointer-events-none absolute -bottom-1 end-1 h-[96px] w-[96px] object-contain" />
-      <div className="mt-4 w-[70%]"><Btn variant="primary" full iconEnd="ArrowRight">{tr("journeyviews.chatWithSakhi")}</Btn></div>
-    </div>
-  );
-}
-
-export function LearningRail() {
-  return (
-    <div className="space-y-[16px]">
-      <LearnerCard />
-      <StreakCard />
-      <AchievementsCard />
-      <ReminderCard />
-      <AskSakhiCard />
-    </div>
-  );
-}
-
-export { AvatarStack, v };

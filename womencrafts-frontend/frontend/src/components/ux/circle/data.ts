@@ -25,6 +25,10 @@ export interface Topic {
   icon: string;
   tint: string;
   ink: string;
+  /** Its picture (Masters → Circle topics), set once the list loads — see `topicPicture`. */
+  pic?: string;
+  /** Staff chose `pic`, so it beats a circle's own words. */
+  picByStaff?: boolean;
 }
 
 /**
@@ -88,17 +92,42 @@ const OTHER = (label: string): Topic => ({
   ink: "--ux-ink-2",
 });
 
-export function topicOf(raw: string | undefined): Topic {
+/**
+ * The topics as staff keep them in Masters (`circle_topics`, backend
+ * app/core/masters.py): their labels, icons and synonyms. `useCircleTopics()`
+ * (./topics.ts) builds this; until it loads, the seven above stand in.
+ */
+export type LiveTopics = { topics: Topic[]; syn: Record<string, string> };
+
+/** Colours by position, so a topic staff add still gets a colour of its own. */
+export const TOPIC_PALETTE = TOPICS.map(({ tint, ink }) => ({ tint, ink }));
+
+export function liveTopics(items: { key: string; label: string; extra?: { icon?: string; synonyms?: string[] } }[]): LiveTopics {
+  const topics = items.map((it, i) => ({
+    id: it.key, label: it.label, icon: it.extra?.icon || "MessagesSquare",
+    ...TOPIC_PALETTE[i % TOPIC_PALETTE.length],
+  }));
+  const syn: Record<string, string> = {};
+  for (const it of items) {
+    syn[it.label.toLowerCase()] = it.key;
+    for (const w of it.extra?.synonyms ?? []) syn[w.toLowerCase()] = it.key;
+  }
+  return { topics, syn };
+}
+
+export function topicOf(raw: string | undefined, live?: LiveTopics): Topic {
   const s = (raw || "").trim();
   if (!s) return OTHER("General");
 
+  const table = live?.syn ?? SYNONYMS;
+  const list = live?.topics ?? TOPICS;
   const key = s.toLowerCase();
-  const direct = SYNONYMS[key]
+  const direct = table[key]
     // "Digital Literacy" and "Work & family" are whole phrases; a circle
     // called "Craft and pricing" is matched on its first meaningful word.
-    ?? key.split(/[^a-z]+/).map((w) => SYNONYMS[w]).find(Boolean);
+    ?? key.split(/[^a-z]+/).map((w) => table[w]).find(Boolean);
 
-  const hit = direct ? TOPICS.find((t) => t.id === direct) : undefined;
+  const hit = direct ? list.find((t) => t.id === direct) : undefined;
   // Its own words, capitalised the way she typed them.
   return hit ?? OTHER(s[0].toUpperCase() + s.slice(1));
 }

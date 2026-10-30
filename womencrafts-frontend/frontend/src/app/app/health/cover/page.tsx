@@ -1,236 +1,182 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { PlaceMark } from "@/components/ux/nav/Place";
+import { useCallback, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Back, Btn, Card, EmptyState, I, IconTile, SectionHead, Stat, v } from "@/components/ux/kit";
-import { COVER as RAW_COVER, COVERERS as RAW_COVERERS, type CoverDay } from "@/components/ux/wellness/data";
-import { useT } from "@/i18n";
-import { ListGroup } from "@/components/ux/mobile/ListRow";
-import { GroupLabel, PhoneRow, PhoneTitle, phoneFull, phonePrimary } from "@/components/ux/PhoneParts";
-import { useTranslated } from "@/i18n/data";
+import { Back, Btn, Card, EmptyState, I, SectionHead, ScreenSkeleton, v } from "@/components/ux/kit";
+import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
+import { toast } from "@/components/ux/mobile/Toast";
+import { PhoneTitle } from "@/components/ux/PhoneParts";
+import { useResource } from "@/lib/use-resource";
+import { apiCover, apiMarkReference, type MyState, type Reference } from "@/lib/entitlements-api";
 
 /**
- * Cover when you cannot work.
+ * Health cover — what she is entitled to, and where she stands with it.
  *
- * ── The real health-and-earning link ────────────────────────────────────────
- * Roughly 90% of employed Indian women are in informal work; among the salaried
- * minority in non-agriculture, 45.9% are not eligible for paid leave and 58%
- * have no social security of any kind. There is no sick day to take. A day ill
- * is a day unpaid **and** a stall nobody opened, an order nobody delivered, a
- * customer who goes elsewhere.
+ * ── What was here ───────────────────────────────────────────────────────────
+ * The menu promised "Health cover — what you are entitled to" and this page
+ * was a rota for covering work days, built from fixture women ("Sunita can take
+ * Friday", "you owe 6 hours in care") whose accept button sent nothing to
+ * anyone. Nothing on it was hers or true.
  *
- * That is a rota problem, not a medical one — which is why this is the health
- * module that stores **no health data whatsoever.** She says "I cannot work
- * Thursday." She never says why, and nobody may ask.
- *
- * ── Paid in hours, not rupees ───────────────────────────────────────────────
- * Cover is repaid in care hours inside the circle rather than cash. It keeps the
- * exchange between women who already trust each other, and for a woman who needs
- * two hours free on a Thursday it is worth more than the money would be.
+ * ── What it is now ──────────────────────────────────────────────────────────
+ * The cover catalogue staff keep (`/cover` — reference topic "cover"): health
+ * insurance first (Ayushman Bharat PM-JAY and any state scheme for her city),
+ * then accident, life and pension cover worth having. Each card says what it
+ * pays, what it costs, and the steps — and her status on it ("I have this",
+ * "I applied", "Not for me") is saved on the server, so the page remembers
+ * which ones she has already sorted.
  */
 
-const STATE: Record<CoverDay["state"], { label: string; tint: string; ink: string }> = {
-  asked: { label: "Waiting for someone", tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
-  covered: { label: "Covered", tint: "--ux-tint-green", ink: "--ux-green-ink" },
-  past: { label: "Done", tint: "--ux-surface-2", ink: "--ux-muted" },
-};
+const STATUS: { state: MyState["state"]; label: string; tone: "green" | "blue" | "neutral" }[] = [
+  { state: "active", label: "I have this", tone: "green" },
+  { state: "applied", label: "I applied", tone: "blue" },
+  { state: "declined", label: "Not for me", tone: "neutral" },
+];
 
-export default function CoverPage() {
-  const COVERERS = useTranslated(RAW_COVERERS);
-  const COVER = useTranslated(RAW_COVER);
-  const tr = useT();
-  const router = useRouter();
-  const [days, setDays] = useState<CoverDay[]>(COVER);
-  const [asking, setAsking] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+function kindOf(r: Reference) {
+  return String(r.payload?.kind || "").toLowerCase();
+}
 
-  const open = useMemo(() => days.filter((d) => d.state !== "past"), [days]);
-  const past = useMemo(() => days.filter((d) => d.state === "past"), [days]);
-  const owed = useMemo(() => COVERERS.reduce((n, c) => n + c.owedHours, 0), [COVERERS]);
-  const timesCovered = useMemo(() => COVERERS.reduce((n, c) => n + c.coveredCount, 0), [COVERERS]);
+function CoverCard({ r, onMark, busy }: { r: Reference; onMark: (r: Reference, s: MyState["state"]) => void; busy: boolean }) {
+  const steps = Array.isArray(r.payload?.steps) ? (r.payload.steps as string[]) : [];
+  const status = STATUS.find((s) => s.state === r.mine?.state);
+  const kind = kindOf(r);
+  const health = kind === "health";
+  return (
+    <MediaCard
+      image={artFor([r.title, kind, r.body], health ? "health" : "scheme", null, r.id)} alt={r.title}
+      topLeft={r.payload?.kind ? { text: String(r.payload.kind) } : null}
+      topRight={status ? { text: status.label, tone: status.tone === "green" ? "green" : status.tone === "blue" ? "brand" : "dark" }
+               : r.free === true ? { text: "Free", tone: "green" } : null}
+      overlay={r.payload?.pays ? <><I name="ShieldCheck" className="h-[13px] w-[13px]" /> Pays {String(r.payload.pays)}</> : undefined}
+      title={r.title}
+      subtitle={r.who}
+      highlight={health}
+      meta={<>
+        <Fact icon="IndianRupee">{r.free === true ? "Free" : r.cost_label || "See the cost"}</Fact>
+        {r.payload?.renews ? <Fact icon="CalendarClock">Renews {String(r.payload.renews)}</Fact> : null}
+      </>}
+      footer={
+        <div className="flex flex-wrap gap-2" role="group" aria-label={`Your status for ${r.title}`}>
+          {STATUS.map((s) => {
+            const on = r.mine?.state === s.state;
+            return (
+              <button key={s.state} type="button" aria-pressed={on} disabled={busy} onClick={() => onMark(r, s.state)}
+                      className="ux-press ux-sq flex min-h-[36px] items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold"
+                      style={{ borderColor: v(on ? "--ux-brand" : "--ux-line"), background: v(on ? "--ux-brand-tint" : "--ux-surface"),
+                               color: v(on ? "--ux-brand" : "--ux-ink-2") }}>
+                {on && <I name="Check" className="h-[12px] w-[12px]" />}{s.label}
+              </button>
+            );
+          })}
+        </div>
+      }>
+      {r.body && <p className="line-clamp-3 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>{r.body}</p>}
+      {steps.length > 0 && (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-xs font-bold" style={{ color: v("--ux-brand") }}>How to get it ({steps.length} steps)</summary>
+          <ol className="mt-2 space-y-1.5">
+            {steps.map((st, i) => (
+              <li key={st} className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                <span className="grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                      style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>{i + 1}</span>{st}
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+    </MediaCard>
+  );
+}
 
-  /**
-   * Asking another woman to cover a day.
-   *
-   * This said "<name> will cover it. She was not told why, and she will not
-   * ask" — and asked nobody. The day went green, and on the morning she stayed
-   * home nobody turned up, because nobody had been told.
-   *
-   * On a screen for a woman too unwell to work, that is the failure that costs
-   * her the day's earnings she was trying to protect. Nothing here can send
-   * the request yet, so it says so and hands her the way to ask.
-   */
-  const accept = useCallback((dayId: string, who: string) => {
-    setAsking(false);
-    setNote(`Ask ${who} yourself in your messages — nothing has been sent to her, and she has not been told anything.`);
-  }, []);
+export default function HealthCoverPage() {
+  const cover = useResource(useCallback((s: AbortSignal) => apiCover(s), []), [] as Reference[]);
+  const [marked, setMarked] = useState<Record<string, Reference>>({});
+  const [busy, setBusy] = useState("");
+
+  const rows = cover.data.map((r) => marked[r.id] ?? r);
+  const health = rows.filter((r) => kindOf(r) === "health");
+  const rest = rows.filter((r) => kindOf(r) !== "health");
+  const have = rows.filter((r) => r.mine?.state === "active").length;
+
+  const mark = async (r: Reference, state: MyState["state"]) => {
+    setBusy(r.id);
+    try {
+      const next = await apiMarkReference(r.id, state);
+      setMarked((m) => ({ ...m, [r.id]: next }));
+      toast("Saved", { tone: "success" });
+    } catch { toast("That did not save. Try again.", { tone: "error" }); }
+    finally { setBusy(""); }
+  };
 
   return (
     <HomeShell active="/app/health">
       <div className="flex flex-col gap-5">
-        {/* The top bar carries the way back on a phone; this one is the desktop's. */}
-        <div className="hidden lg:flex">
-          <Back to="/app/health" label={tr("healthCover.backToHealth")} />
-        </div>
+        <div className="hidden lg:flex"><Back to="/app/health" label="Back to health" /></div>
 
-        <PhoneTitle title="Cover" sub={tr("healthCover.aDayOffShouldNotCost")}
-                    note={tr("healthCover.thereIsNoSickLeaveWhen")}>
-          <Btn icon="Plus" className={`mt-4 ${phonePrimary}`} onClick={() => setAsking(true)}>{tr("healthCover.iNeedADay")}</Btn>
-        </PhoneTitle>
-        <header className="hidden flex-wrap items-end gap-4 lg:flex">
-          <div className="min-w-0 flex-1">
-            <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>
-              Cover
-            </p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>{tr("healthCover.aDayOffShouldNotCost")}</h1>
-            <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
-              There is no sick leave when you work for yourself — and a closed stall loses the
-              customer, not just the day. So someone in your circle opens it instead.
-            </p>
+        <PhoneTitle title="Health cover" sub="What you are entitled to"
+                    note="A hospital stay should not cost you your savings. Most of these are free or cost a few rupees a year." />
+        <header className="hidden lg:block">
+          <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>Health cover</p>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0" style={{ color: v("--ux-ink") }}>
+              What you are entitled to
+            </h1>
           </div>
-          <Btn icon="Plus" onClick={() => setAsking(true)}>{tr("healthCover.iNeedADay")}</Btn>
+          <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
+            A hospital stay should not cost you your savings. Most of these are free or cost a few rupees a year —
+            mark the ones you have, and we will keep track with you.
+          </p>
         </header>
 
-        <Card pad={20} style={{ background: v("--ux-tint-pink"), borderColor: "transparent" }}>
-          <div className="flex items-start gap-3.5">
-            <IconTile icon="Lock" tint="--ux-surface" ink="--ux-pink-ink" size={44} radius={13} />
-            <div className="min-w-0">
-              <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{tr("healthCover.youNeverHaveToSayWhy")}</p>
-              <p className="mt-1.5 max-w-[54ch] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                Not to us and not to her. Illness, a child, a hospital visit, a bad day — the app
-                asks for a date and nothing else, and nowhere does it store a reason.
+        {cover.source === "loading" && !cover.data.length ? <ScreenSkeleton shape="list" /> : cover.source === "error" ? (
+          <Card><EmptyState icon="WifiOff" title="This did not load" body="Check your connection and try again."
+                            action={<Btn size="sm" onClick={cover.refetch}>Try again</Btn>} /></Card>
+        ) : !rows.length ? (
+          <Card><EmptyState icon="ShieldCheck" title="Nothing listed for your area yet"
+                            body="Our team adds the cover available where you live. Meanwhile, ask at your bank or the nearest Common Service Centre."
+                            action={<Btn size="sm" variant="outline" href="/app/haq">See schemes you can claim</Btn>} /></Card>
+        ) : (
+          <>
+            <Card pad={16} style={{ background: v(have ? "--ux-tint-green" : "--ux-surface-2"), borderColor: "transparent" }}>
+              <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v(have ? "--ux-green-ink" : "--ux-ink-2") }}>
+                <I name={have ? "ShieldCheck" : "Info"} className="h-[16px] w-[16px]" />
+                {have ? `You have ${have} of ${rows.length} kinds of cover listed here.` : "Mark the ones you already have — it takes a tap each."}
               </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Stat value={String(timesCovered)} label={tr("healthCover.timesYouWereCovered")} icon="Handshake"
-                  tint="--ux-tint-green" ink="--ux-green-ink" />
-            <Stat value={`${owed} hours`} label={tr("healthCover.youOweBackInCare")} icon="Clock"
-                  tint="--ux-tint-amber" ink="--ux-amber-ink" />
-            <Stat value={String(COVERERS.length)} label={tr("healthCover.womenWhoCanStepIn")} icon="Users"
-                  tint="--ux-tint-blue" ink="--ux-blue-ink" />
-          </div>
-        </Card>
-
-        {note && (
-          <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
-            <p className="flex items-center gap-2 text-xsm font-semibold" style={{ color: v("--ux-green-ink") }}>
-              <I name="CheckCircle2" className="h-[16px] w-[16px]" />{note}
-            </p>
-          </Card>
-        )}
-
-        {asking && (
-          <Card pad={16} style={{ borderColor: v("--ux-brand") }}>
-            <SectionHead title={tr("healthCover.whoCanTakeFriday")}
-                         sub="Pick one and ask her yourself — nothing is sent for you" icon="Users" />
-            {/* The women who can step in are a list to pick from. */}
-            <div className="flex flex-col gap-2.5">
-              {COVERERS.map((c) => (
-                <button key={c.id} type="button"
-                        onClick={() => accept(open.find((d) => d.state === "asked")?.id ?? "cv2", c.name)}
-                        className="ux-press ux-sq flex items-center gap-3.5 rounded-[12px] border p-3.5 text-left max-lg:p-4"
-                        style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
-                  <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full text-sm font-bold"
-                        style={{ background: v("--ux-brand-tint-2"), color: v("--ux-brand") }}>
-                    {c.name.charAt(0)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{c.name}</p>
-                    <p className="text-xs" style={{ color: v("--ux-muted") }}>
-                      {c.can} · has covered for you {c.coveredCount}×
-                    </p>
-                  </div>
-                  <I name="ArrowRight" className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-faint") }} />
-                </button>
-              ))}
-            </div>
-            <Btn size="sm" variant="ghost" full className={`mt-2.5 ${phoneFull}`} onClick={() => setAsking(false)}>{tr("healthCover.notNow")}</Btn>
-          </Card>
-        )}
-
-        <div>
-          <GroupLabel count={open.length}>{tr("healthCover.comingUp")}</GroupLabel>
-          <div className="hidden lg:block">
-            <SectionHead title={tr("healthCover.comingUp")} icon="CalendarDays" chip={String(open.length)} />
-          </div>
-          {open.length === 0 ? (
-            <Card><EmptyState icon="CalendarDays" title={tr("healthCover.nothingNeedingCover")}
-                              body={tr("healthCover.whenYouNeedADayAsk")} /></Card>
-          ) : (
-            <>
-            <ListGroup className="lg:hidden">
-              {open.map((d) => {
-                const s = STATE[d.state];
-                return (
-                  <PhoneRow key={d.id} icon={d.state === "covered" ? "Check" : "Clock"} tint={s.tint} ink={s.ink}
-                            title={
-                              <span className="flex flex-wrap items-center gap-2">
-                                {d.when}
-                                <span className="rounded-full px-2 py-[2px] text-[12px] font-semibold uppercase tracking-[0.06em]"
-                                      style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
-                              </span>
-                            }
-                            meta={`${d.what}${d.who ? ` · ${d.who} is doing it` : ""}`}
-                            trailing={d.state === "asked"
-                              ? <Btn size="sm" onClick={() => setAsking(true)}>{tr("healthCover.findSomeone")}</Btn>
-                              : undefined} />
-                );
-              })}
-            </ListGroup>
-            <div className="hidden flex-col gap-2.5 lg:flex">
-              {open.map((d) => {
-                const s = STATE[d.state];
-                return (
-                  <Card key={d.id} pad={16}>
-                    <div className="flex flex-wrap items-center gap-3.5">
-                      <IconTile icon={d.state === "covered" ? "Check" : "Clock"} tint={s.tint} ink={s.ink} size={38} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{d.when}</p>
-                          <span className="rounded-full px-2 py-[2px] text-2xs font-bold uppercase tracking-[0.06em]"
-                                style={{ background: v(s.tint), color: v(s.ink) }}>{s.label}</span>
-                        </div>
-                        <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>
-                          {d.what}{d.who && ` · ${d.who} is doing it`}
-                        </p>
-                      </div>
-                      {d.state === "asked" && <Btn size="sm" onClick={() => setAsking(true)}>{tr("healthCover.findSomeone")}</Btn>}
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-            </>
-          )}
-        </div>
-
-        {past.length > 0 && (
-          <div>
-            <GroupLabel count={past.length}>Before</GroupLabel>
-            <div className="hidden lg:block">
-              <SectionHead title="Before" icon="History" chip={String(past.length)} />
-            </div>
-            <Card pad={0}>
-              <ul className="divide-y" style={{ borderColor: v("--ux-line") }}>
-                {past.map((d) => (
-                  <li key={d.id} className="flex items-center gap-3 px-4 py-3">
-                    <I name="Check" className="h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-green-ink") }} sw={2.6} />
-                    <p className="flex-1 text-xsm" style={{ color: v("--ux-ink-2") }}>
-                      {d.when} · {d.what}{d.who && ` · ${d.who}`}
-                    </p>
-                  </li>
-                ))}
-              </ul>
             </Card>
-          </div>
+
+            {health.length > 0 && (
+              <div>
+                <SectionHead title="Health insurance" sub="Hospital treatment, paid for" icon="HeartPulse" />
+                <MediaGrid cols={2}>
+                  {health.map((r) => <CoverCard key={r.id} r={r} onMark={mark} busy={busy === r.id} />)}
+                </MediaGrid>
+              </div>
+            )}
+            {rest.length > 0 && (
+              <div>
+                <SectionHead title="Also worth having" sub="Accident, life and pension cover" icon="ShieldCheck" />
+                <MediaGrid>
+                  {rest.map((r) => <CoverCard key={r.id} r={r} onMark={mark} busy={busy === r.id} />)}
+                </MediaGrid>
+              </div>
+            )}
+          </>
         )}
+
+        <Card pad={16} style={{ background: v("--ux-surface-2"), borderColor: "transparent" }}>
+          <div className="flex flex-wrap items-center gap-3">
+            <I name="Landmark" className="h-[16px] w-[16px] shrink-0" style={{ color: v("--ux-muted") }} />
+            <p className="min-w-0 flex-1 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+              Money schemes you may be owed — pensions, maternity benefit, scholarships — are in Haq.
+            </p>
+            <Btn size="sm" variant="outline" href="/app/haq" iconEnd="ArrowRight">Open Haq</Btn>
+          </div>
+        </Card>
       </div>
     </HomeShell>
   );

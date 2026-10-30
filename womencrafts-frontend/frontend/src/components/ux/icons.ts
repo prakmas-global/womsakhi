@@ -16,6 +16,25 @@
  */
 export {
   Activity,
+  // Get help: the helpline pictures
+  Ambulance,
+  Hand,
+  Venus,
+  // a member's work, as photos
+  Images,
+  // My Khata's PIN keypad
+  Delete,
+  // Rent & borrow
+  CookingPot,
+  Plug,
+  Luggage,
+  CalendarRange,
+  PackageCheck,
+  // My Khata's chits: how the pot is given, and closing a record
+  ListOrdered,
+  Dices,
+  ArchiveRestore,
+  ArrowUpDown,
   AlarmClock,
   AlertCircle,
   AlertTriangle,
@@ -27,6 +46,7 @@ export {
   ArrowRightCircle,
   ArrowUp,
   ArrowUpRight,
+  AtSign,
   AudioLines,
   Award,
   Baby,
@@ -241,6 +261,8 @@ export {
   User,
   UserCheck,
   UserPlus,
+  UserX,
+  UserMinus,
   UserRound,
   UserRoundCheck,
   UserRoundCog,
@@ -272,6 +294,41 @@ export {
   ScanFace,
   Smile,
   Timer,
+  // circle group chats
+  Link,
+  LogIn,
+  ClipboardPaste,
+  ShieldOff,
+  Reply,
+  ArrowDown,
+  Ban,
+  SendHorizontal,
+  // Health & Wellness sections
+  Apple,
+  Dumbbell,
+  FileHeart,
+  Gamepad2,
+  SkipBack,
+  SlidersHorizontal,
+  // Nutrition & Sleep
+  Bed,
+  Coffee,
+  Utensils,
+  Wind,
+  // Mental Wellness and Games
+  Cloud,
+  Grid3x3,
+  Puzzle,
+  Shuffle,
+  SkipForward,
+  // Fertility & Pregnancy
+  ArrowLeftRight,
+  CalendarHeart,
+  // Health Records
+  FileCheck,
+  Ruler,
+  // Shop categories (staff pick these icons)
+  PartyPopper,
   // the phone's More sheet
   Menu,
 } from "lucide-react";

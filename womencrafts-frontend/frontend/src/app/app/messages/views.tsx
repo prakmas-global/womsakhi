@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 /**
  * Everything the inbox draws, separated from everything it does.
  *
@@ -17,10 +18,13 @@ import { createPortal } from "react-dom";
 import { Bold, Italic, PinOff } from "lucide-react";
 import * as Icons from "@/components/ux/icons";
 import { useToast } from "@/design-system/feedback/ToastProvider";
+import { useConfirm } from "@/design-system/feedback/ConfirmProvider";
+import { apiErrorMessage } from "@/lib/api";
+import { apiNotInterested, apiShareMyNumber } from "@/lib/work-api";
 
 import { formatMoney } from "@/components/ux/kit/money";
 import Link from "next/link";
-import { apiEditMessage, apiPinMessage, EDIT_WINDOW_MS, MAX_PINS, MESSAGE_MAX, type ConvBubble, type ConvDetail, type ConvRow, type InboxSummary, type PartyKind } from "@/lib/me-messages-api";
+import { apiConversation, apiEditMessage, apiPinMessage, EDIT_WINDOW_MS, MAX_PINS, MESSAGE_MAX, type ConvBubble, type ConvDetail, type ConvRow, type InboxSummary, type PartyKind } from "@/lib/me-messages-api";
 import { useT } from "@/i18n";
 import { bubbleRadius, ChatDock, ChatFrame, ChatInput, ChatLog, JumpToLatest, Says, SendButton, Stamp, useChatScroll } from "@/components/ux/sakhi/chat";
 import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
@@ -104,6 +108,8 @@ export const DOT: Record<PartyKind, string> = {
   mentor: "var(--ux-violet)",
   circle: "var(--ux-pink)",
   team: "var(--ux-blue)",
+  work: "var(--ux-orange)",
+  member: "var(--ux-green)",
 };
 export const TAG: Record<PartyKind, { label: string }> = {
   buyer: { label: "Buyer" },
@@ -111,6 +117,8 @@ export const TAG: Record<PartyKind, { label: string }> = {
   mentor: { label: "Mentor" },
   circle: { label: "Circle" },
   team: { label: "Team" },
+  work: { label: "Work" },
+  member: { label: "Member" },
 };
 
 /** The kind, as the one neutral chip every row carries. */
@@ -129,6 +137,8 @@ export const FILTERS: { value: PartyKind | "all"; label: string }[] = [
   { value: "seller", label: "Sellers" },
   { value: "mentor", label: "Mentors" }, { value: "circle", label: "Circles" },
   { value: "team", label: "Team" },
+  { value: "work", label: "Work" },
+  { value: "member", label: "Members" },
 ];
 
 export function Header({ summary, className, rows, onPick }: {
@@ -165,7 +175,10 @@ export function Header({ summary, className, rows, onPick }: {
   return (
     <header className={`flex-wrap items-end gap-4 ${className ?? "flex"}`}>
       <div className="min-w-0 flex-1">
-        <h1 className="ux-screen-title text-2xl font-bold tracking-[-0.03em]" style={{ color: "var(--ux-ink)" }}>Messages</h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title text-2xl font-bold tracking-[-0.03em] min-w-0" style={{ color: "var(--ux-ink)" }}>Messages</h1>
+        </div>
         <p className="mt-1 hidden text-xsm lg:block" style={{ color: "var(--ux-muted)" }}>{tr("messages.buyersMentorsAndYourCirclesAll")}</p>
         <p className="mt-1.5 text-[13px] lg:hidden" style={{ color: "var(--ux-muted)" }}>{line}</p>
       </div>
@@ -1016,6 +1029,16 @@ export function Thread({
       <ChatDock className="lg:border-t lg:border-[var(--ux-line-strong)] lg:px-4 lg:pb-4">
         <JumpToLatest scroll={scroll} label="Latest" />
 
+        {conv.closed ? (
+          <p className="flex items-center gap-2 px-1 py-3 text-xsm font-semibold lg:px-0"
+             style={{ color: "var(--ux-muted)" }}>
+            <Icons.Lock className="h-[14px] w-[14px] shrink-0" /> This chat is closed.
+          </p>
+        ) : (<>
+        {conv.kind === "work" && conv.party?.role === "Looking to hire" && (
+          <WorkActions conv={conv} onChanged={onChanged} />
+        )}
+
         {!typed && (
           <div className="ux-chat-tip ux-chiprow flex gap-2 px-1 pb-2 pt-2 lg:flex-wrap lg:px-0 lg:pt-3">
             {QUICK.map((q) => (
@@ -1096,8 +1119,55 @@ export function Thread({
         <p className="ux-chat-tip flex shrink-0 items-center gap-2 pb-2 text-[12px] leading-snug lg:pt-3"
            style={{ color: "var(--ux-muted)" }}>
           <Icons.ShieldCheck className="h-[13px] w-[13px] shrink-0" style={{ color: "var(--ux-green-ink)" }} />{tr("messages.keepPaymentsInsideWomsakhiNobodyHe")}</p>
+        </>)}
       </ChatDock>
     </ChatFrame>
+  );
+}
+
+/**
+ * The two things only the woman being asked about work can do: send her own
+ * number into the chat (it is never shown to anyone otherwise), or say she is
+ * not interested — which closes the chat and hides her from that person.
+ */
+function WorkActions({ conv, onChanged }: { conv: ConvDetail; onChanged: (d: ConvDetail) => void }) {
+  const confirm = useConfirm();
+  const toast = useToast();
+  const [busy, setBusy] = useState<"" | "share" | "close">("");
+
+  async function run(kind: "share" | "close") {
+    const sure = await confirm(kind === "share"
+      ? { title: "Send your mobile number into this chat?",
+          description: `${conv.name.split(" ")[0]} will see it and can call or WhatsApp you.`,
+          confirmLabel: "Send my number", cancelLabel: "Not now" }
+      : { title: "Close this chat?",
+          description: "They won't be able to message you or find you again.",
+          confirmLabel: "Not interested", cancelLabel: "Keep talking", danger: true });
+    if (!sure) return;
+    setBusy(kind);
+    try {
+      if (kind === "share") await apiShareMyNumber(conv.id);
+      else await apiNotInterested(conv.id);
+      onChanged(await apiConversation(conv.id));
+      toast.success(kind === "share" ? "Your number was sent" : "Chat closed");
+    } catch (e) {
+      toast.error(apiErrorMessage(e, "That did not go through. Try again."));
+    } finally { setBusy(""); }
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2 px-1 pt-2 lg:px-0 lg:pt-3">
+      <button type="button" disabled={!!busy} onClick={() => void run("share")}
+              className="ux-press ux-tap-exempt inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold"
+              style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>
+        <Icons.Phone className="h-[14px] w-[14px]" /> {busy === "share" ? "Sending…" : "Share my number"}
+      </button>
+      <button type="button" disabled={!!busy} onClick={() => void run("close")}
+              className="ux-press ux-tap-exempt inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold"
+              style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+        <Icons.X className="h-[14px] w-[14px]" /> {busy === "close" ? "Closing…" : "Not interested"}
+      </button>
+    </div>
   );
 }
 
@@ -1288,19 +1358,22 @@ export function OrderCard({ order }: { order: NonNullable<ConvBubble["order"]> }
           </b>
         </div>
       </div>
+      {/* This card is a record of what was agreed, kept as it was — it carries
+          no order id, so it cannot change the order. These two used to be
+          buttons that did nothing: the payment state is now a plain label,
+          and changing an order happens where orders live. */}
       <div className="flex gap-2 px-3.5 pb-3.5">
-        <button type="button"
-                className="ux-press flex flex-1 items-center justify-center gap-1.5 rounded-[12px] py-2.5 text-xs font-bold"
-                style={order.paid
-                  ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
-                  : { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
-          <Icons.Wallet className="h-[13px] w-[13px]" /> {order.paid ? "Paid" : "Not paid"}
-        </button>
-        <button type="button"
-                className="ux-press flex-1 rounded-[12px] py-2.5 text-xs font-bold"
-                style={{ background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
-          Change
-        </button>
+        <span className="flex flex-1 items-center justify-center gap-1.5 rounded-[12px] py-2.5 text-xs font-bold"
+              style={order.paid
+                ? { background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }
+                : { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
+          <Icons.Wallet className="h-[13px] w-[13px]" /> {order.paid ? "Paid" : "Not paid yet"}
+        </span>
+        <a href="/app/documents#orders"
+           className="ux-press flex flex-1 items-center justify-center rounded-[12px] py-2.5 text-xs font-bold"
+           style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
+          Open my orders
+        </a>
       </div>
     </div>
   );

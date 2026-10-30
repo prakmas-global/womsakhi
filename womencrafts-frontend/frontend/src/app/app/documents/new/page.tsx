@@ -1,7 +1,14 @@
 "use client";
 
+import { JourneyTrail } from "@/components/ux/home/JourneyTrail";
+
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
+import { CatThumb, StoreCategoryPicker, SubChips, catPicture, listingPicture, useShopCategories } from "@/components/ux/shop/categories";
+import { categoryErrorCode, subsFor } from "@/lib/shop-categories-api";
+import { apiErrorMessage } from "@/lib/api";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -15,13 +22,13 @@ import { CHOICES, FIELDS, STEP_NAV } from "@/components/ux/earn/phone";
 // `Sheet`, which is a drawer and the wrong shape for a choice like this.
 import Modal from "@/design-system/primitives/Modal";
 import {
-  CATEGORIES as RAW_CATEGORIES, HIGHLIGHTS as RAW_HIGHLIGHTS, PRICE_BANDS as RAW_PRICE_BANDS, PRICE_TYPES as RAW_PRICE_TYPES, PROCESSING_TIMES as RAW_PROCESSING_TIMES,
+  HIGHLIGHTS as RAW_HIGHLIGHTS, PRICE_BANDS as RAW_PRICE_BANDS, PRICE_TYPES as RAW_PRICE_TYPES, PROCESSING_TIMES as RAW_PROCESSING_TIMES,
   QUOTE_FIELDS as RAW_QUOTE_FIELDS, RESPONSE_TIMES as RAW_RESPONSE_TIMES,
 } from "@/components/ux/earn/data";
 
 import { Saying, Tips } from "./wizard-views";
 import {
-  Area, Check, Choice, Label, Select, Steps, Text, Toggle,
+  Area, Check, Choice, Label, More, Picks, Select, Stepper, Steps, Text, Toggle,
 } from "@/components/ux/kit/form";
 
 /** What the four steps of adding a listing are called. */
@@ -41,6 +48,21 @@ type PriceMode = "fixed" | "range" | "quote";
 type Delivery = "physical" | "digital" | "service";
 
 const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
+/** Sentences sellers write again and again — tapped, not typed. */
+const DELIVERY_PHRASES = [
+  "Wrapped in cloth, not plastic", "Hand delivery in my area", "Cash or UPI on delivery",
+  "Pick up from my home", "Sent by post with tracking", "Ready in 2–3 days",
+];
+const QUOTE_PHRASES = [
+  "Tell me the size", "Tell me the colour", "Send a photo of what you want",
+  "Say when you need it", "Bulk orders welcome",
+];
+/** Add or remove one phrase in a ". "-joined note. */
+const togglePhrase = (note: string, phrase: string) => {
+  const parts = note.split(". ").map((x) => x.trim()).filter(Boolean);
+  return (parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase]).join(". ");
+};
 
 const TIPS: Record<number, { title: string; items: string[] }> = {
   1: { title: "Making it findable", items: [
@@ -88,7 +110,6 @@ const TIPS: Record<number, { title: string; items: string[] }> = {
 export default function AddListingPage() {
   const PRICE_BANDS = useTranslated(RAW_PRICE_BANDS);
   const HIGHLIGHTS = useTranslated(RAW_HIGHLIGHTS);
-  const CATEGORIES = useTranslated(RAW_CATEGORIES);
   const RESPONSE_TIMES = useTranslated(RAW_RESPONSE_TIMES);
   const QUOTE_FIELDS = useTranslated(RAW_QUOTE_FIELDS);
   const PROCESSING_TIMES = useTranslated(RAW_PROCESSING_TIMES);
@@ -107,8 +128,12 @@ export default function AddListingPage() {
   // Step 1
   const [kind, setKind] = useState<Kind>("product");
   const [title, setTitle] = useState("");
-  const [cat, setCat] = useState("");
+  // Her shop's one category is fixed (Store settings); she picks the
+  // sub-category. `sub` is a sub-category key from the staff-controlled tree.
+  const cats = useShopCategories();
+  const storeCat = cats.storeCat;
   const [sub, setSub] = useState("");
+  const [catError, setCatError] = useState("");
   const [short, setShort] = useState("");
   const [long, setLong] = useState("");
   const [tags, setTags] = useState("");
@@ -145,7 +170,23 @@ export default function AddListingPage() {
   const [askOpen, setAskOpen] = useState(false);
   const [respondIn, setRespondIn] = useState(RESPONSE_TIMES[1]);
 
-  const subs = useMemo(() => CATEGORIES.find((c) => c.label === cat)?.subs ?? [], [cat, CATEGORIES]);
+  // "Both" is saved as a product, so it takes the sub-categories products can use.
+  const subRows = useMemo(() => subsFor(storeCat, kind === "service" ? "service" : "product"), [storeCat, kind]);
+  const subRow = subRows.find((x) => x.key === sub) ?? null;
+  const subs = useMemo(() => subRows.map((x) => x.name), [subRows]);
+  const cat = storeCat?.name ?? "";
+
+  /** Written for her when she leaves the one-liner empty: "Blouses — handmade, made to order". */
+  const autoLine = useMemo(() => {
+    const what = subRow?.name || cat;
+    if (!what) return "";
+    const how = picked.slice(0, 3).join(", ").toLowerCase();
+    return how ? `${what} — ${how}` : what;
+  }, [subRow, cat, picked]);
+  const tagIdeas = useMemo(
+    () => Array.from(new Set([subRow?.name ?? "", cat, ...picked].filter(Boolean))).slice(0, 8), [subRow, cat, picked]);
+  const tagList = tags.split(",").map((x) => x.trim()).filter(Boolean);
+
 
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -155,19 +196,19 @@ export default function AddListingPage() {
   const photoInput = useRef<HTMLInputElement>(null);
 
   const draft = useMemo(() => ({
-    at, done, kind, title, cat, sub, short, long, tags, picked,
+    at, done, kind, title, sub, short, long, tags, picked,
     mode, price, was, discountOn, discount, priceType, minQty, band,
     customLow, customHigh, trackStock, stock, lowAt, whenOut, delivery,
     prep, ships, freeShip, deliveryNote, quoteOn, quoteAsk, quoteMsg,
     respondIn, photos,
-  }), [at, done, kind, title, cat, sub, short, long, tags, picked,
+  }), [at, done, kind, title, sub, short, long, tags, picked,
     mode, price, was, discountOn, discount, priceType, minQty, band,
     customLow, customHigh, trackStock, stock, lowAt, whenOut, delivery,
     prep, ships, freeShip, deliveryNote, quoteOn, quoteAsk, quoteMsg,
     respondIn, photos]);
   const restoreDraft = useCallback((d: typeof draft) => {
     setAt(d.at || 1); setDone(d.done || 1); setKind(d.kind || "product");
-    setTitle(d.title || ""); setCat(d.cat || ""); setSub(d.sub || "");
+    setTitle(d.title || ""); setSub(d.sub || "");
     setShort(d.short || ""); setLong(d.long || ""); setTags(d.tags || "");
     setPicked(Array.isArray(d.picked) ? d.picked : []); setMode(d.mode || "fixed");
     setPrice(d.price || ""); setWas(d.was || ""); setDiscountOn(Boolean(d.discountOn));
@@ -225,18 +266,20 @@ export default function AddListingPage() {
       await apiSaveListing({
         kind: kind === "service" ? "service" : "product",
         title: title.trim(),
-        desc: [short.trim(), long.trim()].filter(Boolean).join("\n\n"),
+        desc: [short.trim() || autoLine, long.trim()].filter(Boolean).join("\n\n"),
         price_minor: mode === "quote" ? 0 : Math.round(effectivePrice * 100),
         rate: mode === "quote" ? "By quote" : priceType,
         stock: kind === "service" || mode === "quote" || !trackStock
           ? null : Number(stock.replace(/[^\d]/g, "")) || 0,
-        category: sub || cat,
+        category_key: storeCat?.key ?? "",
+        subcategory_key: subRow?.key ?? "",
         photo: photos[0] || "",
         photos,
         status: asDraft ? "paused" : "live",
         price_mode: mode,
         price_high_minor: mode === "range" && band ? Math.round(band.high * 100) : 0,
-        compare_at_minor: Math.round((Number(was.replace(/[^\d.]/g, "")) || 0) * 100),
+        // "Run a discount" is the one way to show a saving: the old price is her price.
+        compare_at_minor: discountOn && discount ? Math.round((Number(price.replace(/[^\d.]/g, "")) || 0) * 100) : 0,
         min_quantity: Math.max(1, Number(minQty.replace(/[^\d]/g, "")) || 1),
         low_stock_at: Math.max(0, Number(lowAt.replace(/[^\d]/g, "")) || 0),
         continue_when_out: whenOut === "continue",
@@ -246,27 +289,35 @@ export default function AddListingPage() {
         free_shipping: freeShip,
         delivery_note: deliveryNote.trim(),
         highlights: picked,
-        tags: tags.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 12),
+        tags: (tagList.length ? tagList : tagIdeas).slice(0, 12),
         quote_fields: mode === "quote" ? quoteAsk : [],
         quote_message: mode === "quote" ? quoteMsg.trim() : "",
         response_time: mode === "quote" ? respondIn : "",
       });
       clearDraft();
       router.push("/app/documents/listings");
-    } catch {
-      setSaveError("That did not save. Nothing you typed is lost — try again in a moment.");
+    } catch (e) {
+      if (categoryErrorCode(e)) {
+        // A category rule: back to the step where she can fix it, in its words.
+        setCatError(apiErrorMessage(e));
+        setAt(1);
+        cats.reload();
+      } else {
+        setSaveError("That did not save. Nothing you typed is lost — try again in a moment.");
+      }
     } finally {
       setSaving(false);
     }
-  }, [kind, title, short, long, mode, price, priceType, trackStock, stock, sub, cat, router,
-      saving, uploading, photos, band, discountOn, discount, was, minQty, lowAt, whenOut,
-      delivery, prep, ships, freeShip, deliveryNote, picked, tags, quoteAsk, quoteMsg, respondIn, clearDraft]);
+  }, [kind, title, short, long, mode, price, priceType, trackStock, stock, subRow, storeCat, cats, router,
+      saving, uploading, photos, band, discountOn, discount, minQty, lowAt, whenOut,
+      delivery, prep, ships, freeShip, deliveryNote, picked, quoteAsk, quoteMsg, respondIn, clearDraft,
+      autoLine, tagList, tagIdeas]);
 
   const toggleIn = useCallback((list: string[], set: (v: string[]) => void, id: string) => {
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   }, []);
 
-  const step1Ok = title.trim().length > 2 && cat && short.trim().length > 5;
+  const step1Ok = title.trim().length > 2 && !!storeCat && !!subRow;
   const step2Ok = mode === "quote" ? quoteOn : mode === "range" ? Boolean(band && band.low > 0)
     : Number(price.replace(/[^\d.]/g, "")) > 0;
 
@@ -277,7 +328,7 @@ export default function AddListingPage() {
   }, []);
 
   const priceNum = Number(price.replace(/[^\d.]/g, "")) || 0;
-  const wasNum = Number(was.replace(/[^\d.]/g, "")) || 0;
+  const wasNum = discountOn ? Number(price.replace(/[^\d.]/g, "")) || 0 : 0;
   const discNum = Number(discount.replace(/[^\d.]/g, "")) || 0;
   const shownPrice = discountOn && discNum ? discNum : priceNum;
   const off = wasNum > shownPrice && shownPrice > 0
@@ -301,9 +352,21 @@ export default function AddListingPage() {
               {tr("documentsNew.howItWillLook")}
             </h2>
             <div className="overflow-hidden rounded-[12px] border" style={{ borderColor: v("--ux-line") }}>
-              <div className="grid h-[132px] place-items-center" style={{ background: v("--ux-surface-2") }}>
+              <div className="relative grid h-[132px] place-items-center" style={{ background: v("--ux-surface-2") }}>
                 {photos[0] ? <img src={photos[0]} alt={title || "Listing photo"} className="h-full w-full object-contain" />
-                  : <Icons.Image className="h-[30px] w-[30px]" style={{ color: v("--ux-faint") }} />}
+                  : storeCat ? (
+                    /* No photo yet: what buyers see until she adds one — its kind's picture. */
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={listingPicture({ id: "new", title, kind: kind === "service" ? "service" : "product",
+                                                 category_key: storeCat.key, subcategory_key: subRow?.key }, cats.data?.categories)}
+                           alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
+                      <span className="absolute bottom-2 start-2 rounded-full px-2 py-0.5 text-2xs font-semibold"
+                            style={{ background: "color-mix(in srgb, var(--ux-surface) 88%, transparent)", color: v("--ux-ink-2") }}>
+                        Until you add a photo
+                      </span>
+                    </>
+                  ) : <Icons.Image className="h-[30px] w-[30px]" style={{ color: v("--ux-faint") }} />}
               </div>
               <div className="p-3">
                 <p className="truncate text-xsm font-bold" style={{ color: v("--ux-ink") }}>
@@ -334,7 +397,7 @@ export default function AddListingPage() {
                   </p>
                 )}
                 <p className="mt-2 line-clamp-2 text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
-                  {short.trim() || "Your short description shows here."}
+                  {short.trim() || autoLine || "Your short description shows here."}
                 </p>
               </div>
             </div>
@@ -342,14 +405,18 @@ export default function AddListingPage() {
         </div>
       }
     >
+      <JourneyTrail goal="sell" />
       <Back to="/app/documents/listings" label={tr("documents.whatYouSell")} className="mb-4" />
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:mb-4">
         <div className="min-w-0">
-          <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
-              style={{ color: v("--ux-ink") }}>
-            {tr("documents.addSomethingToSell")}
-          </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em] min-w-0"
+                style={{ color: v("--ux-ink") }}>
+              {tr("documents.addSomethingToSell")}
+            </h1>
+          </div>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             {tr("documentsNew.tellBuyersWhatYouMakeOr")}
           </p>
@@ -381,38 +448,43 @@ export default function AddListingPage() {
                     on={kind === "both"} onClick={() => setKind("both")} />
           </div>
 
-          <div className="mt-5">
-            <Label need>{tr("circlesNew.whatIsItCalled")}</Label>
-            <Text value={title} onChange={setTitle} max={100} label="Title"
-                  placeholder={tr("documentsNew.handmadeCottonKurta")} />
-            <span className="mt-1 block text-end text-2xs" style={{ color: v("--ux-faint") }}>
-              {title.length}/100
-            </span>
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label need>Category</Label>
-              <Select value={cat} onChange={(c) => { setCat(c); setSub(""); }} label="Category"
-                      placeholder={tr("documentsNew.chooseOne")} options={CATEGORIES.map((c) => c.label)} />
-            </div>
-            <div>
-              <Label>Kind of {cat ? "it" : "thing"}</Label>
-              <Select value={sub} onChange={setSub} label="Subcategory"
-                      placeholder={cat ? "Choose one" : "Pick a category first"} options={subs} />
-            </div>
+          {/* Category first: her shop's one category, then the kind of thing
+              inside it. Once she has picked, the name is one tap. */}
+          <div className="mt-5" data-wizard-category>
+            {!cats.data ? (
+              <p className="text-xsm" style={{ color: v("--ux-muted") }}>Loading what your shop sells…</p>
+            ) : !storeCat ? (
+              <>
+                <Label need>First, what does your shop sell?</Label>
+                <p className="mb-3 text-xs" style={{ color: v("--ux-muted") }}>
+                  Pick one category. Everything you list goes inside it.
+                </p>
+                <StoreCategoryPicker data={cats.data} onChanged={() => { setCatError(""); cats.reload(); }} />
+              </>
+            ) : (
+              <>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <Label need>{`What kind of ${storeCat.name.toLowerCase()}?`}</Label>
+                  <Link href="/app/documents/store#category" className="ms-auto inline-flex items-center gap-1.5 text-xs font-bold" style={{ color: v("--ux-brand") }}>
+                    <CatThumb src={catPicture(storeCat)} size={20} /> Your shop sells {storeCat.name} · Change
+                  </Link>
+                </div>
+                <SubChips subs={subRows} value={sub} parent={storeCat}
+                          onPick={(x) => { setSub(x.key); setCatError(""); if (!title.trim() || subs.includes(title)) setTitle(x.name); }}
+                          empty={`Nothing in ${storeCat.name} can be listed as ${kind === "service" ? "a service" : "a product"}. Try the other kind.`} />
+              </>
+            )}
+            {catError && <p role="alert" className="mt-2 text-xsm font-semibold" style={{ color: v("--ux-danger-ink") }}>{catError}</p>}
           </div>
 
           <div className="mt-4">
-            <Label need>{tr("documentsNew.inOneLine")}</Label>
-            <Area value={short} onChange={setShort} max={200} rows={2} label={tr("circlesCreate.shortDescription")}
-                  placeholder={tr("documentsNew.handStitchedCottonKurtaAvailableIn")} />
-          </div>
-
-          <div className="mt-3">
-            <Label>{tr("messages.everythingElse")}</Label>
-            <Area value={long} onChange={setLong} max={1000} rows={5} label={tr("documentsNew.detailedDescription")}
-                  placeholder={tr("documentsNew.materialSizesHowItIsMade")} />
+            <Label need>{tr("circlesNew.whatIsItCalled")}</Label>
+            <Text value={title} onChange={setTitle} max={100} label="Title"
+                  placeholder={tr("documentsNew.handmadeCottonKurta")} />
+            {storeCat && !title.trim() && subs.length > 0 && (
+              <Picks options={subs} value={title} label="Quick names"
+                     onPick={(x) => { setTitle(x); setSub(subRows.find((r) => r.name === x)?.key ?? sub); }} />
+            )}
           </div>
 
           <div className="mt-4">
@@ -434,14 +506,31 @@ export default function AddListingPage() {
             </div>
           </div>
 
-          <div className="mt-4">
-            <Label>{tr("documentsNew.wordsPeopleMightSearch")}</Label>
-            <Text value={tags} onChange={setTags} label="Tags"
-                  placeholder={tr("documentsNew.cottonKurtaHandmadeFestival")} />
-            <p className="mt-1 text-2xs" style={{ color: v("--ux-faint") }}>
-              {tr("documentsNew.separateWithCommasTheseHelpBuyers")}
+          {autoLine && !short.trim() && (
+            <p className="mt-4 rounded-[12px] px-4 py-3 text-xsm leading-relaxed" style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
+              <Icons.Sparkles className="me-1.5 inline h-[14px] w-[14px] align-[-2px]" style={{ color: v("--ux-brand") }} />
+              Buyers will read: <b style={{ color: v("--ux-ink") }}>{autoLine}</b>
             </p>
-          </div>
+          )}
+
+          <More label="Add your own words (optional)" open={!!(short || long || tags)}>
+            <Label>{tr("documentsNew.inOneLine")}</Label>
+            <Area value={short} onChange={setShort} max={200} rows={2} label={tr("circlesCreate.shortDescription")}
+                  placeholder={autoLine || tr("documentsNew.handStitchedCottonKurtaAvailableIn")} />
+            <div className="mt-3">
+              <Label>{tr("messages.everythingElse")}</Label>
+              <Area value={long} onChange={setLong} max={1000} rows={4} label={tr("documentsNew.detailedDescription")}
+                    placeholder={tr("documentsNew.materialSizesHowItIsMade")} />
+            </div>
+            <div className="mt-3">
+              <Label>{tr("documentsNew.wordsPeopleMightSearch")}</Label>
+              <Picks options={tagIdeas} value={tagList} multi label="Search words"
+                     onPick={(t) => setTags((tagList.includes(t) ? tagList.filter((x) => x !== t) : [...tagList, t]).join(", "))} />
+              <p className="mt-1.5 text-2xs" style={{ color: v("--ux-faint") }}>
+                Tap to add. If you add none, we use your category and highlights.
+              </p>
+            </div>
+          </More>
 
           <div className={`mt-6 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                style={{ borderColor: v("--ux-line") }}>
@@ -494,7 +583,7 @@ export default function AddListingPage() {
 
             {mode !== "quote" ? (
               <>
-                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <div>
                     <Label need>{tr("documentsNew.yourPrice")}</Label>
                     <Text value={price} onChange={setPrice} label="Price" prefix="₹" type="number"
@@ -504,14 +593,6 @@ export default function AddListingPage() {
                         Within {money(band.low)} – {money(band.high)}
                       </p>
                     )}
-                  </div>
-                  <div>
-                    <Label>{tr("documentsNew.whatItUsedToBe")}</Label>
-                    <Text value={was} onChange={setWas} label={tr("documentsNew.compareAtPrice")} prefix="₹" type="number"
-                          placeholder="2000" />
-                    <p className="mt-1 text-2xs" style={{ color: v("--ux-faint") }}>
-                      {tr("documentsNew.shownStruckThroughSoTheSaving")}
-                    </p>
                   </div>
                   <div>
                     <Label>{tr("documentsNew.soldBy")}</Label>
@@ -532,9 +613,9 @@ export default function AddListingPage() {
                   )}
                 </div>
 
-                <div className="mt-4 max-w-[240px]">
+                <div className="mt-4">
                   <Label>{tr("documentsNew.smallestOrderYouWillTake")}</Label>
-                  <Text value={minQty} onChange={setMinQty} label={tr("documentsNew.minimumOrderQuantity")} type="number" />
+                  <Stepper value={minQty} onChange={setMinQty} label={tr("documentsNew.minimumOrderQuantity")} min={1} presets={[1, 2, 5, 10]} />
                 </div>
               </>
             ) : (
@@ -558,9 +639,13 @@ export default function AddListingPage() {
 
                       <div className="mt-4">
                         <Label>{tr("documentsNew.anythingYouWantToSayFirst")}</Label>
-                        <Area value={quoteMsg} onChange={setQuoteMsg} max={300} rows={3}
-                              label={tr("documentsNew.messageToBuyers")}
-                              placeholder={tr("documentsNew.tellMeTheSizeTheColour")} />
+                        <Picks options={QUOTE_PHRASES} value={quoteMsg.split(". ")} multi label={tr("documentsNew.messageToBuyers")}
+                               onPick={(x) => setQuoteMsg(togglePhrase(quoteMsg, x))} />
+                        <div className="mt-2.5">
+                          <Area value={quoteMsg} onChange={setQuoteMsg} max={300} rows={2}
+                                label={tr("documentsNew.messageToBuyers")}
+                                placeholder={tr("documentsNew.tellMeTheSizeTheColour")} />
+                        </div>
                       </div>
 
                       <div className="mt-3 max-w-[280px]">
@@ -622,16 +707,16 @@ export default function AddListingPage() {
               </div>
 
               {trackStock && (
-                <div className="mt-4 grid gap-4 lg:grid-cols-[160px_160px_minmax(0,1fr)]">
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div>
                     <Label need>{tr("documentsNew.howManyNow")}</Label>
-                    <Text value={stock} onChange={setStock} label={tr("documentsNew.totalStock")} type="number" placeholder="50" />
+                    <Stepper value={stock} onChange={setStock} label={tr("documentsNew.totalStock")} presets={[1, 5, 10, 25, 50]} />
                   </div>
                   <div>
                     <Label>{tr("documentsNew.warnMeAt")}</Label>
-                    <Text value={lowAt} onChange={setLowAt} label={tr("documentsNew.lowStockAlert")} type="number" />
+                    <Stepper value={lowAt} onChange={setLowAt} label={tr("documentsNew.lowStockAlert")} presets={[2, 5, 10]} />
                   </div>
-                  <div className="rounded-[12px] p-4 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
+                  <div className="rounded-[12px] p-4 sm:col-span-2 lg:p-3.5" style={{ background: v("--ux-surface-2") }}>
                     <span className="mb-2 block text-xsm font-bold" style={{ color: v("--ux-ink") }}>
                       {tr("documentsNew.whenItRunsOut")}
                     </span>
@@ -726,12 +811,16 @@ export default function AddListingPage() {
               </div>
             )}
 
-            <div className="mt-4">
-              <Label>{tr("documentsNew.anythingElseTheyShouldKnow")}</Label>
-              <Area value={deliveryNote} onChange={setDeliveryNote} max={300} rows={2}
-                    label={tr("documentsNew.additionalDeliveryInformation")}
-                    placeholder={tr("documentsNew.wrappedInClothNotPlasticUsually")} />
-            </div>
+            <More label={`${tr("documentsNew.anythingElseTheyShouldKnow")} (optional)`} open={!!deliveryNote}>
+              <Picks options={DELIVERY_PHRASES} value={deliveryNote.split(". ")} multi
+                     label={tr("documentsNew.additionalDeliveryInformation")}
+                     onPick={(x) => setDeliveryNote(togglePhrase(deliveryNote, x))} />
+              <div className="mt-2.5">
+                <Area value={deliveryNote} onChange={setDeliveryNote} max={300} rows={2}
+                      label={tr("documentsNew.additionalDeliveryInformation")}
+                      placeholder={tr("documentsNew.wrappedInClothNotPlasticUsually")} />
+              </div>
+            </More>
 
             <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4 ${STEP_NAV}`}
                  style={{ borderColor: v("--ux-line") }}>
@@ -836,7 +925,7 @@ export default function AddListingPage() {
           <dl className="mt-4 divide-y" style={{ borderColor: v("--ux-line") }}>
             {[
               { k: "What it is",   val: title.trim() || "—", step: 1 },
-              { k: "Category",     val: [cat, sub].filter(Boolean).join(" · ") || "—", step: 1 },
+              { k: "Category",     val: [cat, subRow?.name].filter(Boolean).join(" · ") || "—", step: 1 },
               { k: "In one line",  val: short.trim() || "—", step: 1 },
               { k: "Price",        val: mode === "quote" ? "Buyers ask for a price"
                                      : band ? `${money(band.low)} – ${money(band.high)}`

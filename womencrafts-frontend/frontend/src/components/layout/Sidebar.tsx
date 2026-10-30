@@ -17,6 +17,7 @@ import {
   MessageSquareHeart,
   Bot,
   Settings,
+  ListTree,
   ChevronDown,
   Eye,
   EyeOff,
@@ -82,6 +83,11 @@ const NAV: NavItem[] = [
     href: "/dashboard/appointments",
     icon: CalendarClock,
     module: "appointments",
+    children: [
+      { label: "All appointments", href: "/dashboard/appointments" },
+      { label: "Doctors", href: "/dashboard/doctors" },
+      { label: "Doctor consultations", href: "/dashboard/doctors/consultations" },
+    ],
   },
   {
     label: "Services & Types",
@@ -129,6 +135,7 @@ const NAV: NavItem[] = [
     children: [
       { label: "Opportunities", href: "/dashboard/opportunities" },
       { label: "Applications", href: "/dashboard/applications" },
+      { label: "Work skills", href: "/dashboard/work-skills" },
       { label: "Events", href: "/dashboard/events" },
       { label: "Mentors", href: "/dashboard/mentors" },
       { label: "Mentor requests", href: "/dashboard/mentors/requests" },
@@ -143,8 +150,10 @@ const NAV: NavItem[] = [
       { label: "Listings", href: "/dashboard/market/listings" },
       { label: "Orders", href: "/dashboard/market/orders" },
       { label: "Reviews", href: "/dashboard/market/reviews" },
+      { label: "Rent & borrow", href: "/dashboard/market/rentals" },
       { label: "Group buys", href: "/dashboard/market/group-buys" },
       { label: "Sellers & licences", href: "/dashboard/market/sellers" },
+      { label: "Shop categories", href: "/dashboard/market/categories" },
     ],
   },
   {
@@ -215,6 +224,10 @@ const NAV: NavItem[] = [
     href: "/dashboard/content",
     icon: LayoutList,
     module: "content",
+    children: [
+      { label: "Content library", href: "/dashboard/content" },
+      { label: "Health videos", href: "/dashboard/health-videos" },
+    ],
   },
   {
     label: "Feedback",
@@ -227,6 +240,14 @@ const NAV: NavItem[] = [
     href: "/dashboard/ai",
     icon: Bot,
     module: "ai",
+  },
+  {
+    // The lists staff control across every module. Open to every staff
+    // member; each list inside is gated by its own module's permissions.
+    label: "Masters",
+    href: "/dashboard/masters",
+    icon: ListTree,
+    module: "dashboard",
   },
   {
     label: "Settings",

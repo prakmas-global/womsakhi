@@ -7,7 +7,7 @@ import * as Icons from "@/components/ux/icons";
 import { Btn, I, IconTile, Rating, Sheet, v } from "@/components/ux/kit";
 import { QUOTE_ASK as RAW_QUOTE_ASK } from "@/components/ux/earn/data";
 
-import { Area, Check, Label, Text } from "@/components/ux/kit/form";
+import { Area, Check, Label, Picks, Stepper, Text } from "@/components/ux/kit/form";
 import { useTranslated } from "@/i18n/data";
 
 /**
@@ -24,6 +24,26 @@ import { useTranslated } from "@/i18n/data";
  * This is a seller-side preview. Buyers send real quote questions from the
  * market listing, through `/market/listings/{id}/ask` into the seller inbox.
  */
+
+/** What a buyer can tap instead of type — the seller is previewing how easy her form is. */
+const NEED_PHRASES = ["Same as the photo", "In different colours", "Custom size", "For a wedding", "To resell in my shop"];
+const BY_PICKS: { label: string; days: number }[] = [
+  { label: "In 3 days", days: 3 }, { label: "In a week", days: 7 },
+  { label: "In 2 weeks", days: 14 }, { label: "In a month", days: 30 },
+];
+const BUDGETS: { label: string; low: string; high: string }[] = [
+  { label: "Under ₹1,000", low: "", high: "1000" }, { label: "₹1,000 – ₹2,500", low: "1000", high: "2500" },
+  { label: "₹2,500 – ₹5,000", low: "2500", high: "5000" }, { label: "Above ₹5,000", low: "5000", high: "" },
+];
+const PLACE_PICKS = ["I will pick it up", "Same town as you"];
+const dateIn = (days: number) => {
+  const d = new Date(); d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const togglePhrase = (note: string, phrase: string) => {
+  const parts = note.split(". ").map((x) => x.trim()).filter(Boolean);
+  return (parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase]).join(". ");
+};
 
 export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: {
   open: boolean;
@@ -122,7 +142,10 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
       {wants.has("needs") && (
         <div className="mb-4">
           <Label need>{tr("intake.title")}</Label>
-          <Area value={needs} onChange={setNeeds} max={500} rows={4} label={tr("quotesheet.whatDoYouNeed")}
+          <Picks options={NEED_PHRASES} value={needs.split(". ")} multi label={tr("quotesheet.whatDoYouNeed")}
+                 onPick={(x) => setNeeds(togglePhrase(needs, x))} />
+          <div className="mt-2.5" />
+          <Area value={needs} onChange={setNeeds} max={500} rows={3} label={tr("quotesheet.whatDoYouNeed")}
                 placeholder="e.g. 20 kurtas for my boutique. Please share pricing, available designs and delivery timeline." />
         </div>
       )}
@@ -130,12 +153,14 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <div>
           <Label need>{tr("quotesheet.howMany")}</Label>
-          <Text value={qty} onChange={setQty} type="number" label="Quantity" placeholder="e.g. 20" />
+          <Stepper value={qty} onChange={setQty} label="Quantity" min={1} presets={[1, 5, 10, 20, 50]} />
         </div>
         {wants.has("when") && (
           <div>
             <Label hint="(optional)">{tr("quotesheet.whenYouNeedItBy")}</Label>
             <Text value={by} onChange={setBy} type="date" label={tr("quotesheet.preferredDeliveryDate")} />
+            <Picks options={BY_PICKS.map((b) => b.label)} value={BY_PICKS.find((b) => dateIn(b.days) === by)?.label ?? ""}
+                   onPick={(l) => setBy(dateIn(BY_PICKS.find((b) => b.label === l)!.days))} label={tr("quotesheet.preferredDeliveryDate")} />
           </div>
         )}
       </div>
@@ -150,6 +175,10 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
             <Text value={budgetHigh} onChange={setBudgetHigh} type="number"
                   prefix="₹" label={tr("quotesheet.mostYouCanSpend")} placeholder="2,500" />
           </div>
+          <Picks options={BUDGETS.map((b) => b.label)}
+                 value={BUDGETS.find((b) => b.low === budgetLow && b.high === budgetHigh)?.label ?? ""}
+                 onPick={(l) => { const b = BUDGETS.find((x) => x.label === l)!; setBudgetLow(b.low); setBudgetHigh(b.high); }}
+                 label={tr("quotesheet.whatYouCanSpend")} />
         </div>
       )}
 
@@ -158,6 +187,7 @@ export function QuoteSheet({ open, onClose, listing, ask, message, respondIn }: 
           <Label need>{tr("quotesheet.whereItHasToReach")}</Label>
           <Text value={place} onChange={setPlace} label={tr("quotesheet.deliveryLocation")}
                 placeholder={tr("quotesheet.cityOrPincode")} />
+          <Picks options={PLACE_PICKS} value={place} onPick={(x) => setPlace(place === x ? "" : x)} label={tr("quotesheet.whereItHasToReach")} />
         </div>
       )}
 

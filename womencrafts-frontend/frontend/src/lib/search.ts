@@ -33,8 +33,7 @@ import {
   LifeBuoy,
   Headset,
   Tag,
-  MapPin,
-} from "lucide-react";
+  MapPin, Clapperboard } from "lucide-react";
 
 /* ------------------------------------------------------------------
    Global search index — a curated, static, MODULE-WISE dataset that
@@ -114,6 +113,10 @@ const PAGES: SearchItem[] = [
   { id: "pg-circles-moderation", title: "Moderation", subtitle: "Posts and replies across circles", group: "Community", kind: "page", href: "/dashboard/circles/moderation", icon: ShieldCheck, tone: "amber", keywords: ["moderate", "hide", "post", "reply"] },
   { id: "pg-stories", title: "Success stories", subtitle: "Stories members submitted", group: "Community", kind: "page", href: "/dashboard/stories", icon: Layers, tone: "brand", keywords: ["story", "stories", "approve"] },
   { id: "pg-opportunities", title: "Opportunities", subtitle: "Jobs and craft orders", group: "Growth & Work", kind: "page", href: "/dashboard/opportunities", icon: Briefcase, tone: "amber", keywords: ["job", "opportunity", "work", "craft order"] },
+  { id: "pg-doctors", title: "Doctors", subtitle: "The doctors members can book in Health → Doctor Consultation", group: "Appointments", kind: "page", href: "/dashboard/doctors", icon: Briefcase, tone: "emerald", keywords: ["doctor", "consultation", "health", "prescription", "clinic"] },
+  { id: "pg-doctor-consultations", title: "Doctor consultations", subtitle: "Confirm bookings and add prescriptions", group: "Appointments", kind: "page", href: "/dashboard/doctors/consultations", icon: Briefcase, tone: "emerald", keywords: ["doctor", "consultation", "booking", "prescription"] },
+  { id: "pg-work-skills", title: "Work skills", subtitle: "Categories and skills members pick and search by", group: "Growth & Work", kind: "page", href: "/dashboard/work-skills", icon: Briefcase, tone: "amber", keywords: ["skill", "category", "master", "taxonomy", "work profile"] },
+  { id: "pg-health-videos", title: "Health videos", subtitle: "Workout, yoga and meditation videos members watch", group: "Content", kind: "page", href: "/dashboard/health-videos", icon: Clapperboard, tone: "violet", keywords: ["video", "youtube", "yoga", "workout", "health", "wellness"] },
   { id: "pg-applications", title: "Applications", subtitle: "Who applied to what", group: "Growth & Work", kind: "page", href: "/dashboard/applications", icon: Briefcase, tone: "amber", keywords: ["application", "applied", "shortlist"] },
   { id: "pg-events", title: "Events", subtitle: "Events and attendees", group: "Growth & Work", kind: "page", href: "/dashboard/events", icon: Layers, tone: "sky", keywords: ["event", "attendee", "register"] },
   { id: "pg-mentors", title: "Mentors", subtitle: "The mentor roster", group: "Growth & Work", kind: "page", href: "/dashboard/mentors", icon: UserRound, tone: "violet", keywords: ["mentor", "mentorship"] },
@@ -126,8 +129,10 @@ const PAGES: SearchItem[] = [
   { id: "pg-market-listings", title: "Market listings", subtitle: "Moderate what members sell", group: "Market", kind: "page", href: "/dashboard/market/listings", icon: Layers, tone: "brand", keywords: ["shop", "listing", "product", "market", "sell"] },
   { id: "pg-market-orders", title: "Market orders", subtitle: "Orders between members", group: "Market", kind: "page", href: "/dashboard/market/orders", icon: Layers, tone: "brand", keywords: ["order", "shop", "buyer", "seller"] },
   { id: "pg-market-reviews", title: "Reviews", subtitle: "Moderate shop reviews", group: "Market", kind: "page", href: "/dashboard/market/reviews", icon: Layers, tone: "brand", keywords: ["review", "rating", "shop"] },
+  { id: "pg-market-rentals", title: "Rent & borrow", subtitle: "Member rentals, problems and hidden listings", group: "Market", kind: "page", href: "/dashboard/market/rentals", icon: Layers, tone: "brand", keywords: ["rent", "rental", "borrow", "deposit", "lend", "dispute"] },
   { id: "pg-market-group-buys", title: "Group buys", subtitle: "Wholesale orders members join", group: "Market", kind: "page", href: "/dashboard/market/group-buys", icon: Layers, tone: "brand", keywords: ["group buy", "wholesale", "bulk"] },
   { id: "pg-market-sellers", title: "Sellers & licences", subtitle: "Who sells, and FSSAI licences", group: "Market", kind: "page", href: "/dashboard/market/sellers", icon: Layers, tone: "brand", keywords: ["seller", "fssai", "licence", "kitchen", "suspend"] },
+  { id: "pg-market-categories", title: "Shop categories", subtitle: "Categories and sub-categories shops sell under", group: "Market", kind: "page", href: "/dashboard/market/categories", icon: Layers, tone: "brand", keywords: ["category", "sub-category", "subcategory", "shop", "store", "tailoring", "market", "taxonomy"] },
   { id: "pg-money-orders", title: "Payments", subtitle: "Payment orders and refunds", group: "Money", kind: "page", href: "/dashboard/money/orders", icon: Layers, tone: "emerald", keywords: ["payment", "refund", "order", "razorpay"] },
   { id: "pg-money-withdrawals", title: "Withdrawals", subtitle: "Payouts waiting to be recorded", group: "Money", kind: "page", href: "/dashboard/money/withdrawals", icon: Layers, tone: "emerald", keywords: ["withdraw", "payout", "utr", "bank"] },
   { id: "pg-money-ledger", title: "Ledger", subtitle: "Every wallet movement", group: "Money", kind: "page", href: "/dashboard/money/ledger", icon: Layers, tone: "emerald", keywords: ["wallet", "ledger", "balance", "adjustment"] },
@@ -152,6 +157,13 @@ const PAGES: SearchItem[] = [
   { id: "pg-ai", title: "AI Command Center", subtitle: "AI insights & automations", group: "AI Command Center", kind: "page", href: "/dashboard/ai", icon: Bot, tone: "violet", keywords: ["ai", "assistant", "automation", "predictions", "copilot"] },
   { id: "pg-notifications", title: "Notifications", subtitle: "Alerts & activity", group: "Notifications", kind: "page", href: "/dashboard/notifications", icon: Bell, tone: "amber", keywords: ["alerts", "activity", "bell", "updates"] },
 
+  { id: "pg-masters", title: "Masters", subtitle: "Every list staff control, across modules", group: "Settings", kind: "page", href: "/dashboard/masters", icon: Settings, tone: "slate", keywords: ["master", "masters", "list", "category", "categories", "types", "dropdown", "options", "taxonomy", "reference data"] },
+  { id: "pg-masters-courses", title: "Course categories", subtitle: "Masters · learning paths and categories", group: "Settings", kind: "page", href: "/dashboard/masters/course_categories", icon: Settings, tone: "slate", keywords: ["course", "programme", "program", "learning path", "category"] },
+  { id: "pg-masters-events", title: "Event categories", subtitle: "Masters · kinds of event", group: "Settings", kind: "page", href: "/dashboard/masters/event_categories", icon: Settings, tone: "slate", keywords: ["event", "workshop", "mela", "webinar", "category"] },
+  { id: "pg-masters-circles", title: "Circle topics", subtitle: "Masters · what circles are about", group: "Settings", kind: "page", href: "/dashboard/masters/circle_topics", icon: Settings, tone: "slate", keywords: ["circle", "topic", "community"] },
+  { id: "pg-masters-languages", title: "Languages", subtitle: "Masters · languages for mentors, doctors and events", group: "Settings", kind: "page", href: "/dashboard/masters/languages", icon: Settings, tone: "slate", keywords: ["language", "hindi", "telugu", "tamil"] },
+  { id: "pg-masters-specialities", title: "Doctor specialities", subtitle: "Masters · what doctors practise", group: "Settings", kind: "page", href: "/dashboard/masters/doctor_specialities", icon: Settings, tone: "slate", keywords: ["doctor", "speciality", "specialty", "gynaecologist"] },
+  { id: "pg-masters-reports", title: "Report reasons", subtitle: "Masters · post and safety report reasons", group: "Settings", kind: "page", href: "/dashboard/masters/feed_report_reasons", icon: Settings, tone: "slate", keywords: ["report", "reason", "abuse", "spam", "safety"] },
   { id: "pg-settings", title: "Settings", subtitle: "General settings", group: "Settings", kind: "page", href: "/dashboard/settings", icon: Settings, tone: "slate", keywords: ["general", "preferences", "configuration"] },
   { id: "pg-settings-profile", title: "Profile", subtitle: "Your profile & details", group: "Settings", kind: "page", href: "/dashboard/settings/profile", icon: User, tone: "slate", keywords: ["account", "me", "avatar", "personal"] },
   { id: "pg-settings-security", title: "Security", subtitle: "Authenticator & devices", group: "Settings", kind: "page", href: "/dashboard/settings/security", icon: ShieldCheck, tone: "slate", keywords: ["password", "2fa", "privacy", "authentication"] },

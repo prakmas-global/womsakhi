@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 #: How she was actually paid, and where the sale happened. Not a payment
 #: method: "whatsapp" is where the conversation was, and that is the fact she
 #: remembers when she is entering it a week later.
-VIA = ("whatsapp", "shop", "person", "circle")
+VIA = ("whatsapp", "shop", "person", "circle", "course", "mentoring")
 
 #: paid  — the money arrived
 #: owed  — she delivered and is waiting
@@ -69,6 +69,8 @@ class BookEntryModel:
     def to_response(doc: dict) -> dict:
         on = doc.get("on")
         due = doc.get("due")
+        if isinstance(on, datetime) and on.tzinfo is None: on = on.replace(tzinfo=timezone.utc)
+        if isinstance(due, datetime) and due.tzinfo is None: due = due.replace(tzinfo=timezone.utc)
         return {
             "id": str(doc.get("_id", "")),
             "who": doc.get("who", ""),

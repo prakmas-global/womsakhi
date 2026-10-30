@@ -1,5 +1,6 @@
 "use client";
 
+import { useOpportunityTypes } from "@/components/ux/work/types";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -16,6 +17,7 @@ import {
   type GrowthSummary, type OpportunityInput, type OpportunityRow,
 } from "@/lib/growth-admin-api";
 import { memberError } from "@/lib/member-api";
+import { apiAdminWorkTaxonomy, type AdminWorkCategory } from "@/lib/work-api";
 
 /**
  * Opportunities — jobs, orders and freelance work.
@@ -23,18 +25,25 @@ import { memberError } from "@/lib/member-api";
  * "Applied" is a count of application rows that were not withdrawn, not the
  * document's counter. Closing never deletes: women have applications against
  * the listing, and those keep their history.
+ *
+ * Skills come from the work masters (Work skills page): a category, then up
+ * to ten skills by key — the same keys women pick in My work profile, so Find
+ * work can match a job to her skills instead of guessing from typed words.
+ * Members can post work too; those rows say so, and staff can still close them.
  */
 
-const KINDS = ["Job", "Internship", "Freelance", "Craft order", "Training"];
+const MAX_SKILLS = 10;
 
 const EMPTY: OpportunityInput = {
   title: "", org: "", kind: "Job", desc: "", location: "", mode: "On-site", pay: "",
-  skills: [], openings: 1, deadline: "", experience: "", contact_note: "", status: "open",
+  skills: [], category: "", skill_keys: [], openings: 1, deadline: "", experience: "", contact_note: "", status: "open",
 };
 
 const STATUS_LABEL: Record<string, string> = { "": "Open and closed", open: "Open", closed: "Closed" };
 
 export default function AdminOpportunitiesPage() {
+  // Types are the staff-controlled master (Masters → Opportunity types).
+  const types = useOpportunityTypes();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -48,8 +57,33 @@ export default function AdminOpportunitiesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<OpportunityRow | null>(null);
   const [form, setForm] = useState<OpportunityInput>(EMPTY);
-  const [skillsText, setSkillsText] = useState("");
+  // A post already in a since-disabled type keeps it as an option.
+  const KINDS = form.kind && !types.includes(form.kind) ? [...types, form.kind] : types;
+  /** Typed skills on a listing made before the masters; kept until keys are picked. */
+  const [legacySkills, setLegacySkills] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [tax, setTax] = useState<AdminWorkCategory[]>([]);
+
+  useEffect(() => {
+    apiAdminWorkTaxonomy().then(setTax).catch(() => setTax([]));
+  }, []);
+  const catName = (key?: string) => tax.find((c) => c.key === key)?.name ?? "";
+  const skillName = (key: string) => {
+    for (const c of tax) {
+      const hit = c.skills.find((x) => x.key === key);
+      if (hit) return hit.name;
+    }
+    return key;
+  };
+  const liveCats = tax.filter((c) => c.active && c.skills.some((x) => x.active));
+  const offered = liveCats.find((c) => c.key === form.category)?.skills.filter((x) => x.active) ?? [];
+  const picked = form.skill_keys ?? [];
+  const toggleSkill = (key: string) => setForm((f) => {
+    const cur = f.skill_keys ?? [];
+    if (cur.includes(key)) return { ...f, skill_keys: cur.filter((k) => k !== key) };
+    if (cur.length >= MAX_SKILLS) { toast.error(`Up to ${MAX_SKILLS} skills`); return f; }
+    return { ...f, skill_keys: [...cur, key] };
+  });
 
   const refresh = useCallback(async () => {
     try {
@@ -73,15 +107,16 @@ export default function AdminOpportunitiesPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const openCreate = () => { setEditing(null); setForm(EMPTY); setSkillsText(""); setFormOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(EMPTY); setLegacySkills([]); setFormOpen(true); };
   const openEdit = (o: OpportunityRow) => {
     setEditing(o);
     setForm({
       title: o.title, org: o.org, kind: o.kind, desc: o.desc, location: o.location, mode: o.mode,
       pay: o.pay, skills: o.skills, openings: o.openings, deadline: o.deadline,
       experience: o.experience, contact_note: o.contact_note, status: o.status,
+      category: o.category ?? "", skill_keys: o.skill_keys ?? [],
     });
-    setSkillsText(o.skills.join(", "));
+    setLegacySkills(o.skill_keys?.length ? [] : o.skills);
     setFormOpen(true);
   };
   const set = (k: keyof OpportunityInput) => (v: string | number) => setForm((f) => ({ ...f, [k]: v }));
@@ -89,7 +124,9 @@ export default function AdminOpportunitiesPage() {
   const save = useCallback(async () => {
     if (!form.title.trim()) { toast.error("Give the listing a title"); return; }
     setBusy(true);
-    const body: OpportunityInput = { ...form, skills: skillsText.split(",").map((s) => s.trim()).filter(Boolean) };
+    // Picked keys win: the server fills `skills` with their names. Old typed
+    // skills are sent back unchanged only while nothing has been picked.
+    const body: OpportunityInput = { ...form, skills: picked.length ? [] : legacySkills };
     try {
       if (editing) {
         await apiGrowthUpdateOpportunity(editing.id, body);
@@ -105,7 +142,7 @@ export default function AdminOpportunitiesPage() {
     } finally {
       setBusy(false);
     }
-  }, [editing, form, refresh, skillsText, toast]);
+  }, [editing, form, legacySkills, picked.length, refresh, toast]);
 
   const close = useCallback(async (o: OpportunityRow) => {
     const ok = await confirm({
@@ -227,7 +264,12 @@ export default function AdminOpportunitiesPage() {
                     <tr key={o.id} className={`border-b border-line last:border-0 hover:bg-surface-2 ${o.status !== "open" ? "opacity-70" : ""}`}>
                       <td className="max-w-sm px-3 py-3">
                         <p className="truncate text-sm font-semibold text-ink">{o.title}</p>
-                        <p className="truncate text-xs text-ink-subtle">{o.org || "Employer not named"} · {o.kind}</p>
+                        <p className="truncate text-xs text-ink-subtle">
+                          {o.org || "Employer not named"} · {o.kind}{catName(o.category) ? ` · ${catName(o.category)}` : ""}
+                        </p>
+                        {o.owner_kind === "member" && (
+                          <span className="mt-1 inline-block"><Badge tone="violet">Posted by a member</Badge></span>
+                        )}
                       </td>
                       <td className="px-3 py-3">
                         <span className="flex items-center gap-1 text-sm text-ink-muted"><IndianRupee className="h-3.5 w-3.5 text-ink-subtle" />{o.pay || "Not stated"}</span>
@@ -299,7 +341,48 @@ export default function AdminOpportunitiesPage() {
                     options={[{ value: "open", label: "Open — accepting applications" }, { value: "closed", label: "Closed" }]} />
           </div>
           <Textarea label="What is the work?" value={form.desc} onChange={(e) => set("desc")(e.target.value)} />
-          <Input label="Skills (comma separated)" value={skillsText} onChange={(e) => setSkillsText(e.target.value)} placeholder="Tailoring, Blouse stitching" />
+          <div className="space-y-2">
+            <Select label="Kind of work" value={form.category ?? ""}
+                    onChange={(e) => set("category")(e.target.value)}
+                    options={[{ value: "", label: liveCats.length ? "Choose a category" : "Loading categories…" },
+                              ...liveCats.map((c) => ({ value: c.key, label: c.name }))]} />
+            {offered.length > 0 && (
+              <div>
+                <p className="mb-1.5 text-xs font-semibold text-ink-muted">
+                  Skills needed <span className="font-normal text-ink-subtle">— tap up to {MAX_SKILLS} ({picked.length} picked)</span>
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {offered.map((x) => {
+                    const on = picked.includes(x.key);
+                    return (
+                      <button key={x.key} type="button" aria-pressed={on} onClick={() => toggleSkill(x.key)}
+                              className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                                on ? "border-brand-500 bg-brand-tint text-brand-ink" : "border-line text-ink-muted hover:bg-surface-2"}`}>
+                        {on && <Check className="-mt-px me-1 inline h-3 w-3" />}{x.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {picked.some((k) => !offered.some((x) => x.key === k)) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-2xs text-ink-subtle">Also picked:</span>
+                {picked.filter((k) => !offered.some((x) => x.key === k)).map((k) => (
+                  <button key={k} type="button" onClick={() => toggleSkill(k)}
+                          className="rounded-full border border-brand-500 bg-brand-tint px-2.5 py-1 text-xs font-medium text-brand-ink">
+                    {skillName(k)} ×
+                  </button>
+                ))}
+              </div>
+            )}
+            {legacySkills.length > 0 && !picked.length && (
+              <p className="rounded-lg bg-surface-2 px-3 py-2 text-xs text-ink-muted">
+                <span className="font-semibold">Old skills (typed):</span> {legacySkills.join(", ")}.{" "}
+                Pick them from the list above so this job matches women&apos;s skills in Find work.
+              </p>
+            )}
+          </div>
           <Input label="What they need" value={form.experience} onChange={(e) => set("experience")(e.target.value)} placeholder="Can stitch a lined blouse" />
           <Textarea label="Note shown to members" value={form.contact_note} onChange={(e) => set("contact_note")(e.target.value)}
                     placeholder="We've checked this employer. Applying is free and always will be." />

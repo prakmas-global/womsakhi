@@ -1,0 +1,108 @@
+/* One geometry for page banners. Explicit markers keep promotional cards,
+   alerts, profile covers and inner hero content out of this contract. */
+.ux {
+  --ux-banner-height: 360px;
+  --ux-banner-radius: 20px;
+  --ux-banner-photo-height: 112px;
+}
+
+@media (min-width: 1024px) {
+  .ux {
+    --ux-banner-height: 320px;
+    --ux-banner-photo-height: 208px;
+  }
+
+  .ux #content [data-banner-copy] { padding-block: 24px; }
+}
+
+/* Decorations must not create a scroll area. The copy owns overflow when
+   large accessibility text needs extra room. */
+.ux [data-banner],
+.ux #content [data-banner] {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ux-banner-height) !important;
+  min-height: var(--ux-banner-height) !important;
+  max-height: var(--ux-banner-height);
+  flex-shrink: 0;
+  border-radius: var(--ux-banner-radius) !important;
+  overflow: hidden !important;
+}
+
+.ux #content [data-banner-copy] {
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.ux [data-banner-details] {
+  margin-top: 0;
+  padding: 8px 12px;
+  color: var(--ux-muted);
+  border-color: var(--ux-line);
+}
+
+.ux [data-banner="home"] {
+  display: flex;
+  flex-direction: column;
+  background: var(--ux-brand-900);
+}
+
+.ux [data-banner="home"] > :first-child {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  height: auto;
+  aspect-ratio: auto !important;
+  object-fit: contain;
+}
+
+.ux [data-banner="home"] > :last-child { flex-shrink: 0; }
+
+@media (max-width: 1023px) {
+  .ux [data-banner] > img[src*="dashboard-hero"],
+  .ux [data-banner] > picture > img[src*="dashboard-hero"] {
+    height: var(--ux-banner-photo-height) !important;
+  }
+
+  .ux [data-banner] > picture { flex-shrink: 0; }
+
+  .ux #content [data-banner] [data-banner-copy] {
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 12px 16px !important;
+    gap: 8px;
+  }
+
+  .ux #content [data-banner-copy] h1 {
+    width: auto;
+    max-width: none;
+    font-size: 28px !important;
+    line-height: 1.08;
+    margin: 0 0 6px;
+  }
+
+  .ux #content [data-banner-copy] > p {
+    margin-top: 0;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .ux #content [data-banner-copy] [class*="__heroActions"] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .ux #content [data-banner-copy] [class*="__heroActions"] > a {
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  .ux #content [data-banner-copy] > small { margin-top: 8px; }
+}

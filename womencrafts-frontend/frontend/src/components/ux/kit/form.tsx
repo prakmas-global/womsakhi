@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 import * as Icons from "@/components/ux/icons";
 import { IconTile, v } from "./index";
 
@@ -104,49 +106,46 @@ export function Label({ children, need, hint }: {
   );
 }
 
-/** A counted textarea. The count is a budget, not a warning. */
-export function Area({ value, onChange, placeholder, max, rows = 3, label }: {
+/** Shared writing controls: native semantics, descriptive errors and mobile keyboards. */
+export function Area({ value, onChange, placeholder, max, rows = 3, label, hint, error, required, id: givenId, ...props }: {
   value: string; onChange: (s: string) => void; placeholder: string;
-  max: number; rows?: number; label: string;
-}) {
+  max: number; rows?: number; label: string; hint?: string; error?: string; required?: boolean;
+} & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange" | "value" | "maxLength">) {
+  const autoId = useId();
+  const id = givenId || autoId;
+  const description = [props["aria-describedby"], `${id}-count`, (error || hint) && `${id}-help`].filter(Boolean).join(" ");
   return (
     <>
-      <textarea
-        value={value}
-        rows={rows}
-        aria-label={label}
-        maxLength={max}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="ux-sq w-full rounded-[12px] border px-4 py-3 text-xsm leading-relaxed outline-none lg:px-3.5"
-        style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}
-      />
-      <span className="mt-1 block text-end text-2xs" style={{ color: v("--ux-faint") }}>
-        {value.length}/{max}
-      </span>
+      <textarea {...props} id={id} value={value} rows={rows} required={required}
+        aria-label={label} aria-invalid={error ? true : props["aria-invalid"]} aria-describedby={description}
+        maxLength={max} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="wc-field ux-sq w-full resize-y rounded-[12px] px-4 py-3 text-xsm leading-relaxed lg:px-3.5" />
+      <span id={`${id}-count`} className="mt-1 block text-end text-2xs" style={{ color: v("--ux-muted") }}>{value.length}/{max}</span>
+      {(error || hint) && <span id={`${id}-help`} className="mt-1 block text-xs" style={{ color: v(error ? "--ux-danger-ink" : "--ux-muted") }}>{error || hint}</span>}
     </>
   );
 }
 
-export function Text({ value, onChange, placeholder, label, prefix, type = "text", max }: {
+export function Text({ value, onChange, placeholder, label, prefix, type = "text", max, maxDate, hint, error, required, id: givenId, ...props }: {
   value: string; onChange: (s: string) => void; placeholder?: string; label: string;
-  prefix?: string; type?: string; max?: number;
-}) {
+  prefix?: string; type?: string; max?: number; maxDate?: string; hint?: string; error?: string; required?: boolean;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type" | "maxLength">) {
+  const autoId = useId();
+  const id = givenId || autoId;
+  const description = [props["aria-describedby"], (error || hint) && `${id}-help`].filter(Boolean).join(" ") || undefined;
   return (
-    <span className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border px-4 lg:px-3.5"
-          style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
-      {prefix && <span className="shrink-0 text-xsm" style={{ color: v("--ux-muted") }}>{prefix}</span>}
-      <input
-        value={value}
-        type={type}
-        inputMode={type === "number" ? "numeric" : undefined}
-        maxLength={max}
-        aria-label={label}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="min-h-[46px] w-full bg-transparent text-xsm outline-none"
-        style={{ color: v("--ux-ink") }}
-      />
+    <span className="block min-w-0 flex-1">
+      <span data-field-shell className="flex min-w-0 items-center gap-2 px-4 lg:px-3.5">
+        {prefix && <span aria-hidden className="shrink-0 text-xsm" style={{ color: v("--ux-muted") }}>{prefix}</span>}
+        <input {...props} id={id} data-field-input value={value} type={type} required={required}
+          inputMode={props.inputMode ?? (type === "number" ? "decimal" : type === "tel" ? "tel" : type === "email" ? "email" : undefined)}
+          maxLength={max} max={maxDate} aria-label={prefix ? `${label} (${prefix})` : label}
+          aria-invalid={error ? true : props["aria-invalid"]} aria-describedby={description}
+          onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+          className="min-h-[46px] w-full min-w-0 bg-transparent text-xsm outline-none"
+          style={{ color: v("--ux-ink") }} />
+      </span>
+      {(error || hint) && <span id={`${id}-help`} className="mt-1 block text-xs" style={{ color: v(error ? "--ux-danger-ink" : "--ux-muted") }}>{error || hint}</span>}
     </span>
   );
 }
@@ -158,9 +157,8 @@ export function Select({ value, onChange, options, label, placeholder }: {
 }) {
   return (
     <select value={value} aria-label={label} onChange={(e) => onChange(e.target.value)}
-            className="ux-sq min-h-[46px] w-full rounded-[12px] border px-3 text-xsm outline-none"
-            style={{ borderColor: v("--ux-line"), background: v("--ux-surface"),
-                     color: v(value ? "--ux-ink" : "--ux-muted") }}>
+            className="wc-field ux-sq min-h-[46px] w-full rounded-[12px] px-3 text-xsm outline-none"
+            style={{ color: v(value ? "--ux-ink" : "--ux-muted") }}>
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((o) => {
         const val = typeof o === "string" ? o : o.value;
@@ -205,5 +203,85 @@ export function Check({ on, onChange, label }: {
       </span>
       <span className="text-xsm" style={{ color: v("--ux-ink-2") }}>{label}</span>
     </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Choosing instead of typing                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One tap fills the field. For the answers most women give — "Blouses",
+ * "Tomorrow", "WhatsApp group" — so typing is the exception, not the rule.
+ * `multi` adds/removes each pick (for phrases joined into a note).
+ */
+export function Picks({ options, value, onPick, multi, label }: {
+  options: string[]; value: string | string[]; onPick: (s: string) => void; multi?: boolean; label?: string;
+}) {
+  if (!options.length) return null;
+  const isOn = (o: string) => (Array.isArray(value) ? value.includes(o) : value === o);
+  return (
+    <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={label ?? "Quick choices"}>
+      {options.map((o) => {
+        const on = isOn(o);
+        return (
+          <button key={o} type="button" aria-pressed={on} onClick={() => onPick(o)}
+                  className="ux-press ux-sq flex min-h-[36px] items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold"
+                  style={{ background: v(on ? "--ux-brand-tint" : "--ux-surface-2"),
+                           color: v(on ? "--ux-brand" : "--ux-ink-2") }}>
+            {on ? <Icons.Check className="h-[12px] w-[12px]" /> : multi ? <Icons.Plus className="h-[12px] w-[12px]" /> : null}
+            {o}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * A count without the keyboard: − and + either side, and a row of the
+ * usual numbers under it. The middle still takes typing for an odd number.
+ */
+export function Stepper({ value, onChange, label, min = 0, presets }: {
+  value: string; onChange: (s: string) => void; label: string; min?: number; presets?: number[];
+}) {
+  const n = Number(value.replace(/[^\d]/g, "")) || 0;
+  const set = (x: number) => onChange(String(Math.max(min, x)));
+  const btn = "ux-press grid h-[46px] w-[46px] shrink-0 place-items-center rounded-[12px] border";
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <button type="button" className={btn} aria-label={`Fewer — ${label}`} disabled={n <= min}
+                onClick={() => set(n - 1)}
+                style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink"), opacity: n <= min ? 0.4 : 1 }}>
+          <Icons.Minus className="h-4 w-4" />
+        </button>
+        <input value={value} inputMode="numeric" aria-label={label}
+               onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ""))}
+               className="ux-sq min-h-[46px] w-[72px] rounded-[12px] border text-center text-base font-bold outline-none"
+               style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }} />
+        <button type="button" className={btn} aria-label={`More — ${label}`} onClick={() => set(n + 1)}
+                style={{ borderColor: v("--ux-line"), background: v("--ux-surface"), color: v("--ux-ink") }}>
+          <Icons.Plus className="h-4 w-4" />
+        </button>
+      </div>
+      {presets && <Picks options={presets.map(String)} value={String(n)} onPick={(s) => set(Number(s))} label={`Quick ${label}`} />}
+    </div>
+  );
+}
+
+/** Folds the optional fields away, so the form she sees is only what is needed. */
+export function More({ label, children, open: start = false }: {
+  label: string; children: React.ReactNode; open?: boolean;
+}) {
+  return (
+    <details className="group mt-4" open={start}>
+      <summary className="ux-press flex min-h-[40px] cursor-pointer list-none items-center gap-2 text-xsm font-bold [&::-webkit-details-marker]:hidden"
+               style={{ color: v("--ux-brand") }}>
+        <Icons.ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+        {label}
+      </summary>
+      <div className="mt-2">{children}</div>
+    </details>
   );
 }

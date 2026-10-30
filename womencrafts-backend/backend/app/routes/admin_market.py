@@ -934,6 +934,10 @@ async def create_group_buy(body: GroupBuyUpsert, request: Request, me: dict = De
     result = await _buys().insert_one(doc)
     doc["_id"] = result.inserted_id
     cache.forget_prefix("groupbuy:")
+    # Women who asked "tell me next time" about this item hear now.
+    from app.routes.group_buy import notify_watchers
+
+    await notify_watchers(doc)
     await record(
         me, "market.groupbuy.create", target=str(result.inserted_id),
         detail=f"Opened group buy '{body.item}' — {body.needed} needed, closes {body.closes_at.date().isoformat()}",

@@ -20,9 +20,9 @@ const BLANK = { account: "", confirm: "", ifsc: "", holder: "", upi: "" };
 /** The two ways to be paid. `row` is the `ListRow` tint name for the phone list. */
 const ADD_WAYS = [
   { k: "bank" as const, icon: "Landmark", tint: "--ux-tint-blue", ink: "--ux-blue", row: "blue" as const,
-    t: "Bank account", d: "Money in one working day. Works everywhere." },
+    t: "Bank account", d: "Saved bank details; transfers are not enabled." },
   { k: "upi" as const, icon: "Smartphone", tint: "--ux-tint-violet", ink: "--ux-violet", row: "violet" as const,
-    t: "UPI ID", d: "Usually within minutes. Needs a smartphone." },
+    t: "UPI ID", d: "Saved UPI details; transfers are not enabled." },
 ];
 
 /**
@@ -196,13 +196,13 @@ export default function PaymentMethodsPage() {
         <Group
           title={tr("settingsPayments.addAWayToGetPaid")}
           inset="flush"
-          phone={ADD_WAYS.map((o) => (
+          phone={ADD_WAYS.filter(way => way.k === 'upi').map((o) => (
             <ListRow key={o.k} icon={o.icon} tint={o.row} title={o.t} subtitle={o.d} chevron
                      onClick={() => setDraft(o.k)} />
           ))}
         >
           <div className="grid gap-2.5 sm:grid-cols-2">
-            {ADD_WAYS.map((o, i) => (
+            {ADD_WAYS.filter(way => way.k === 'upi').map((o, i) => (
               <button
                 key={o.k}
                 onClick={() => setDraft(o.k)}

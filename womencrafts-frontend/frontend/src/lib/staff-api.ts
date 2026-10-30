@@ -99,6 +99,11 @@ export interface Ticket {
   raised_on: string;
 }
 
+/**
+ * What the category list shipped with. Staff edit the real list as the
+ * `support_ticket_categories` master (lib/masters-api.ts); this shows only
+ * until that answers.
+ */
 export const TICKET_CATEGORIES = [
   "Account & access",
   "A bug or something broken",

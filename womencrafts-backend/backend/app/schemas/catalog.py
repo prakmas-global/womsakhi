@@ -42,7 +42,18 @@ class CatalogProgram(BaseModel):
     #: than showing one hardcoded digital-marketing syllabus for every course
     #: in the catalogue, which is what it did before.
     curriculum: list[dict] = []
+    #: Who teaches it and what it costs (0 = free). A member's paid course is
+    #: paid to her by UPI; the catalogue never shows her UPI id.
+    owner_kind: str = "staff"
+    owner_id: str = ""
+    teacher_name: str = "WomSakhi team"
+    price_minor: int = 0
+    #: The course's thumbnail ("" = none; the screen shows its category's picture).
+    cover: str = ""
     # member-specific extras
     joined: bool = False
+    #: "" | pending | active | completed | withdrawn — her enrolment, if any.
+    my_status: str = ""
+    is_mine: bool = False
     seats_left: Optional[int] = None
     is_full: bool = False

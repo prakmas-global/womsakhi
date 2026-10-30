@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Image from "next/image";
 import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
@@ -40,12 +41,12 @@ export function GoalsHero({ chips, active, onPick }: {
     ["Creativity & Hobbies", "Palette", "All goals"], ["Lifestyle & Wellbeing", "Flower2", "All goals"],
   ] as const;
   return <>
-    <section className={styles.hero} aria-labelledby="goals-title">
+    <section data-banner data-page-hero className={styles.hero} aria-labelledby="goals-title">
       <Image src="/ux/goals/goals-hero-v2.webp" alt={tr("goalviews.womenFromDifferentBackgroundsPlanningGoals")} fill priority sizes="(max-width:760px) 100vw, 70vw" />
       <div className={styles.heroShade} />
       <div className={styles.heroCopy}>
         <p>{tr("goalviews.homeMyGoals")}</p>
-        <h1 id="goals-title">My <em>Goals</em></h1>
+        <div className="mb-2"><PlaceMark size={44} /></div><h1 id="goals-title">My <em>Goals</em></h1>
         <span>{tr("goalviews.dreamPlanDoABrighterYou")}</span>
       </div>
     </section>

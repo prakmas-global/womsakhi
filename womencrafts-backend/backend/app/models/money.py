@@ -72,7 +72,7 @@ class CommitmentModel:
             "id": str(doc.get("_id", "")),
             "what": doc.get("what", ""),
             "minor": int(doc.get("minor", 0)),
-            "due": due.isoformat() if isinstance(due, datetime) else "",
+            "due": (due if due.tzinfo else due.replace(tzinfo=timezone.utc)).isoformat() if isinstance(due, datetime) else "",
             "if_missed": doc.get("if_missed", ""),
             "weight": doc.get("weight", "should-pay"),
             "icon": doc.get("icon", "Circle"),

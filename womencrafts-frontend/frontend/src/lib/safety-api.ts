@@ -59,7 +59,11 @@ export interface SafetyCentre {
   reports: SafetyReport[];
 }
 
-/** The categories the server will accept — kept in step with SafetyReportModel. */
+/**
+ * The starting values of the `safety_report_categories` master. Screens read
+ * the live list with `useMaster("safety_report_categories", …)`; the server
+ * checks a report against the same master.
+ */
 export const REPORT_CATEGORIES = [
   "Harassment or abuse",
   "A man on the platform",

@@ -28,6 +28,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
+from app.core import masters
 from app.db.mongodb import get_database
 from app.models.conversation import notify
 from app.models.safety import (
@@ -50,6 +51,18 @@ from app.schemas.safety import (
 )
 
 router = APIRouter(prefix="/safety", tags=["Member · Safety"])
+
+
+async def _report_category(value: str) -> str:
+    v = (value or "").strip().lower()
+    parents = {r["key"]: r for r in await masters.rows("safety_report_categories", active_only=True) if not r.get("parent_key")}
+    for r in parents.values():
+        if r["label"].lower() == v:
+            return r["label"]
+    for r in await masters.rows("safety_report_categories", active_only=True):
+        if r.get("parent_key") in parents and r["label"].lower() == v:
+            return parents[r["parent_key"]]["label"]
+    return await masters.check("safety_report_categories", value, level="parent", field="category")
 
 
 def _contacts():
@@ -262,13 +275,15 @@ async def my_reports(me: dict = Depends(require_active_member)):
     summary="Report something",
 )
 async def file_report(body: ReportCreate, me: dict = Depends(require_active_member)):
-    if body.category not in SafetyReportModel.CATEGORIES:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Choose one of the listed categories")
+    # A category from the `safety_report_categories` master (app/core/masters.py).
+    # A reason under a category (what the Report-a-person screen shows) files
+    # under its category.
+    category = await _report_category(body.category)
 
     user_id = str(me["_id"])
     doc = SafetyReportModel.create_document(
         user_id=user_id,
-        category=body.category,
+        category=category,
         details=body.details,
         about=body.about,
         anonymous=body.anonymous,

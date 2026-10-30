@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
@@ -181,9 +182,12 @@ export default function ExchangeThread({ params }: { params: Promise<{ id: strin
     >
       <Back to="/app/library" label={tr("library.teachAndLearn")} className="mb-4" />
 
-      <h1 className="mb-4 text-xl font-bold" style={{ color: "var(--ux-ink)" }}>
-        {swap.skill} with {swap.who}
-      </h1>
+      <div className="mb-4 flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="text-xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>
+          {swap.skill} with {swap.who}
+        </h1>
+      </div>
 
       {/* Pinned above the messages, always. An exchange that lives only in a
           thread is one two women remember differently in a month. */}

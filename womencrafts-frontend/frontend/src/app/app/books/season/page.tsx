@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -69,8 +70,11 @@ export default function SeasonPage() {
 
         <header>
           <p className={EYEBROW}>{tr("booksSeason.yourYear")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("booksSeason.theBusyMonthsAndTheThin")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("booksSeason.theBusyMonthsAndTheThin")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your work is not the same every month and never has been. What matters is knowing
             far enough ahead — cloth is bought in the quiet month before the rush.

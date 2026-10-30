@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
@@ -7,17 +8,19 @@ import { apiCancelEvent, apiRegisterForEvent } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 
 import {
-  Btn, Card, Chip, EmptyState, IconTile,
-  Pill, Progress, SectionHead, SourceNote, plural
+  Btn, Card, EmptyState, IconTile,
+  Progress, SectionHead, SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ChipRow, Segments } from "@/components/ux/learning/native";
 import {
-  EVENT_ART as RAW_EVENT_ART, EVENT_KINDS as RAW_EVENT_KINDS, rupees, type Ev, type EventKind,
+  EVENT_ART as RAW_EVENT_ART, EVENT_KINDS as RAW_EVENT_KINDS, EVENTS as SAMPLE_EVENTS, eventLook, rupees, type Ev, type EventKind,
 } from "@/components/ux/events/data";
 import { useEvents } from "@/components/ux/growth";
+import { PicChip, pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
+import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
 
 /**
  * Events — melas, workshops, webinars and meets.
@@ -27,7 +30,9 @@ import { useTranslated } from "@/i18n/data";
  * same principle: the cost of a decision belongs next to the decision.
  */
 export default function EventsPage() {
-  const EVENT_KINDS = useTranslated(RAW_EVENT_KINDS);
+  // Categories are the staff-controlled master; the old list shows until it loads.
+  const kindPics = useMasterPictures("event_categories", RAW_EVENT_KINDS);
+  const EVENT_KINDS = kindPics.labels;
   const EVENT_ART = useTranslated(RAW_EVENT_ART);
   const tr = useT();
   // Split in the fetcher, not here: reading the clock during render makes the
@@ -69,7 +74,7 @@ export default function EventsPage() {
   // once from the mock fallback and never rebuilt when the real events landed,
   // so the header said "4 coming up" above four events nobody had organised.
   const pool = tab === "You are going" ? going : EVENTS;
-  const shown = kinds.length ? pool.filter((e) => kinds.includes(e.kind)) : pool;
+  const shown = kinds.length ? pool.filter((e) => kinds.some((k) => k.toLowerCase() === (e.kind || "").toLowerCase())) : pool;
 
   return (
     <HomeShell
@@ -81,9 +86,8 @@ export default function EventsPage() {
             <ul className="ux-stagger space-y-3">
               {PAST_EVENTS.map((p) => (
                 <li key={p.id} className="ux-hov flex items-center gap-3">
-                  <IconTile icon={p.kind === "Mela" ? "Store" : "GraduationCap"}
-                            tint={p.kind === "Mela" ? "--ux-tint-pink" : "--ux-tint-violet"}
-                            ink={p.kind === "Mela" ? "--ux-pink" : "--ux-violet"} size={36} />
+                  <IconTile icon={eventLook(p.kind).icon} tint={eventLook(p.kind).tint}
+                            ink={eventLook(p.kind).ink} size={36} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{p.title}</p>
                     <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-muted)" }}>{p.when}</p>
@@ -119,7 +123,10 @@ export default function EventsPage() {
           header never had. */}
       <div className="mb-6 lg:mb-[20px] lg:flex lg:items-end lg:justify-between lg:gap-4">
         <div>
-          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Events</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>Events</h1>
+          </div>
           <p className="mt-2 text-xsm lg:mt-1.5" style={{ color: "var(--ux-muted)" }}>
             {going.length} {plural("event", going.length)} you are going to · {EVENTS.length} coming up
           </p>
@@ -139,107 +146,70 @@ export default function EventsPage() {
 
       {/* One line the thumb pushes along on a phone; wraps as before on desktop. */}
       <ChipRow className="mb-6 lg:mb-[16px]">
+        {/* The key is the server's English kind; only the label is translated.
+            Filtering on the translated word matched nothing in Hindi. */}
         {EVENT_KINDS.map((k) => (
-          <Chip key={k} selected={kinds.includes(k)}
-                onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>
+          <PicChip key={k} src={kindPics.pic(k)} selected={kinds.includes(k)}
+                   onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>
             {plural(k, 2)}
-          </Chip>
+          </PicChip>
         ))}
       </ChipRow>
 
       {shown.length ? (
-        <div className="ux-deck ux-stagger space-y-[12px]">
-          {shown.map((e, i) => {
+        <MediaGrid>
+          {shown.map((e) => {
             // `seats: 0` from the API means the organiser has not set a limit,
-            // not that every place has gone. `taken >= spots` read 0 >= 0 and
-            // stamped "Full" on an open talk anybody could join.
+            // not that every place has gone.
             const limited = e.spots > 0;
             const full = limited && e.taken >= e.spots;
             const on = isGoing(e);
             const busy = place.busyWith === e.id;
+            // Its own cover when the organiser added one; otherwise the picture
+            // of what happens there — a mela stall, a workshop, a talk — and
+            // failing that, its category's.
+            const cover = e.art && e.art !== SAMPLE_EVENTS[0]?.art ? e.art : null;
             return (
-              <Card key={e.id} className="ux-i ux-onscroll" style={{ ["--i" as string]: i }} pad={0}>
-                {/* Picture above the words on a phone. Side by side, the
-                    190px picture left the text a 150px column to wrap in. */}
-                <div className="flex flex-col lg:flex-row">
-                  <span className="relative h-[148px] w-full shrink-0 overflow-hidden lg:h-[168px] lg:w-[190px]"
-                        style={{ background: `var(${e.tint})` }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img loading="lazy" decoding="async" src={e.art} alt="" className="ux-art h-full w-full object-cover" />
-                    <span className="absolute start-3 top-3 grid h-[52px] w-[46px] place-items-center rounded-[12px]"
-                          style={{ background: "var(--ux-surface)", boxShadow: "var(--ux-shadow-card)" }}>
-                      <span className="text-lg font-bold leading-none" style={{ color: "var(--ux-brand)" }}>{e.day}</span>
-                      <span className="text-2xs font-semibold" style={{ color: "var(--ux-brand)" }}>{e.month}</span>
-                    </span>
+              <MediaCard
+                key={e.id}
+                href={`/app/events/${e.id}`}
+                image={pictureOr(cover, [e.title, e.blurb], kindPics.of(e.kind))}
+                topLeft={{ text: on ? "You are going" : e.kind, tone: on ? "brand" : "light" }}
+                topRight={e.fee_minor > 0 ? { text: rupees(e.fee_minor), tone: "dark" } : { text: "Free", tone: "green" }}
+                overlay={<><Icons.CalendarDays className="h-[13px] w-[13px]" /> {e.day} {e.month} · {e.time}</>}
+                title={e.title}
+                meta={<>
+                  <Fact icon={e.online ? "Video" : "MapPin"}>{e.place}</Fact>
+                  <Fact icon="Users">{!limited ? "Open to everyone" : full ? "Full" : `${e.spots - e.taken} of ${e.spots} places left`}</Fact>
+                </>}
+                footer={
+                  <span className="flex items-center gap-2 [&>*]:flex-1">
+                    <Btn href={`/app/events/${e.id}`} variant="outline" size="sm">{tr("events.theDetails")}</Btn>
+                    {full && !on ? (
+                      <span className="text-center text-xs font-medium" style={{ color: "var(--ux-orange-ink)" }}>{tr("events.everyPlaceHasGone")}</span>
+                    ) : (
+                      <Btn variant={on ? "outline" : "primary"} size="sm"
+                           icon={busy ? "Loader" : on ? "Check" : undefined}
+                           iconEnd={busy || on ? undefined : "ArrowRight"}
+                           disabled={busy}
+                           onClick={() => void place.run(e.id, on ? "not going" : "going")}>
+                        {busy ? "Sending…" : on ? "Going" : e.fee_minor > 0 ? `Book · ${rupees(e.fee_minor)}` : "Join"}
+                      </Btn>
+                    )}
                   </span>
-
-                  <div className="flex min-w-0 flex-1 flex-col p-[16px]">
-                    <div className="flex items-start gap-2">
-                      <h2 className="min-w-0 flex-1 text-base font-semibold" style={{ color: "var(--ux-ink)" }}>
-                        {e.title}
-                      </h2>
-                      <Pill tone={e.kind === "Mela" ? "pink" : e.kind === "Webinar" ? "blue" : e.kind === "Workshop" ? "green" : "orange"} size="sm">
-                        {e.kind}
-                      </Pill>
-                      {on && <Pill tone="brand" size="sm">Going</Pill>}
-                    </div>
-
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] lg:mt-1.5 lg:text-xs" style={{ color: "var(--ux-muted)" }}>
-                      <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {e.time}</span>
-                      <span className="inline-flex items-center gap-1">
-                        <Icons.MapPin className="h-3.5 w-3.5" /> {e.place}
-                      </span>
-                    </p>
-
-                    <p className="mt-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{e.blurb}</p>
-
-                    <div className="mt-3">
-                      <div className="mb-2 flex items-center justify-between text-2xs lg:mb-1.5">
-                        <span style={{ color: full ? "var(--ux-orange-ink)" : "var(--ux-muted)" }}>
-                          {!limited ? "Open to everyone" : full ? "Full" : `${e.spots - e.taken} of ${e.spots} places left`}
-                        </span>
-                        <span className="font-semibold" style={{ color: "var(--ux-ink)" }}>{rupees(e.fee_minor)}</span>
-                      </div>
-                      {limited && (
-                        <Progress pct={(e.taken / e.spots) * 100} track="--ux-track" h={5}
-                                  tone={full ? "--ux-orange" : "--ux-brand-600"} />
-                      )}
-                    </div>
-
-                    {/* On a phone the note sits on its own line and the two
-                        actions share the full width under it. */}
-                    <div className="mt-auto flex flex-col items-stretch gap-3 pt-4 lg:flex-row lg:items-center lg:justify-between lg:pt-3.5">
-                      <span className="text-[13px] lg:text-xs" style={{ color: "var(--ux-faint)" }}>
-                        {e.online ? tr("events.joiningLinkSentOnTheDay")
-              : tr("events.bringYourOwnStock")}
-                      </span>
-                      <span className="flex items-center gap-2 [&>*]:flex-1 lg:[&>*]:flex-none">
-                        {/* "Remind me" and "Tell me if a place opens" used to
-                            live here. Both were ActionBtns with no action at
-                            all: nothing schedules a reminder and nothing keeps
-                            a waiting list, so both said "we will" about
-                            something nobody had arranged. A full event now
-                            says it is full, in words, where the button was. */}
-                        <Btn href={`/app/events/${e.id}`} variant="outline" size="sm">{tr("events.theDetails")}</Btn>
-                        {full && !on ? (
-                          <span className="text-xs font-medium" style={{ color: "var(--ux-orange-ink)" }}>{tr("events.everyPlaceHasGone")}</span>
-                        ) : (
-                          <Btn variant={on ? "outline" : "primary"} size="sm"
-                               icon={busy ? "Loader" : on ? "Check" : undefined}
-                               iconEnd={busy || on ? undefined : "ArrowRight"}
-                               disabled={busy}
-                               onClick={() => void place.run(e.id, on ? "not going" : "going")}>
-                            {busy ? "Sending…" : on ? "Going" : e.fee_minor > 0 ? `Book · ${rupees(e.fee_minor)}` : "Join"}
-                          </Btn>
-                        )}
-                      </span>
-                    </div>
+                }
+              >
+                <p className="line-clamp-2 text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{e.blurb}</p>
+                {limited && (
+                  <div className="mt-2.5">
+                    <Progress pct={(e.taken / e.spots) * 100} track="--ux-track" h={5}
+                              tone={full ? "--ux-orange" : "--ux-brand-600"} />
                   </div>
-                </div>
-              </Card>
+                )}
+              </MediaCard>
             );
           })}
-        </div>
+        </MediaGrid>
       ) : (
         <Card>
           <EmptyState

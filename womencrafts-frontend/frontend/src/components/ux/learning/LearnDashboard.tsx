@@ -1,19 +1,22 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { SectionPictures } from "@/components/ux/nav/Hub";
+import { useMemo, useState } from "react";
 import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { TransitionLink } from "@/components/ux/TransitionLink";
 import { I } from "@/components/ux/kit";
-import { useLearning } from "@/components/ux/growth";
+import { useLearning, useMentorSessions } from "@/components/ux/growth";
 import { useShell } from "@/components/ux/ShellProvider";
 import { useResource } from "@/lib/use-resource";
 import { apiCertificates } from "@/lib/me-api";
-import { apiMyMentorRequests } from "@/lib/growth-api";
+import { apiEvents, apiMyMentorRequests, type GrowthEvent } from "@/lib/growth-api";
+import { apiGoals, type Goal } from "@/lib/money-api";
 import { useCallback } from "react";
 import styles from "./LearnDashboard.module.css";
 import { DashboardNudge } from "@/components/ux/reminders/DashboardNudge";
+import { pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 
 const ART = "/ux/art/learn-dashboard-";
 /**
@@ -40,31 +43,48 @@ function statsFor(p: {
   ];
 }
 
-const recommendations = [
-  { title: "Start Your Online Business", sub: "Turn your idea into income", image: "business", badge: "Popular", level: "Beginner", time: "2.5 hrs", rating: "4.8", count: "1.2k", href: "/app/programs" },
-  { title: "Social Media for Growth", sub: "Build your personal brand", image: "social", badge: "Best for You", level: "Intermediate", time: "3 hrs", rating: "4.7", count: "856", href: "/app/programs" },
-  { title: "Financial Basics for Women", sub: "Manage money with confidence", image: "finance", badge: "New", level: "Beginner", time: "2 hrs", rating: "4.9", count: "2.1k", href: "/app/programs" },
-  { title: "Mindfulness & Mental Wellness", sub: "Feel calmer, stronger everyday", image: "mindfulness", badge: "Trending", level: "All Levels", time: "1.5 hrs", rating: "4.8", count: "980", href: "/app/programs" },
+/** "₹499" or "Free" — what a course costs her. */
+const priceLabel = (minor?: number) => (minor ? `₹${(minor / 100).toLocaleString("en-IN")}` : "Free");
+
+/**
+ * Learning paths, each a group of course categories — counted from the real
+ * catalogue. The paths and their categories are the "course_categories" master
+ * staff control (Masters → Course categories); this list is what shows until
+ * it loads, and if it can't.
+ */
+const PATHS = [
+  { icon: "Briefcase", title: "Career & Jobs", sub: "Get job ready", cats: ["Digital Literacy", "Languages", "Personal Development"] },
+  { icon: "TrendingUp", title: "Entrepreneurship", sub: "Start and grow", cats: ["Entrepreneurship", "Handicrafts", "Cooking & Food", "Beauty & Care", "Sustainability"] },
+  { icon: "BadgeIndianRupee", title: "Money & Finance", sub: "Financial independence", cats: ["Money & Savings"] },
+  { icon: "Heart", title: "Health & Wellness", sub: "A happier you", cats: ["Health & Wellness"] },
 ];
 
-const paths = [
-  { icon: "Briefcase", title: "Career & Jobs", sub: "Get job ready", count: "12 courses", href: "/app/programs" },
-  { icon: "TrendingUp", title: "Entrepreneurship", sub: "Start and grow", count: "15 courses", href: "/app/programs" },
-  { icon: "BadgeIndianRupee", title: "Money & Finance", sub: "Financial independence", count: "10 courses", href: "/app/programs" },
-  { icon: "Heart", title: "Health & Wellness", sub: "A happier you", count: "9 courses", href: "/app/programs" },
-];
+/**
+ * What is coming up for HER — workshops she registered for and mentor
+ * sessions a mentor accepted. These were three hardcoded sessions ("Career
+ * Guidance with Ananya, Oct 3") and three hardcoded goals at 67/100/50%, the
+ * same for every woman; the calendar beside them was pinned to September 2026
+ * with the 19th marked as today.
+ */
+interface Upcoming { key: string; date: Date | null; type: string; title: string; when: string; href: string }
 
-const sessions = [
-  { month: "SEP", day: "29", type: "Live", title: "Social Media Strategies", when: "Sep 29, 5:00 PM" },
-  { month: "OCT", day: "03", type: "Mentor Session", title: "Career Guidance with Ananya", when: "Oct 3, 11:00 AM" },
-  { month: "OCT", day: "04", type: "Webinar", title: "Women in Tech", when: "Oct 4, 4:00 PM" },
-];
-
-const goals = [
-  { icon: "BookmarkCheck", title: "Complete 3 courses this month", done: "2/3", pct: 67, href: "/app/programs" },
-  { icon: "CheckCircle2", title: "Learn a new skill", done: "1/1", pct: 100, href: "/app/goals" },
-  { icon: "CalendarDays", title: "Attend 2 live sessions", done: "1/2", pct: 50, href: "/app/schedule" },
-];
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+/** A day out of a time she or her mentor typed ("Sat 25 Oct, 11 am"). Null when it has none. */
+function dayIn(text: string): Date | null {
+  const iso = /(\d{4})-(\d{2})-(\d{2})/.exec(text);
+  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
+  const m = /(\d{1,2})\s+([A-Za-z]{3})/.exec(text) || /([A-Za-z]{3})[a-z]*\s+(\d{1,2})/.exec(text);
+  if (!m) return null;
+  const [d, mon] = /\d/.test(m[1]) ? [+m[1], m[2]] : [+m[2], m[1]];
+  const mi = MONTHS.indexOf(mon.toLowerCase());
+  if (mi < 0) return null;
+  const now = new Date();
+  let y = now.getFullYear();
+  if (new Date(y, mi, d) < new Date(now.getFullYear(), now.getMonth() - 2, 1)) y += 1;
+  return new Date(y, mi, d);
+}
+const sameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 function SectionTitle({ title, detail, href }: { title: string; detail?: string; href: string }) {
   const tr = useT();
@@ -74,9 +94,10 @@ function SectionTitle({ title, detail, href }: { title: string; detail?: string;
   </div>;
 }
 
-function CalendarPanel() {
+function CalendarPanel({ marks }: { marks: Date[] }) {
   const tr = useT();
-  const [month, setMonth] = useState(new Date(2026, 8, 1));
+  const today = new Date();
+  const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
   const offset = new Date(year, monthIndex, 1).getDay();
@@ -92,13 +113,24 @@ function CalendarPanel() {
     </div>
     <div className={styles.calendarGrid}>
       {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => <span className={styles.weekday} key={day}>{day}</span>)}
-      {cells.map((day, i) => <span key={`${i}-${day}`} className={day === 19 && monthIndex === 8 && year === 2026 ? styles.today : ""}>{day || ""}</span>)}
+      {cells.map((day, i) => {
+        const at = day ? new Date(year, monthIndex, day) : null;
+        const isToday = !!at && sameDay(at, today);
+        const has = !!at && marks.some((m) => sameDay(m, at));
+        return <span key={`${i}-${day}`} className={isToday ? styles.today : ""}
+                     title={has ? "Something you are going to" : undefined}
+                     style={has ? { position: "relative", ...(isToday ? {} : { fontWeight: 800, color: "var(--ux-brand)" }) } : undefined}>
+          {day || ""}
+          {has && <i aria-hidden style={{ position: "absolute", left: "50%", bottom: 2, width: 4, height: 4, marginLeft: -2, borderRadius: 9, background: isToday ? "#fff" : "var(--ux-brand)" }} />}
+        </span>;
+      })}
     </div>
     <TransitionLink className={styles.calendarEvent} href="/app/schedule"><I name="CalendarDays" /> {tr("learnDashboard.upcomingLearningSessions")} <I name="ArrowRight" /></TransitionLink>
   </section>;
 }
 
 export function LearnDashboard() {
+  const courseCats = useMasterPictures("course_categories");
   const tr = useT();
   const { data: learning } = useLearning();
 
@@ -119,14 +151,48 @@ export function LearnDashboard() {
     certificates: certificates.length,
     mentors: mentorRequests.length,
   });
+  const { data: sessions } = useMentorSessions();
+  const { data: events } = useResource(
+    useCallback(async (s: AbortSignal) => apiEvents(s).catch(() => [] as GrowthEvent[]), []), [] as GrowthEvent[],
+  );
+  const { data: allGoals } = useResource(
+    useCallback(async (s: AbortSignal) => apiGoals(s).catch(() => [] as Goal[]), []), [] as Goal[],
+  );
+  // Learning goals: the ones that count skills — courses, tests, certificates.
+  const goals = allGoals.filter((g) => g.kind === "skill" && g.status !== "dropped").slice(0, 3);
+  const upcoming: Upcoming[] = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const fromEvents = events.filter((e) => e.registered).map((e) => ({
+      key: `e-${e.id}`, date: dayIn(e.date), type: e.category || "Workshop", title: e.title,
+      when: [e.date_label, e.time].filter(Boolean).join(", "), href: `/app/events/${e.id}`,
+    }));
+    const fromMentors = sessions.filter((x) => x.state === "Upcoming").map((x) => ({
+      key: `m-${x.id}`, date: dayIn(x.scheduledFor || x.when), type: "Mentor session",
+      title: `${x.topic.split(". ")[0]} — with ${x.mentor.split(" ")[0]}`, when: x.when, href: "/app/mentors",
+    }));
+    return [...fromEvents, ...fromMentors]
+      .filter((u) => !u.date || u.date >= today)
+      .sort((a, b) => (a.date?.getTime() ?? Infinity) - (b.date?.getTime() ?? Infinity));
+  }, [events, sessions]);
+  const marks = upcoming.flatMap((u) => (u.date ? [u.date] : []));
   const current = learning.continuing.find(course => (course.pct ?? 0) > 0) ?? learning.continuing[0];
   const currentHref = current ? `/app/programs/${current.id}` : "/app/programs";
-  const currentPct = current?.pct ?? 0;
+  // Everything she has going: part-way courses first, then the paid ones
+  // waiting on a teacher to confirm her payment.
+  const mine = [...learning.continuing, ...learning.pending].slice(0, 3);
+  // Free first, then by how many women are already learning it.
+  const picks = [...learning.picks].sort((a, b) => Number(!!a.priceMinor) - Number(!!b.priceMinor)).slice(0, 4);
+  const all = [...learning.continuing, ...learning.pending, ...learning.picks];
+  const fromMaster = courseCats.loaded
+    ? courseCats.items.map((p) => ({ icon: p.extra.icon || "BookOpen", title: p.label, sub: p.extra.note || "",
+                                     cats: (p.children ?? []).map((c) => c.label), pic: courseCats.pic(p.label) }))
+    : PATHS.map((p) => ({ ...p, pic: "" }));
+  const paths = fromMaster.map((p) => ({ ...p, count: all.filter((c) => p.cats.includes(c.category)).length }));
 
   return <HomeShell active="/app/learn" loadFailed="your learning" fit>
     <div className={styles.dashboard} data-dashboard="learn">
       <div className={styles.main}>
-        <section className={styles.hero}>
+        <section className={styles.hero} data-page-hero data-banner>
           <picture>
             {/* The wide banner is composed for a laptop and carries lettering in
               its own artwork; a phone-shaped crop of it cuts the subject or the
@@ -134,7 +200,7 @@ export function LearnDashboard() {
             <source media="(max-width: 1023px)" srcSet={`${ART}hero-mobile.webp`} />
             <img src={`${ART}hero.webp`} alt="" aria-hidden="true" />
           </picture>
-          <div className={styles.heroContent}>
+          <div className={styles.heroContent} data-banner-copy>
             <p className={styles.eyebrow}>Learn <span>•</span> Grow <span>•</span> Achieve</p>
             <h1>{tr("learnDashboard.learnWithoutLimits")}</h1>
             <p>{tr("learnDashboard.newSkillsBetterOpportunitiesABrighter")}</p>
@@ -142,12 +208,17 @@ export function LearnDashboard() {
               <TransitionLink className={styles.primaryAction} href={currentHref}>{tr("learnDashboard.continueLearning")} <I name="ArrowRight" /></TransitionLink>
               <TransitionLink className={styles.videoAction} href="/app/programs"><span><I name="Play" /></span> {tr("learnDashboard.watchYour")}<br />{tr("learnDashboard.learningJourney")}</TransitionLink>
             </div>
-            <div className={styles.heroBenefits}>
+
+          </div>
+        </section>
+            <div className={styles.heroBenefits} data-banner-details>
               <span><I name="BadgeCheck" /> {tr("learnDashboard.practicalSkills")}</span><span><I name="Users" /> {tr("learnDashboard.expertMentors")}</span>
               <span><I name="Award" /> {tr("learnDashboard.recognisedCertificates")}</span><span><I name="Briefcase" /> {tr("learnDashboard.realOpportunities")}</span>
             </div>
-          </div>
-        </section>
+
+        {/* Everything in this section as pictures in its colour — the map a
+            woman who cannot read the rail finds her way by. */}
+        <SectionPictures id="learn" className="" />
 
         <div className={styles.stats}>{stats.map(item => <TransitionLink className={styles.stat} href={item.href} key={item.label}>
           <span className={styles.statIcon}><I name={item.icon} /></span><span><strong>{item.value}<small>{item.unit}</small></strong><span>{item.label}</span></span>
@@ -161,33 +232,83 @@ export function LearnDashboard() {
           labelKey="nudge.learn.label" noteKey="nudge.learn.note" />
 
         <section className={styles.section}>
-          <SectionTitle title={tr("learnDashboard.continueLearning")} href="/app/programs" />
-          <div className={styles.continueCard}>
-            <TransitionLink href={currentHref} className={styles.continueImage}><img src={`${ART}continue.webp`} alt={tr("learnDashboard.womanStudyingAtALaptop")} /><span><I name="Play" /></span><b>{current ? "In Progress" : "Explore"}</b></TransitionLink>
-            <div className={styles.continueDetails}><h3>{current?.title ?? "Find your next course"}</h3><p>{current ? "Pick up where you left off" : "Explore new skills and opportunities"}</p><div className={styles.progressLine}><span><i style={{ width: `${currentPct}%` }} /></span><strong>{currentPct}%</strong> complete</div></div>
-            <TransitionLink href={currentHref} className={styles.continueButton}>{current ? "Continue" : "Explore"} <I name="ArrowRight" /></TransitionLink>
-          </div>
+          <SectionTitle title="My learning" detail={mine.length ? undefined : "Courses you join appear here, with your progress"} href="/app/programs" />
+          {mine.length === 0 ? (
+            <div className={styles.continueCard}>
+              <TransitionLink href="/app/programs" className={styles.continueImage}><img src={`${ART}continue.webp`} alt="" /><b>Explore</b></TransitionLink>
+              <div className={styles.continueDetails}><h3>Find your first course</h3><p>Free courses from the WomSakhi team and from women like you</p></div>
+              <TransitionLink href="/app/programs" className={styles.continueButton}>Explore <I name="ArrowRight" /></TransitionLink>
+            </div>
+          ) : mine.map(course => {
+            const waiting = course.myStatus === "pending";
+            return <div className={styles.continueCard} key={course.id} style={{ marginBottom: 12 }}>
+              <TransitionLink href={`/app/programs/${course.id}`} className={styles.continueImage}><img src={course.ownCover ? course.thumb : pictureOr(null, [course.title], courseCats.of(course.category))} alt="" /><span><I name={waiting ? "Hourglass" : "Play"} /></span><b>{waiting ? "Waiting" : "In Progress"}</b></TransitionLink>
+              <div className={styles.continueDetails}>
+                <h3>{course.title}</h3>
+                <p>{waiting
+                  ? course.paymentStatus === "claimed" ? `Waiting for ${course.teacher} to confirm your payment` : `Pay ${course.teacher} ${priceLabel(course.priceMinor)} to start`
+                  : `By ${course.teacher ?? "WomSakhi team"} · pick up where you left off`}</p>
+                {!waiting && <div className={styles.progressLine}><span><i style={{ width: `${course.pct ?? 0}%` }} /></span><strong>{course.pct ?? 0}%</strong> complete</div>}
+              </div>
+              <TransitionLink href={`/app/programs/${course.id}`} className={styles.continueButton}>{waiting ? "Open" : "Continue"} <I name="ArrowRight" /></TransitionLink>
+            </div>;
+          })}
         </section>
 
         <section className={styles.section}>
-          <SectionTitle title={tr("journey.recommendedForYou")} detail="Based on your interests and goals" href="/app/programs" />
-          <div className={styles.recommendations}>{recommendations.map(course => <TransitionLink className={styles.course} href={course.href} key={course.title}>
-            <div className={styles.courseImage}><img src={`${ART}${course.image}.webp`} alt="" /><b>{course.badge}</b></div>
-            <div className={styles.courseBody}><h3>{course.title}</h3><p>{course.sub}</p><span className={styles.courseMeta}><I name="BookOpenCheck" /> {course.level} · <I name="Clock" /> {course.time}</span><span className={styles.rating}><I name="Star" /> <strong>{course.rating}</strong> ({course.count}) <i><I name="Play" /></i></span></div>
+          <SectionTitle title={tr("journey.recommendedForYou")} detail="From the WomSakhi team and from women who teach here" href="/app/programs" />
+          <div className={styles.recommendations}>{picks.map(course => <TransitionLink className={styles.course} href={`/app/programs/${course.id}`} key={course.id}>
+            <div className={styles.courseImage}><img src={course.ownCover ? course.thumb : pictureOr(null, [course.title], courseCats.of(course.category))} alt="" /><b>{priceLabel(course.priceMinor)}</b></div>
+            <div className={styles.courseBody}><h3>{course.title}</h3><p>By {course.teacher}</p><span className={styles.courseMeta}><I name="BookOpenCheck" /> {course.lessons} lessons · <I name="Clock" /> {course.hours || "Own pace"}</span><span className={styles.rating}><I name={course.byMember ? "UserRound" : "Sparkles"} /> {course.byMember ? "Taught by a member" : "WomSakhi team"} <i><I name="Play" /></i></span></div>
           </TransitionLink>)}</div>
         </section>
 
         <section className={styles.section}>
           <SectionTitle title={tr("learnDashboard.learningPaths")} detail="Structured programs to help you achieve your goals" href="/app/programs" />
-          <div className={styles.paths}>{paths.map(path => <TransitionLink href={path.href} className={styles.path} key={path.title}><span><I name={path.icon} /></span><div><h3>{path.title}</h3><p>{path.sub}</p><small>{path.count}</small></div></TransitionLink>)}</div>
+          <div className={styles.paths}>{paths.map(path => <TransitionLink href={`/app/programs?cat=${encodeURIComponent(path.cats.join(","))}&path=${encodeURIComponent(path.title)}`} className={styles.path} key={path.title}><span>{path.pic ? <img src={path.pic} alt="" loading="lazy" decoding="async" /> : <I name={path.icon} />}</span><div><h3>{path.title}</h3><p>{path.sub}</p><small>{path.count} course{path.count === 1 ? "" : "s"}</small></div></TransitionLink>)}</div>
         </section>
       </div>
 
-      <aside className={styles.rightRail} aria-label={tr("learnDashboard.learningOverview")}>
+      <aside className={`${styles.rightRail} ux-sticky-col`} aria-label={tr("learnDashboard.learningOverview")}>
         <blockquote className={styles.quote}><span aria-hidden="true">“</span><p>{tr("learnDashboard.learningIsNotJustForToday")}</p><cite>— WomSakhi</cite></blockquote>
-        <CalendarPanel />
-        <section className={styles.railPanel}><SectionTitle title={tr("learnDashboard.upcomingSessions")} href="/app/schedule" /><div className={styles.sessions}>{sessions.map(session => <TransitionLink href="/app/schedule" className={styles.session} key={session.title}><span className={styles.date}><small>{session.month}</small>{session.day}</span><span><b className={styles.sessionType}>{session.type}</b><strong>{session.title}</strong><small>{session.when}</small></span></TransitionLink>)}</div></section>
-        <section className={styles.railPanel}><SectionTitle title={tr("learnDashboard.myLearningGoals")} href="/app/goals" /><div className={styles.goals}>{goals.map(goal => <TransitionLink href={goal.href} className={styles.goal} key={goal.title}><span className={styles.goalIcon}><I name={goal.icon} /></span><span className={styles.goalInfo}><span>{goal.title}<b>{goal.done}</b></span><i><i style={{ width: `${goal.pct}%` }} /></i></span></TransitionLink>)}</div></section>
+        <CalendarPanel marks={marks} />
+        <section className={styles.railPanel}>
+          <SectionTitle title={tr("learnDashboard.upcomingSessions")} href="/app/schedule" />
+          {upcoming.length ? (
+            <div className={styles.sessions}>{upcoming.slice(0, 3).map(u => (
+              <TransitionLink href={u.href} className={styles.session} key={u.key}>
+                <span className={styles.date}>
+                  <small>{u.date ? u.date.toLocaleString("en-IN", { month: "short" }).toUpperCase() : "TBC"}</small>
+                  {u.date ? String(u.date.getDate()).padStart(2, "0") : "—"}
+                </span>
+                <span><b className={styles.sessionType}>{u.type}</b><strong>{u.title}</strong><small>{u.when}</small></span>
+              </TransitionLink>
+            ))}</div>
+          ) : (
+            <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ux-muted)" }}>
+              Nothing booked yet. <TransitionLink href="/app/events" style={{ color: "var(--ux-brand)", fontWeight: 700 }}>Find a workshop</TransitionLink>
+              {" "}or <TransitionLink href="/app/mentors" style={{ color: "var(--ux-brand)", fontWeight: 700 }}>ask a mentor</TransitionLink>.
+            </p>
+          )}
+        </section>
+        <section className={styles.railPanel}>
+          <SectionTitle title={tr("learnDashboard.myLearningGoals")} href="/app/goals" />
+          {goals.length ? (
+            <div className={styles.goals}>{goals.map(goal => (
+              <TransitionLink href="/app/goals" className={styles.goal} key={goal.id}>
+                <span className={styles.goalIcon}><I name={goal.reached ? "CheckCircle2" : "BookmarkCheck"} /></span>
+                <span className={styles.goalInfo}>
+                  <span>{goal.label}<b>{goal.current}/{goal.target}</b></span>
+                  <i><i style={{ width: `${Math.min(100, goal.pct)}%` }} /></i>
+                </span>
+              </TransitionLink>
+            ))}</div>
+          ) : (
+            <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ux-muted)" }}>
+              No learning goal yet. <TransitionLink href="/app/goals" style={{ color: "var(--ux-brand)", fontWeight: 700 }}>Set one</TransitionLink> — like finishing a course this month.
+            </p>
+          )}
+        </section>
       </aside>
     </div>
   </HomeShell>;

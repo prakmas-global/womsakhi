@@ -426,8 +426,8 @@ export function DraftCard({
 const TOOL_LOOK: Record<string, { label: string; icon: string }> = {
   earnings: { label: "Your earnings", icon: "Wallet" },
   bookings: { label: "Your bookings", icon: "CalendarDays" },
-  programmes: { label: "Your courses", icon: "GraduationCap" },
-  programs: { label: "Your courses", icon: "GraduationCap" },
+  programmes: { label: "My courses", icon: "GraduationCap" },
+  programs: { label: "My courses", icon: "GraduationCap" },
   circles: { label: "Your circles", icon: "UsersRound" },
   opportunities: { label: "Open work", icon: "Search" },
   certificates: { label: "Your certificates", icon: "Award" },

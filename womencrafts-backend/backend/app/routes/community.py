@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pymongo.errors import DuplicateKeyError
 
 from app.core import mongosafe
+from app.core import community_masters
 from app.core import cache
 from app.core import idempotency
 from app.core.rbac import require_active_member
@@ -24,6 +25,7 @@ from app.core.serializers import to_object_id
 from app.core.media import media_url
 from app.db.mongodb import get_database
 from app.models.wallet import WalletTxnModel
+from app.models.circle_chat import post_system, who
 from app.routes.wallet import balance_minor, symbol
 from app.models.community import (
     CircleContributionModel,
@@ -273,9 +275,12 @@ async def create_circle(
 
 async def _create_circle(body: CircleCreate, me: dict):
     uid = str(me["_id"])
+    # Topic and tags come from the masters (app/core/community_masters.py).
+    topic = await community_masters.fold_topic(body.topic)
+    tags = await community_masters.clean_tags(body.tags)
     doc = CircleModel.create_document(
         name=body.name.strip(),
-        topic=body.topic.strip(),
+        topic=topic,
         desc=body.desc.strip(),
         is_private=body.is_private,
         created_by=uid,
@@ -285,7 +290,7 @@ async def _create_circle(body: CircleCreate, me: dict):
         monthly_minor=body.monthly_minor if body.is_savings else 0,
         cover=body.cover,
         icon=body.icon,
-        tags=[t.strip().lower().lstrip("#") for t in body.tags if t.strip()],
+        tags=tags,
         guidelines=body.guidelines.strip(),
         who_posts=body.who_posts,
         review_first=body.review_first,
@@ -303,6 +308,8 @@ async def _create_circle(body: CircleCreate, me: dict):
         )
     )
     await _circles().update_one({"_id": result.inserted_id}, {"$set": {"member_count": 1}})
+    # The chat starts with the line every group chat starts with.
+    await post_system(get_database(), circle_id, f'{who(me)} created the group "{doc["name"]}"', actor_id=uid)
 
     invites = []
     seen = set()
@@ -360,11 +367,16 @@ async def update_circle(
     circle_id: str, body: CircleUpdate, me: dict = Depends(require_active_member),
 ):
     uid = str(me["_id"])
-    tags = list(dict.fromkeys(t.strip() for t in body.tags if t.strip()))[:5]
+    current = await _circles().find_one(
+        {"_id": to_object_id(circle_id), "status": "active", "created_by": uid}, {"topic": 1, "tags": 1})
+    if not current:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Only the circle host can change its details")
+    topic = await community_masters.fold_topic(body.topic, current.get("topic", ""))
+    tags = await community_masters.clean_tags(body.tags, current.get("tags") or [])
     updated = await _circles().find_one_and_update(
         {"_id": to_object_id(circle_id), "status": "active", "created_by": uid},
         {"$set": {
-            "name": body.name.strip(), "topic": body.topic.strip(),
+            "name": body.name.strip(), "topic": topic,
             "desc": body.desc.strip(), "guidelines": body.guidelines.strip(),
             "tags": tags, "who_posts": body.who_posts,
             "review_first": body.review_first, "tell_me": body.tell_me,
@@ -499,6 +511,7 @@ async def join_circle(circle_id: str, me: dict = Depends(require_active_member))
         )
         await _circles().update_one({"_id": circle["_id"]}, {"$inc": {"member_count": 1}})
         circle["member_count"] = circle.get("member_count", 0) + 1
+        await post_system(get_database(), circle_id, f"{who(me)} joined", actor_id=user_id)
     return CircleModel.to_response(circle, True)
 
 
@@ -514,6 +527,7 @@ async def leave_circle(circle_id: str, me: dict = Depends(require_active_member)
             {"_id": circle["_id"], "member_count": {"$gt": 0}}, {"$inc": {"member_count": -1}}
         )
         circle["member_count"] = max(circle.get("member_count", 1) - 1, 0)
+        await post_system(get_database(), circle_id, f"{who(me)} left", actor_id=user_id)
     return CircleModel.to_response(circle, False)
 
 

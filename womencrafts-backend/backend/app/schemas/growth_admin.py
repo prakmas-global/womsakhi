@@ -223,6 +223,9 @@ class OpportunityRow(BaseModel):
     pay_high_minor: int = 0
     pay_period: str = ""
     skills: list[str]
+    category: str = ""
+    skill_keys: list[str] = []
+    owner_kind: str = "staff"
     openings: int
     deadline: str
     deadline_label: str
@@ -258,6 +261,12 @@ class ApplicationRow(BaseModel):
     applied_on: str
     updated_on: str = ""
     history: list[HistoryEntry] = []
+    #: Skills the applicant proved by passing a WomSakhi test.
+    verified_skills: list[dict] = []
+    #: Her skills that match the job, snapshot when she applied.
+    matching_skills: list[dict] = []
+    #: Work done: "" | mine (she said so — confirm it) | confirmed.
+    done: str = ""
 
 
 class ApplicationDecide(BaseModel):
@@ -267,7 +276,7 @@ class ApplicationDecide(BaseModel):
     @field_validator("status")
     @classmethod
     def known(cls, v: str) -> str:
-        allowed = ("applied", "shortlisted", "interview", "offered", "closed")
+        allowed = ("applied", "shortlisted", "interview", "offered", "closed", "completed")
         if v not in allowed:
             raise ValueError("Unknown status")
         return v

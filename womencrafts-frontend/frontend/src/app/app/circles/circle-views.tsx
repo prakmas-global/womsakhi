@@ -1,5 +1,7 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
+import { circlePicture, useCircleTopics } from "@/components/ux/circle/topics";
 import Link from "next/link";
 
 import { useT } from "@/i18n";
@@ -19,7 +21,7 @@ export function CircleHero({ ask, onAsk, onStart }: {
   const CIRCLE_ART = useTranslated(RAW_CIRCLE_ART);
   const tr = useT();
   return (
-    <section className="relative mb-4 overflow-hidden rounded-[20px] max-lg:rounded-[16px]"
+    <section data-banner data-page-hero className="relative mb-4 overflow-hidden rounded-[20px] max-lg:rounded-[16px]"
              style={{ background: "linear-gradient(102deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 55%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
       {/*
@@ -32,10 +34,13 @@ export function CircleHero({ ask, onAsk, onStart }: {
         <div className="p-4 sm:p-7">
           {/* `text-4xl` is 36px — a desktop hero's size on a 390px screen,
               where iOS's own large title is 34 and this app's is 30. */}
-          <h1 className="ux-screen-title text-[28px] font-extrabold leading-none tracking-[-0.03em] lg:text-4xl"
-              style={{ color: v("--ux-ink") }}>
-            Circle
-          </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[28px] font-extrabold leading-none tracking-[-0.03em] lg:text-4xl min-w-0"
+                style={{ color: v("--ux-ink") }}>
+              Circle
+            </h1>
+          </div>
           <p className="mt-2 max-w-[400px] text-[15px] leading-snug lg:mt-2.5 lg:text-smd" style={{ color: v("--ux-ink-2") }}>
             {tr("circleviews.aSafeSupportiveSpaceForWomen")}
           </p>
@@ -367,6 +372,7 @@ export function MyCircle({ posts, likes, saved }: {
 export function PopularGroups({ rows, busy, onJoin }: {
   rows: Circle[]; busy: string | null; onJoin: (c: Circle) => void;
 }) {
+  const live = useCircleTopics();
   const tr = useT();
   // "Popular circles" above five she is already in is a dead panel. When there
   // is nothing left to discover, the card says what it is actually showing.
@@ -384,17 +390,16 @@ export function PopularGroups({ rows, busy, onJoin }: {
       </div>
       <div className="space-y-2.5">
         {rows.map((c) => {
-          const t = topicOf(c.topic);
+          const t = topicOf(c.topic, live);
           return (
             <div key={c.id} className="flex items-center gap-2.5">
               <Link href={`/app/circles/${c.id}`} className="ux-sq shrink-0"
                     aria-label={`Open ${c.name}`}>
-                <span className="grid h-[40px] w-[40px] place-items-center overflow-hidden rounded-[12px]"
+                <span className="grid h-[52px] w-[52px] place-items-center overflow-hidden rounded-[12px]"
                       style={{ background: v(t.tint) }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {c.cover ? <img src={c.cover} alt="" aria-hidden loading="lazy" decoding="async"
-                                  className="h-full w-full object-cover" />
-                           : <I name={t.icon} className="h-[17px] w-[17px]" style={{ color: v(t.ink) }} />}
+                  <img src={circlePicture(c, t)} alt="" aria-hidden loading="lazy" decoding="async"
+                       className="h-full w-full object-cover" />
                 </span>
               </Link>
               <Link href={`/app/circles/${c.id}`} className="ux-sq min-w-0 flex-1">

@@ -13,6 +13,9 @@ import { useBusiness } from "@/components/ux/business";
 import { useMe } from "@/components/ux/me";
 import { useT } from "@/i18n";
 import { phoneFull } from "@/components/ux/PhoneParts";
+import { SkillBadges } from "@/components/ux/SkillBadges";
+import { apiMyWorkProfile, type WorkProfile } from "@/lib/work-api";
+import { apiMyImpact, apiMyPortfolio, type Impact, type PortfolioItem } from "@/lib/portfolio-api";
 
 
 /**
@@ -60,6 +63,14 @@ export default function ProfilePreview() {
   const name = profile?.full_name || ME.name;
   const verified = profile?.verification_status === "active";
   const delivered = biz.orders.filter((o) => o.state === "Done").length;
+  // Only what a stranger is allowed to see: skills she switched on, pieces she
+  // marked shown. The hidden ones are hers alone, so they are not here.
+  const work = useResource(useCallback((s: AbortSignal) => apiMyWorkProfile(s).catch(() => null), []), null as WorkProfile | null);
+  const pieces = useResource(useCallback((s: AbortSignal) => apiMyPortfolio(s).catch(() => []), []), [] as PortfolioItem[]);
+  const impact = useResource(useCallback((s: AbortSignal) => apiMyImpact(s).catch(() => null), []), null as Impact | null);
+  const shownSkills = (work.data?.skills ?? []).filter((x) => x.visible);
+  const shownPieces = pieces.data.filter((x) => x.visible);
+  const LEVEL: Record<string, string> = { learning: "Learning", "1-2": "1–2 yrs", "3-5": "3–5 yrs", "5+": "5+ yrs" };
 
   return (
     <HomeShell
@@ -150,6 +161,7 @@ export default function ProfilePreview() {
             <div className="mt-2.5 flex flex-wrap gap-2">
               {verified && <Pill tone="green" size="sm">{tr("profilePreview.verifiedMember")}</Pill>}
               {profile?.segment && <Pill tone="brand" size="sm">{profile.segment}</Pill>}
+              <SkillBadges skills={profile?.verified_skills} size="sm" />
             </div>
           </div>
         </div>
@@ -167,7 +179,7 @@ export default function ProfilePreview() {
 
       {/* Two columns from `lg` only. At 390px a fixed 320px column left the
           other one 14px wide. */}
-      <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="ux-split-lg grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-[16px]">
           <Card>
             <SectionHead title={tr("profilePreview.whatSheHasDone")} />
@@ -189,6 +201,50 @@ export default function ProfilePreview() {
                 </div>
               ))}
             </div>
+          </Card>
+
+          <Card>
+            <SectionHead title="What she can do" sub="The skills you switched on in My work profile" />
+            {shownSkills.length ? (
+              <div className="flex flex-wrap gap-2">
+                {shownSkills.map((x) => (
+                  <span key={x.key} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                        style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
+                    {x.verified && <Icons.BadgeCheck className="h-[13px] w-[13px]" />}
+                    {x.name}{x.level ? ` · ${LEVEL[x.level] ?? x.level}` : ""}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xsm" style={{ color: "var(--ux-faint)" }}>
+                No skills shown — a stranger sees none. Switch skills on in <a className="font-bold underline" href="/app/work/profile">My work profile</a>.
+              </p>
+            )}
+          </Card>
+
+          <Card>
+            <SectionHead title="Work she made" sub="Pieces you marked as shown" />
+            {shownPieces.length ? (
+              <div className="grid grid-cols-3 gap-2">
+                {shownPieces.slice(0, 9).map((x) => (
+                  <figure key={x.id} className="overflow-hidden rounded-[12px]" style={{ background: "var(--ux-surface-2)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={x.photo} alt={x.title} loading="lazy" className="aspect-square w-full object-cover" />
+                    <figcaption className="truncate px-2 py-1.5 text-2xs font-semibold" style={{ color: "var(--ux-ink-2)" }}>{x.title}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xsm" style={{ color: "var(--ux-faint)" }}>
+                Nothing shown yet. Add photos of your work under <a className="font-bold underline" href="/app/profile">What you made</a>.
+              </p>
+            )}
+            {(impact.data?.women_helped ?? 0) > 0 && (
+              <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--ux-pink-ink)" }}>
+                <Icons.HeartHandshake className="h-[14px] w-[14px]" />
+                Has helped {impact.data!.women_helped} {impact.data!.women_helped === 1 ? "woman" : "women"} on WomSakhi
+              </p>
+            )}
           </Card>
 
           <Card>
@@ -240,9 +296,13 @@ export default function ProfilePreview() {
           <Card>
             <SectionHead title={tr("profilePreview.getInTouch")} />
             <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{tr("profilePreview.messagesReachHerInsideWomsakhiShe")}</p>
-            <div className="mt-3.5">
-              <Btn href="/app/messages" variant="primary" size="sm" full icon="MessageCircle" className={phoneFull}>{tr("profilePreview.messageHer")}</Btn>
+            {/* This is HER preview of herself — a working button would message
+                herself. It shows the button others get, and says so. */}
+            <div className="mt-3.5 flex items-center justify-center gap-2 rounded-[12px] px-4 py-2.5 text-xsm font-semibold"
+                 aria-hidden style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
+              <Icons.MessageCircle className="h-4 w-4" /> {tr("profilePreview.messageHer")}
             </div>
+            <p className="mt-1.5 text-center text-2xs" style={{ color: "var(--ux-faint)" }}>The button others see on your profile.</p>
           </Card>
         </div>
       </div>

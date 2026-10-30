@@ -16,7 +16,7 @@ export default function Loading() {
     }}>
       <div className="ac">
         <div role="status" className="ac-wait">
-          <span className="ac-spin" aria-hidden style={{ border: "3px solid #f8e3eb", borderTopColor: "#9b1d50", borderRadius: "50%" }} />
+          <span className="ac-spin" aria-hidden style={{ border: "3px solid var(--ws-magenta-100)", borderTopColor: "var(--ws-magenta-600)", borderRadius: "50%" }} />
           <p>Loading…</p>
         </div>
       </div>

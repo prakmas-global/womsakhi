@@ -1,5 +1,7 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
+import { artFor } from "@/components/ux/media/art";
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -102,8 +104,11 @@ export default function ContractsPage() {
 
         <header>
           <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("contracts.bigOrders")}</p>
-          <h1 className="ux-screen-title mt-1 lg:mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("contracts.ordersTooBigForOneWoman")}</h1>
+          <div className="mt-1 lg:mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("contracts.ordersTooBigForOneWoman")}</h1>
+          </div>
           <p className="mt-2 max-w-[58ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             One buyer wants hundreds of pieces, and several of you make them between you. Everything
             below is an order a real buyer has placed with us. When you apply, that buyer sees your
@@ -165,7 +170,7 @@ export default function ContractsPage() {
               action={<Btn href="/app/opportunities" icon="Search">{tr("contracts.seeAllTheWork")}</Btn>}
             />
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="grid gap-4 lg:grid-cols-2">
               {open.map((o) => (
                 <OrderCard key={o.id} o={o} closed={false}
                            busy={apply.busyWith === o.id}
@@ -179,7 +184,7 @@ export default function ContractsPage() {
           <div>
             <SectionLabel title="Closed" sub={tr("contracts.keptHereSoYouCanSee")}
                           icon="Archive" chip={String(closed.length)} />
-            <div className="flex flex-col gap-4">
+            <div className="grid gap-4 lg:grid-cols-2">
               {closed.map((o) => (
                 <OrderCard key={o.id} o={o} closed onApply={() => {}} busy={false} />
               ))}
@@ -296,6 +301,25 @@ function OrderCard({ o, closed, busy, onApply }: {
 
   return (
     <Card pad={0} style={{ overflow: "hidden", opacity: closed ? 0.72 : 1 }}>
+      {/* The work itself, big — what the order is, before a word of it. */}
+      <div className="relative h-[170px] w-full overflow-hidden sm:h-[200px]" style={{ background: v("--ux-surface-2") }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={artFor([o.title, o.skills.join(" "), o.desc], "product", undefined, o.id)} alt={o.title}
+             loading="lazy" decoding="async" className="h-full w-full object-cover"
+             style={{ filter: closed ? "grayscale(.85)" : undefined }} />
+        <span aria-hidden className="absolute inset-0"
+              style={{ background: "linear-gradient(180deg, rgba(16,6,24,.12), rgba(16,6,24,0) 40%, rgba(16,6,24,.55))" }} />
+        <span className="absolute start-3 top-3 rounded-full px-2.5 py-1 text-2xs font-bold shadow-sm"
+              style={{ background: "rgba(255,255,255,.92)", color: "#2a1a24" }}>
+          {o.openings > 1 ? `${o.openings} women needed` : "One woman"}
+        </span>
+        {(o.applied || closed) && (
+          <span className="absolute end-3 top-3 rounded-full px-2.5 py-1 text-2xs font-bold shadow-sm"
+                style={closed ? { background: "rgba(24,10,34,.8)", color: "#fff" } : { background: "#0f7a43", color: "#fff" }}>
+            {closed ? "Closed" : "You applied"}
+          </span>
+        )}
+      </div>
       <div className="flex flex-wrap items-start gap-4 px-4 pt-4 lg:px-5 lg:pt-5">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

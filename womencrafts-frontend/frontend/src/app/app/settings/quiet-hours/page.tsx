@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
@@ -113,8 +114,11 @@ export default function QuietHoursPage() {
             <Icons.ChevronRight className="h-[13px] w-[13px]" />
             <span style={{ color: "var(--ux-ink-2)" }}>{tr("settingsQuiethours.quietHours")}</span>
           </p>
-          <h1 className="text-[clamp(1.375rem,3vw,1.875rem)] font-extrabold leading-[1.12] tracking-[-0.03em]"
-              style={{ color: "var(--ux-ink)", textWrap: "balance" }}>{tr("settingsQuiethours.yourPhoneSleepsWhenYouDo")}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-[clamp(1.375rem,3vw,1.875rem)] font-extrabold leading-[1.12] tracking-[-0.03em] min-w-0"
+                style={{ color: "var(--ux-ink)", textWrap: "balance" }}>{tr("settingsQuiethours.yourPhoneSleepsWhenYouDo")}</h1>
+          </div>
           <p className="mt-2.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Pick the hours you do not want to be disturbed. Everything that arrives while you sleep
             waits for you in Notifications — nothing is lost, it just waits until morning.
@@ -139,7 +143,7 @@ export default function QuietHoursPage() {
                   onChange={(v) => set({ quiet_hours: v })} />
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_342px]">
+        <div className="ux-split-lg grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_342px]">
           <Dial p={p} set={set} marks={marks} inside={inside} span={span} caught={caught} />
 
           <div className="flex flex-col gap-5">

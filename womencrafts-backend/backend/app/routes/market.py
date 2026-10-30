@@ -45,7 +45,7 @@ from typing import Optional
 from bson import ObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 
-from app.core import idempotency, mongosafe
+from app.core import idempotency, mongosafe, store
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.core.media import media_url
@@ -123,6 +123,11 @@ NOT_HIDDEN = {"hidden": {"$ne": True}}
 async def _suspended_sellers() -> list[str]:
     """Accounts staff have suspended from selling; their listings are not for sale."""
     return [str(i) for i in await _users().distinct("_id", {"seller_suspended": True})]
+
+
+async def _closed_sellers() -> list[str]:
+    """Women who have closed their store for now (app/core/store.py); left out of browse."""
+    return [str(i) for i in await _users().distinct("_id", store.closed_filter())]
 
 
 async def _for_sale(doc: dict | None) -> bool:
@@ -241,6 +246,10 @@ def _row(
             # an empty string — a blank name reads like a rendering bug.
             "name": who.get("full_name") or "A WomSakhi member",
             "avatar": media_url(who.get("avatar") or ""),
+            "shop_name": store.store_name(who) if who else "",
+            "shop_logo": media_url(((who.get("store") or {}).get("logo")) or ""),
+            "open": store.is_open(who),
+            "away_line": store.away_line(who) if who else "",
             "tie": tie,
             "tie_label": _TIE_LABEL[tie],
             "orders_done": int(stat.get("orders_done", 0)),
@@ -274,7 +283,7 @@ async def _decorate(docs: list[dict], uid: str) -> list[dict]:
         _orders().distinct("seller_id", {"buyer_id": uid}),
         _saved().distinct("ref_id", {"user_id": uid, "kind": SavedModel.KIND_LISTING}),
         _users().find(
-            {"_id": {"$in": _oids(seller_ids)}}, {"full_name": 1, "avatar": 1},
+            {"_id": {"$in": _oids(seller_ids)}}, {"full_name": 1, "avatar": 1, "store": 1},
         ).to_list(len(seller_ids) or 1),
         _seller_stats(seller_ids),
     )
@@ -312,12 +321,15 @@ async def browse(
     uid = str(me["_id"])
     query: dict = {
         "status": ListingModel.STATUS_LIVE, **NOT_HIDDEN,
-        "user_id": {"$nin": [uid, *await _suspended_sellers()]},
+        "user_id": {"$nin": [uid, *await _suspended_sellers(), *await _closed_sellers()]},
     }
     if kind in (ListingModel.KIND_PRODUCT, ListingModel.KIND_SERVICE):
         query["kind"] = kind
     if category:
-        query["category"] = category
+        # A key from the staff-controlled tree (a category or a sub-category),
+        # or an old free-text name.
+        query["$and"] = query.get("$and", []) + [{"$or": [
+            {"category_key": category}, {"subcategory_key": category}, {"category": category}]}]
     if q and q.strip():
         query.update(mongosafe.any_of(q, ["title", "desc", "category", "place"]))
 
@@ -462,6 +474,12 @@ async def _place_order(listing_id: str, body: PlaceOrderRequest, me: dict) -> Pl
             status.HTTP_404_NOT_FOUND, "That is not for sale any more. She may have paused it.")
     if listing.get("user_id") == uid:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is your own listing.")
+    seller_doc = await _users().find_one({"_id": to_object_id(listing.get("user_id", ""))},
+                                         {"store": 1, "full_name": 1})
+    if seller_doc and not store.is_open(seller_doc):
+        # Refused, never taken and left waiting: she said she is away.
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            {"code": "shop_closed", "message": store.away_line(seller_doc)})
 
     quantity = max(1, int(body.quantity))
     stock = listing.get("stock")

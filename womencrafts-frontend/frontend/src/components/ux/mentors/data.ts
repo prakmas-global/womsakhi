@@ -30,6 +30,10 @@ export type Mentor = {
   fee_minor: number;
   tint: string;
   ink: string;
+  session_mode?: string;
+  is_mine?: boolean;
+  owner_kind?: string;
+  verified_skills?: { skill: string; title: string; score: number; code: string }[];
 };
 
 export const MENTORS: Mentor[] = [
@@ -95,12 +99,10 @@ export const MY_SESSIONS = [
     mode: "Video call" },
 ];
 
-export const EXPERTISE = [
-  "Digital marketing", "Bookkeeping", "Getting started", "Communication",
-  "Online selling", "Tailoring", "Savings", "Pricing",
-];
+// Mentor topics are the "mentor_topics" master (Masters → Mentor topics).
 
-export const LANGUAGES = ["Hindi", "English", "Gujarati", "Urdu", "Telugu", "Tamil", "Bhojpuri"];
+// Languages are the `languages` master (lib/masters-api.ts); the Mentors
+// filter offers the ones mentors actually speak.
 
 export const MENTOR_ART = {
   empty: A("empty-magnifying-glass-blank-page"),

@@ -1,13 +1,16 @@
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
 /**
- * The current product brand pair, scoped to the auth screens. These match the
- * signed-in app's design tokens so the first screen and the member experience
- * feel like one product. The shell puts both variable classes on its own root.
+ * The brand's one typeface (design-system/brand.css), scoped to the sign-in,
+ * verification and onboarding shells, which put both variable classes on
+ * their own root.
+ *
+ * `authSerif` keeps its name so the stylesheets that read `--wsa-serif` for
+ * headings need no change, but it is the same family: WomSakhi headings
+ * differ from body text by weight and size, not by typeface.
  */
-export const authSerif = Fraunces({
+export const authSerif = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
   variable: "--wsa-serif",
   display: "swap",
 });

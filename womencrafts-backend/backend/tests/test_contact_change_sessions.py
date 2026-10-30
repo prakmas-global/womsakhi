@@ -185,8 +185,9 @@ async def test_changing_her_phone_on_her_profile_follows_the_same_rule(api):
     here = await sessions.start(None, user)
     there = await sessions.start(None, user)
 
-    # Name only: nothing ends.
-    renamed = await client.patch("/me/profile", json={"full_name": "New Name"}, headers=_bearer(here))
+    # A non-contact field only: nothing ends. (Her name is locked once she is
+    # verified — see test_usernames.py — so the bio stands in for it.)
+    renamed = await client.patch("/me/profile", json={"bio": "I sew and sell"}, headers=_bearer(here))
     assert renamed.status_code == 200, renamed.text
     assert await _signed_in(client, there)
 

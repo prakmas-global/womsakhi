@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
@@ -11,7 +12,8 @@ import { useResource } from "@/lib/use-resource";
 import { Back, Btn, Card, EmptyState, IconTile, mapsHref, Pill, Progress, RailSkeleton, ScreenSkeleton, SectionHead } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { toEvent, useEvents } from "@/components/ux/growth";
-import { rupees, type Ev } from "@/components/ux/events/data";
+import { EVENTS as SAMPLE_EVENTS, eventLook, isMela, rupees, type Ev } from "@/components/ux/events/data";
+import { pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 import { useT } from "@/i18n";
 
 /**
@@ -33,6 +35,7 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
     null as Ev | null,
   );
   const { data: events } = useEvents();
+  const kindPics = useMasterPictures("event_categories");
   const EVENTS = [...events.upcoming, ...events.past];
 
   /**
@@ -181,9 +184,11 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
       <Back to="/app/events" label={tr("events.allEvents2")} className="mb-4" />
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
-        <div className="relative h-[210px] overflow-hidden" style={{ background: `var(${e.tint})` }}>
+        <div className="relative h-[240px] overflow-hidden lg:h-[300px]" style={{ background: `var(${e.tint})` }}>
+          {/* Its own cover, else the picture of what happens there. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src={e.art} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={pictureOr(e.art !== SAMPLE_EVENTS[0]?.art ? e.art : null, [e.title, e.blurb], kindPics.of(e.kind))}
+               alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.5), transparent 58%)" }} />
           <span className="absolute start-4 top-4 grid h-[62px] w-[56px] place-items-center rounded-[12px]"
@@ -192,13 +197,16 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
             <span className="text-2xs font-semibold" style={{ color: "var(--ux-brand)" }}>{e.month}</span>
           </span>
           <span className="absolute end-4 top-4 flex gap-2">
-            <Pill tone={e.kind === "Mela" ? "pink" : e.kind === "Webinar" ? "blue" : "green"} size="sm">{e.kind}</Pill>
+            <Pill tone={eventLook(e.kind).tone} size="sm">{e.kind}</Pill>
             {full && <Pill tone="orange" size="sm">Full</Pill>}
           </span>
         </div>
 
         <div className="p-[20px]">
-          <h1 className="text-2xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{e.title}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-2xl font-bold leading-tight min-w-0" style={{ color: "var(--ux-ink)" }}>{e.title}</h1>
+          </div>
           <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <span className="inline-flex items-center gap-1.5"><Icons.Calendar className="h-4 w-4" /> {e.when}</span>
             <span className="inline-flex items-center gap-1.5"><Icons.Clock className="h-4 w-4" /> {e.time}</span>
@@ -210,11 +218,11 @@ export default function EventDetail({ params }: { params: Promise<{ id: string }
         </div>
       </Card>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
+      <div className="ux-split-lg grid grid-cols-[minmax(0,1fr)_300px] gap-[16px]">
         <Card>
           <SectionHead title={tr("events.whatHappensOnTheDay")} />
           <ol className="ux-stagger space-y-3.5">
-            {(e.kind === "Mela"
+            {(isMela(e.kind)
               ? [["Arrive by 9:30", "Find your table — they are numbered and yours is in the message"],
                  ["Set up until 10:00", "Bring a cloth for the table if you want one"],
                  ["Sell until 4:00", "Most buying happens between 11 and 1"],

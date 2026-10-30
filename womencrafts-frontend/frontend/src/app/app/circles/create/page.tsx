@@ -7,11 +7,13 @@ import { useRouter } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Back, Btn, I, IconTile, v } from "@/components/ux/kit";
-import { Area, Choice, Label, Select, Steps, Text, Toggle } from "@/components/ux/kit/form";
+import { Area, Choice, Label, Picks, Select, Steps, Text, Toggle } from "@/components/ux/kit/form";
 import { apiCreateCircle } from "@/lib/growth-api";
 import { apiUploadImage } from "@/lib/uploads-api";
 import { settled, useAttemptKey } from "@/lib/idempotency";
-import { PRIVACY as RAW_PRIVACY, SUGGESTED_TAGS as RAW_SUGGESTED_TAGS, TOPICS as RAW_TOPICS } from "@/components/ux/circle/data";
+import { PRIVACY as RAW_PRIVACY, TOPICS as RAW_TOPICS } from "@/components/ux/circle/data";
+import { topicPicture, useCircleTags, useCircleTopicList } from "@/components/ux/circle/topics";
+import { PicTiles } from "@/components/ux/media/MasterPictures";
 import {
   Block, CircleTips, CoverPicker, CreateHero, LivePreview, SafePromise, TagField,
 } from "./create-views";
@@ -53,10 +55,42 @@ const WHO_POSTS = [
   { id: "hosts", icon: "ShieldCheck",  title: "Only you and hosts",   sub: "Members can reply, but not start one." },
 ];
 
+/**
+ * Words most circles start with, one tap each — by topic id, because the
+ * topic labels are translated. Her own words still go in the same fields.
+ */
+const NAME_IDEAS: Record<string, string[]> = {
+  business: ["Home business circle", "Selling from home", "Handmade makers"],
+  health:   ["Healthy together", "Mothers' health circle", "Morning walk group"],
+  career:   ["Learning together", "Spoken English practice", "Finding work"],
+  money:    ["Money talk", "Saving together", "UPI and banking help"],
+  family:   ["Mothers' circle", "Working mothers", "Family and home"],
+  stories:  ["Our success stories", "First sale stories"],
+  safety:   ["Know your rights", "Safe at work"],
+};
+const DESC_IDEAS = [
+  "Share tips and ask questions", "Help each other find customers", "Learn something new every week",
+  "A safe, kind place to talk", "For women in our area", "Hindi and English both welcome",
+];
+const RULE_IDEAS = [
+  "Be kind", "Ask anything, no question is too small", "No selling without asking",
+  "Keep phone numbers private", "Respect every faith and family",
+];
+/** Add or remove one phrase in a ". "-joined text. */
+const togglePhrase = (text: string, phrase: string) => {
+  const parts = text.split(". ").map((x) => x.trim().replace(/\.$/, "")).filter(Boolean);
+  const next = parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase];
+  return next.length ? `${next.join(". ")}.` : "";
+};
+const phrasesIn = (text: string) => text.split(". ").map((x) => x.trim().replace(/\.$/, ""));
+
 export default function CreateCirclePage() {
-  const SUGGESTED_TAGS = useTranslated(RAW_SUGGESTED_TAGS);
+  // Tags and topics are the staff-controlled masters; the built-in lists show
+  // until they load. Labels stay as the server keeps them, since that is what
+  // the server checks a new circle against.
+  const SUGGESTED_TAGS = useCircleTags();
   const PRIVACY = useTranslated(RAW_PRIVACY);
-  const TOPICS = useTranslated(RAW_TOPICS);
+  const TOPICS = useCircleTopicList();
   const tr = useT();
   const router = useRouter();
   const { user } = useAuth();
@@ -108,6 +142,8 @@ export default function CreateCirclePage() {
   );
 
   const step1Ok = name.trim().length > 2 && desc.trim().length > 9 && Boolean(category);
+  // Name ideas are keyed by the built-in topic ids.
+  const topicId = RAW_TOPICS.find((t) => t.label === category)?.id ?? "";
 
   const go = useCallback((n: number) => {
     setAt(n);
@@ -195,28 +231,13 @@ export default function CreateCirclePage() {
         {at === 1 && (
           <Block icon="UsersRound" title={tr("circlesCreate.basicInformation")}
                  sub={tr("circlesCreate.whatItIsCalledWhoIt")}>
+            {/* Topic first, as pictures: once it is picked, the name is one tap. */}
             <div className="mb-5">
-              <Label need>{tr("circlesCreate.whatIsThisCircleCalled")}</Label>
-              <Text value={name} onChange={setName} max={50} label={tr("circlesCreate.circleName")}
-                    placeholder="e.g. Handmade Business Hub" />
-              <span className="mt-1 block text-end text-[12px] lg:text-2xs" style={{ color: v("--ux-faint") }}>
-                {name.length}/50
-              </span>
+              <Label need>{tr("circlesCreate.whatItIsAbout")}</Label>
+              <PicTiles label="Category" size="sm" value={category} onPick={setCategory}
+                        tiles={TOPICS.map((t) => ({ value: t.label, label: t.label, src: topicPicture(t) }))} />
             </div>
-
-            <div className="mb-5">
-              <Label need>{tr("circlesCreate.whatHappensInIt")}</Label>
-              <Area value={desc} onChange={setDesc} max={200} rows={3} label={tr("circlesCreate.shortDescription")}
-                    placeholder={tr("circlesCreate.brieflyWhoItIsForAnd")} />
-            </div>
-
             <div className="mb-5 grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label need>{tr("circlesCreate.whatItIsAbout")}</Label>
-                <Select value={category} onChange={setCategory} label="Category"
-                        placeholder={tr("circlesCreate.pickATopic")}
-                        options={TOPICS.map((t) => t.label)} />
-              </div>
               <div>
                 <Label need>{tr("circlesCreate.whoCanComeIn")}</Label>
                 <Select value={privacy} onChange={setPrivacy} label="Privacy"
@@ -224,6 +245,26 @@ export default function CreateCirclePage() {
                 <span className="mt-1.5 block text-[12px] lg:text-2xs leading-snug" style={{ color: v("--ux-muted") }}>
                   {PRIVACY.find((p) => p.id === privacy)?.note}
                 </span>
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <Label need>{tr("circlesCreate.whatIsThisCircleCalled")}</Label>
+              <Text value={name} onChange={setName} max={50} label={tr("circlesCreate.circleName")}
+                    placeholder="e.g. Handmade Business Hub" />
+              <span className="mt-1 block text-end text-[12px] lg:text-2xs" style={{ color: v("--ux-faint") }}>
+                {name.length}/50
+              </span>
+              <Picks options={NAME_IDEAS[topicId] ?? []} value={name} onPick={setName} label="Name ideas" />
+            </div>
+
+            <div className="mb-5">
+              <Label need>{tr("circlesCreate.whatHappensInIt")}</Label>
+              <Picks options={DESC_IDEAS} value={phrasesIn(desc)} multi label="Tap to describe it"
+                     onPick={(x) => setDesc(togglePhrase(desc, x))} />
+              <div className="mt-2.5">
+                <Area value={desc} onChange={setDesc} max={200} rows={3} label={tr("circlesCreate.shortDescription")}
+                      placeholder={tr("circlesCreate.brieflyWhoItIsForAnd")} />
               </div>
             </div>
 
@@ -281,8 +322,12 @@ export default function CreateCirclePage() {
 
             <div className="mb-5">
               <Label hint="(optional)">{tr("circlesCreate.theOneRuleYouWantEveryone")}</Label>
-              <Area value={guidelines} onChange={setGuidelines} max={300} rows={3} label={tr("circlesCreate.circleGuidelines")}
-                    placeholder="e.g. Ask anything. Nobody here is an expert at everything, and no question is too small." />
+              <Picks options={RULE_IDEAS} value={phrasesIn(guidelines)} multi label="Tap to add a rule"
+                     onPick={(x) => setGuidelines(togglePhrase(guidelines, x))} />
+              <div className="mt-2.5">
+                <Area value={guidelines} onChange={setGuidelines} max={300} rows={3} label={tr("circlesCreate.circleGuidelines")}
+                      placeholder="e.g. Ask anything. Nobody here is an expert at everything, and no question is too small." />
+              </div>
             </div>
 
             <div className="mb-5 space-y-4">

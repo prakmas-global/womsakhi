@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 
 import { useT } from "@/i18n";
@@ -30,19 +31,24 @@ export function EarnHero() {
   return (
     /* On a phone the banner stands down to a large title: no fill, no frame,
        no inset — the words and the one action are what she came for. */
-    <section className="relative mb-6 overflow-hidden rounded-[20px] max-lg:overflow-visible max-lg:rounded-none! max-lg:border-0! max-lg:bg-none! lg:mb-5"
+    // `data-page-hero`: this is the screen's banner, so the section banner
+    // above it steps aside (components/ux/nav/banners.ts) — one, not two.
+    <section data-banner data-page-hero className="relative mb-6 overflow-hidden rounded-[20px] max-lg:overflow-visible max-lg:rounded-none! max-lg:border-0! max-lg:bg-none! lg:mb-5"
              style={{ background: "linear-gradient(105deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 52%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
       <div className="relative z-[1] max-w-[560px] p-0 lg:p-7">
         <p className="text-xs font-semibold uppercase tracking-[0.06em] lg:text-2xs lg:font-extrabold lg:tracking-[0.14em]" style={{ color: v("--ux-muted") }}>
           {tr("earnhome.earnOnYourTerms")}
         </p>
-        <h1 className="ux-screen-title mt-2.5 text-3xl font-extrabold leading-[1.1] tracking-[-0.02em]"
-            style={{ color: v("--ux-ink") }}>
-          {tr("earnhome.turnYourSkillsInto")}
-          <br />
-          <span style={{ color: v("--ux-brand") }}>income &amp; impact</span>
-        </h1>
+        <div className="mt-2.5 flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.1] tracking-[-0.02em] min-w-0"
+              style={{ color: v("--ux-ink") }}>
+            {tr("earnhome.turnYourSkillsInto")}
+            <br />
+            <span style={{ color: v("--ux-brand") }}>income &amp; impact</span>
+          </h1>
+        </div>
         <p className="mt-3 max-w-[400px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
           {tr("earnhome.sellProductsOfferServicesTakeOrders")}
         </p>
@@ -312,12 +318,12 @@ export function GrowBanner() {
 /* ------------------------------------------------------------------ */
 
 export const ACTIONS = [
-  { label: "Add product",     icon: "Package",       tint: "--ux-tint-pink",   ink: "--ux-pink-ink",   href: "/app/documents/new" },
-  { label: "Add service",     icon: "Sparkles",      tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   href: "/app/documents/new" },
+  { label: "Add to my shop",  icon: "Package",       tint: "--ux-tint-pink",   ink: "--ux-pink-ink",   href: "/app/documents/new" },
+  { label: "Selling tools",   icon: "Sparkles",      tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   href: "/app/shop" },
   { label: "Manage orders",   icon: "ClipboardList", tint: "--ux-tint-amber",  ink: "--ux-amber-ink",  href: "/app/documents#orders" },
   { label: "View earnings",   icon: "Wallet",        tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   href: "/app/wallet" },
-  { label: "Edit my store",   icon: "Store",         tint: "--ux-tint-green",  ink: "--ux-green-ink",  href: "/app/documents/listings" },
-  { label: "Share my profile", icon: "Share2",       tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/collect" },
+  { label: "Edit my store",   icon: "Store",         tint: "--ux-tint-green",  ink: "--ux-green-ink",  href: "/app/documents/store" },
+  { label: "My shop link", icon: "QrCode",       tint: "--ux-tint-violet", ink: "--ux-violet-ink", href: "/app/collect" },
 ] as const;
 
 export function QuickActions() {

@@ -32,7 +32,7 @@ export function ChromeShell({ children }: { children: React.ReactNode }) {
   */
   const shell = useShell();
   const profilePct = shell.data?.profile_pct ?? me.profilePct;
-  const { rail, wide, bare, fit, name, immersive } = useChrome();
+  const { rail, wide, bare, fit, name, immersive, columns } = useChrome();
   const pathname = usePathname();
 
   // The shell survives route changes, so its content scroller does too. Reset
@@ -44,7 +44,7 @@ export function ChromeShell({ children }: { children: React.ReactNode }) {
   return (
     <Shell
       user={{ name: name ?? me.first, avatar: me.avatar, unread: me.unread }}
-      sidebarFooter={bare ? undefined : (pathname === "/app/circle" || profilePct >= 100) ? (
+      sidebarFooter={bare ? undefined : (pathname === "/app/community" || profilePct >= 100) ? (
         <div className="relative overflow-hidden rounded-[8px] px-4 py-5" style={{ minHeight: 168, background: "linear-gradient(135deg, #ffe7f1, #f8cce7)" }}>
           <img src="/ux/art/circle-dashboard-leaves.webp" alt="" width={150} height={190}
                style={{ width: 150, height: 190, maxWidth: 150 }}
@@ -70,6 +70,8 @@ export function ChromeShell({ children }: { children: React.ReactNode }) {
       wide={wide}
       fit={fit}
       immersive={immersive}
+      fill={!bare}
+      columns={columns}
     >
       {children}
     </Shell>

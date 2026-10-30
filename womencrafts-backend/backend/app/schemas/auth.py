@@ -13,6 +13,9 @@ class TokenResponse(BaseModel):
 class UserResponse(BaseModel):
     id: str
     full_name: str
+    username: str = ""
+    display_name: str = ""
+    name_locked: bool = False
     email: str
     role: str = "Super Admin"
     is_active: bool

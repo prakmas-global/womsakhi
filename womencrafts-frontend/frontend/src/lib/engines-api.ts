@@ -386,13 +386,30 @@ export interface ResetActivity {
  * is the correct, common answer, not a failure.
  */
 export async function apiMoodCheckIn(
-  mood: Mood, opts: { note?: string; style?: SupportStyle } = {},
+  mood: Mood, opts: { note?: string; style?: SupportStyle; feelings?: string[] } = {},
 ): Promise<{ ok: boolean; mood: Mood; card: SupportCard | null }> {
   const { data } = await apiClient.post<{ ok: boolean; mood: Mood; card: SupportCard | null }>(
     "/engines/mood/check-in",
-    { mood, note: opts.note ?? "", style: opts.style ?? null },
+    { mood, note: opts.note ?? "", style: opts.style ?? null, ...(opts.feelings ? { feelings: opts.feelings } : {}) },
   );
   return data;
+}
+
+/**
+ * One day's check-in, read back from the day it lives on (`cycle_days`).
+ * `mood` may be in either vocabulary: this module's MOODS, or the cycle
+ * tracker's (happy, calm, tired, irritable, sad). "" when only feelings were set.
+ */
+export interface MoodDay { date: string; mood: string; feelings: string[]; note: string }
+
+export async function apiMoodHistory(days = 60, signal?: AbortSignal): Promise<MoodDay[]> {
+  const { data } = await apiClient.get<{ days: MoodDay[] }>("/engines/mood/history", { params: { days }, signal });
+  return data.days;
+}
+
+/** Take back a day's check-in — the mood and feelings only. */
+export async function apiClearMood(date: string): Promise<void> {
+  await apiClient.delete(`/engines/mood/${date}`);
 }
 
 export async function apiMoodCard(mood?: Mood): Promise<SupportCard | null> {

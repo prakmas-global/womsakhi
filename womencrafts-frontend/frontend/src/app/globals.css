@@ -9,8 +9,11 @@
    normal rule, which would silently take the whole theme with them.
 ------------------------------------------------------------------- */
 @import "tailwindcss";
+/* The brand (logo palette, one font, one scale) first: every token file below maps onto it. */
+@import "../design-system/brand.css";
 @import "../design-system/tokens.css";
 @import "../design-system/styles.css";
+@import "../design-system/forms.css";
 
 /* class-based dark mode: toggled by a `.dark` class on <html> */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -44,88 +47,26 @@ body {
   background: transparent;
 }
 
-/* Brand gradient wordmark (magenta -> purple) */
+/* Brand gradient wordmark: the logo's violet → orchid → magenta (brand.css) */
 .text-brand-gradient {
-  background: linear-gradient(90deg, #742a4f 0%, #a55168 52%, #8b5cf6 100%);
+  background: var(--ws-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
 
-/* ── Brand-colored text caret + selection (entire app) ── */
-input,
-textarea,
-select,
-[contenteditable="true"] {
-  caret-color: var(--color-brand-600, #e6117e);
-}
-.dark input,
-.dark textarea,
-.dark select,
-.dark [contenteditable="true"] {
-  caret-color: #f272b0;
-}
-
-::selection {
-  background-color: rgba(230, 17, 126, 0.18);
-}
-.dark ::selection {
-  background-color: rgba(242, 114, 176, 0.28);
-}
-
-/* ── Themed mouse cursors (magenta arrow + hand), app-wide ──
-   Set the base arrow on the root only and let it INHERIT. Using `*` here would
-   force the arrow onto every child (td/span/svg) and defeat the hand cursor on
-   the contents of clickable rows/buttons/links. */
-html,
-body {
-  cursor: url("/cur-arrow.png") 5 3, auto;
-  cursor: image-set(url("/cur-arrow.png") 1x, url("/cur-arrow-2x.png") 2x) 5 3, auto;
-}
-a,
-button,
-select,
-label[for],
-[role="button"],
-[role="option"],
-[role="tab"],
-[role="switch"],
-[role="menuitem"],
-[role="menuitemradio"],
-[role="menuitemcheckbox"],
-[role="radio"],
-[role="checkbox"],
-[role="link"],
-[role="combobox"],
-summary,
-.cursor-pointer,
-input[type="checkbox"],
-input[type="radio"],
-input[type="submit"],
-input[type="button"],
-input[type="file"] {
-  cursor: url("/cur-pointer.png") 11 2, pointer !important;
-  cursor: image-set(url("/cur-pointer.png") 1x, url("/cur-pointer-2x.png") 2x) 11 2, pointer !important;
-}
-/* keep the text I-beam for typing fields */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="tel"],
-input[type="search"],
-input[type="number"],
-input[type="url"],
-input[type="date"],
-input:not([type]),
-textarea {
-  cursor: text !important;
-}
-[disabled],
-button:disabled,
-.cursor-not-allowed {
-  cursor: not-allowed !important;
-}
+/* Native cursors and restrained, theme-aware text selection. */
+html, body { cursor: auto; }
+a, button, select, summary, label[for], [role="button"], [role="option"],
+[role="tab"], [role="switch"], [role="menuitem"], [role="radio"],
+[role="checkbox"], [role="link"], [role="combobox"], .cursor-pointer,
+input[type="checkbox"], input[type="radio"], input[type="file"] { cursor: pointer; }
+input, textarea, [contenteditable="true"] { caret-color: currentColor; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="submit"]):not([type="button"]),
+textarea, [contenteditable="true"] { cursor: text; }
+:disabled, [aria-disabled="true"], .cursor-not-allowed { cursor: not-allowed !important; }
+::selection { background-color: color-mix(in srgb, var(--color-brand-600) 18%, transparent); }
 
 /* ──────────────────────────────────────────────────────────
    Where am I?
@@ -166,7 +107,6 @@ summary:focus-visible,
   /* Sits just outside the control, so the outline never lands on a
      brand-coloured button where brand-on-brand would vanish. */
   outline-offset: 2px;
-  border-radius: inherit;
 }
 
 /* ──────────────────────────────────────────────────────────

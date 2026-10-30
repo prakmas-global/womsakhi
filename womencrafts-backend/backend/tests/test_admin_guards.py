@@ -40,6 +40,7 @@ ROUTES = pathlib.Path(__file__).resolve().parents[1] / "app" / "routes"
 
 GUARDS = (
     "require_permission",
+    "require_monitoring_token",  # Protected operational scraper; independently tested secret gate.
     "require_super_admin",
     "require_staff",
     "require_active_member",
@@ -70,13 +71,17 @@ def _module_gated() -> set[str]:
 
 #: Endpoints that must stay reachable without a role check, and why.
 EXEMPT = {
+    # Public probes expose only process/dependency availability, never member data.
+    "operations.live", "operations.ready",
     # Signed out by definition — this is how you get a session at all.
     "auth.auth_options", "auth.signup_start", "auth.signup_check", "auth.signup_verify", "auth.signup_firebase", "auth.signup_complete",
     "auth.signin_start", "auth.signin_verify", "auth.two_factor_verify", "auth.two_factor_enroll",
+    "auth.auth_start", "auth.auth_verify", "auth.auth_verify_firebase",
     "auth.refresh", "auth.session", "auth.get_me", "auth.signout", "auth.signout_everywhere",
     # Her own devices and her own mobile number: the object is always the caller.
     "auth.my_sessions", "auth.end_session", "auth.set_phone", "auth.phone_start",
     "auth.phone_verify", "auth.phone_firebase", "auth.signin_firebase", "auth.sms_allowance", "auth.phone_later",
+    "auth.email_start", "auth.email_verify",
     # The app as her key: signed-out halves are guarded by a nonce or a
     # one-time code; the app halves by `require_app_session` (members only).
     "auth_app.create_app_key", "auth_app.signin_with_app_code", "auth_app.qr_start",
@@ -108,11 +113,22 @@ EXEMPT = {
     # be unable to sign herself out. (Scoping them to the caller is the
     # settings-account rebuild's job — see settings_security.py.)
     "settings_security.revoke_other_sessions", "settings_security.revoke_session",
+    # Masters (app/core/masters.py). Reading a list's active items is what
+    # every pick-list on every screen does, members included. The staff
+    # endpoints act on 14 lists that belong to 9 different modules, so the
+    # guard can't be one dependency: each handler checks `<module>.view` or
+    # `<module>.edit` for the list it was given (`_need` in routes/masters.py),
+    # and tests/test_masters.py proves a member gets 403 and an empty hub.
+    "masters.read_lists", "masters.admin_lists", "masters.admin_list", "masters.admin_add",
+    "masters.admin_edit", "masters.admin_delete", "masters.admin_reorder",
 }
 
 #: Prefixes whose whole file is member-facing. These sit behind the member
 #: gate in their own way and are not part of the admin surface.
-MEMBER_FILES = {"engines", "layout", "notifications", "me", "me_export", "public"}
+#: `khata` (My Khata, /me/khata): every handler depends on `khata_open`, which
+#: is `require_member_account` plus her PIN — the caller is always the owner,
+#: or a member she linked to her chit.
+MEMBER_FILES = {"engines", "layout", "notifications", "me", "me_export", "public", "public_share", "khata"}
 
 # `@router.` and any sub-router (`@services_router.`, `@integrations_router.`):
 # a file that mounts two prefixes on one router used to hide every write on

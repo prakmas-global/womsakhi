@@ -157,6 +157,10 @@ class OpportunityUpsert(BaseModel):
     pay_period: Optional[str] = None
     mode: str = "On-site"
     skills: list[str] = []
+    #: From the work masters. When `skill_keys` is set, `skills` is filled
+    #: with their names on save.
+    category: str = ""
+    skill_keys: list[str] = []
     openings: int = 1
     deadline: str = ""
     experience: str = ""

@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 /**
  * The cycle tracker's pieces, drawn to the owner's reference screens.
  *
@@ -81,7 +82,10 @@ export function DeskTitle({ title, sub, right }: { title: string; sub?: string; 
   return (
     <div className="mb-5 hidden items-end justify-between gap-4 lg:flex">
       <div>
-        <h1 className="ux-display text-[28px] font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-display text-[28px] font-bold leading-tight min-w-0" style={{ color: "var(--ux-ink)" }}>{title}</h1>
+        </div>
         {sub && <p className="mt-1 text-[15px]" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
       </div>
       {right}

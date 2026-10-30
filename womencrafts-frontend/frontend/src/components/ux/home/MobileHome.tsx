@@ -1,14 +1,17 @@
 "use client";
 
+import { Img } from "@/components/ux/media/Img";
+import { StartFromHome } from "./StartFromHome";
 import { Fragment } from "react";
-import Image from "next/image";
 import { useT } from "@/i18n";
 import { TransitionLink } from "@/components/ux/TransitionLink";
-import { I, formatRupees } from "@/components/ux/kit";
+import { I } from "@/components/ux/kit";
 import { useHome } from "@/components/ux/live";
 import { HomeCycleCard } from "@/components/ux/cycle/HomeCycleCard";
 import { FirstSteps, PersonalCards, ShopFeed, WhyLine, orderBlocks } from "./Personal";
 import { QuickAccessGrid } from "./QuickAccess";
+import { ModulePictures } from "./ModulePictures";
+import { artFor } from "@/components/ux/media/art";
 
 /** The blocks under the greeting, in the order this screen has always had. */
 const BASE_ORDER = ["earnings", "sakhi", "journey", "opportunities", "recommended"] as const;
@@ -55,8 +58,6 @@ const BASE_ORDER = ["earnings", "sakhi", "journey", "opportunities", "recommende
 /** Morning/afternoon/evening from the device clock, not the server's. */
 /** White on the brand gradient, from the token rather than a literal — and
  *  the dimmer caption white as a mix of it, so both follow the token. */
-const ON_BRAND = "var(--ux-on-brand)";
-const ON_BRAND_2 = "color-mix(in srgb, var(--ux-on-brand) 72%, transparent)";
 
 function greeting() {
   const h = new Date().getHours();
@@ -73,30 +74,27 @@ export function MobileHome() {
     half-fail. `/me/home` gathers them server-side: 69ms at the median against
     715ms for the same eleven called in sequence, before any network cost.
 
-    `data` is null on first load AND on failure, and both render the skeleton
-    rather than throwing. This is the first screen after sign-in; an error
-    boundary here is a woman staring at a blank app.
+    Loading and failure have different states. On failure the retry and
+    data-independent home pathways stay available instead of an endless skeleton.
   */
-  const { data, refetch } = useHome();
+  const { data, source, refetch } = useHome();
 
-  if (!data) return <HomeSkeleton />;
+  if (!data) {
+    if (source === "loading") return <HomeSkeleton />;
+    return (
+      <div className="lg:hidden space-y-4">
+        <section role="alert" className="rounded-[20px] border p-4" style={{ background: "var(--ux-surface)", borderColor: "var(--ux-line)" }}>
+          <h1 className="text-xl font-extrabold" style={{ color: "var(--ux-ink)" }}>Your home</h1>
+          <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>Your updates could not load. You can still explore learning, your shop and work from home below.</p>
+          <button type="button" onClick={refetch} className="mt-3 min-h-[44px] rounded-full px-4 text-sm font-bold" style={{ color: "var(--ux-on-brand)", background: "var(--ux-brand)" }}>Try again</button>
+        </section>
+        <StartFromHome />
+      </div>
+    );
+  }
 
-  const { me, journey, earnings, opportunities, recommended, unavailable } = data;
+  const { me, journey, opportunities, recommended } = data;
   const personal = data.personal ?? null;
-  /*
-    `unavailable` names the blocks whose server-side fetch timed out. The
-    endpoint gathers eleven of them in parallel and returns whatever arrived
-    rather than failing the whole screen, so a slow collection costs one card,
-    not the app.
-
-    It matters most for money. `earnings` is built from the `summary` block, so
-    when that times out `earnings` is null — and `earnings?.money.balance_minor
-    ?? 0` would print a confident **Rs 0** to a woman who has Rs 2,300. That is
-    the same failure as an invented number, arrived at by a different route:
-    the figure is wrong and nothing on screen says so.
-  */
-  const lost = (b: string) => unavailable?.includes(b) ?? false;
-  const balanceUnknown = !earnings || lost("summary");
 
   /*
     ── her order ──────────────────────────────────────────────────────────
@@ -106,74 +104,7 @@ export function MobileHome() {
   */
   const why = (b: string) => (personal ? personal.reasons[b] : undefined);
   const blocks: Record<string, React.ReactNode> = {
-    earnings: <>
-      {/* ── the number she actually opens the app for ───────────────────── */}
-      {balanceUnknown ? (
-        /*
-          Not a number, and not a zero.
-
-          A retry rather than a link to the wallet, because the wallet reads the
-          same block and would fail the same way. The tile keeps its colour and
-          its place so the screen does not jump when the figure arrives.
-        */
-        <div className="ux-sq flex items-center gap-3 rounded-[16px] p-4"
-             style={{ background: "linear-gradient(135deg, var(--ux-brand-700), var(--ux-brand-900))" }}>
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.08em]"
-               style={{ color: ON_BRAND_2 }}>
-              {tr("wallet.balance")}
-            </p>
-            <p className="mt-0.5 text-[15px] font-semibold leading-snug" style={{ color: ON_BRAND }}>
-              {tr("mobileHome.weCouldNotLoadItJust")}
-            </p>
-          </div>
-          <button type="button" onClick={refetch}
-                  className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold"
-                  style={{ background: "color-mix(in srgb, var(--ux-on-brand) 18%, transparent)", color: ON_BRAND }}>
-            <I name="RefreshCw" className="h-4 w-4" sw={2.2} />
-            {tr("common.retry")}
-          </button>
-        </div>
-      ) : (
-      <TransitionLink href="/app/wallet"
-        className="ux-sq flex items-center gap-3 rounded-[16px] p-4"
-        style={{ background: "linear-gradient(135deg, var(--ux-brand-700), var(--ux-brand-900))" }}>
-        <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.08em]"
-             style={{ color: ON_BRAND_2 }}>
-            {tr("wallet.balance")}
-          </p>
-          {/* tabular-nums so the figure does not jitter as it changes */}
-          <p className="mt-0.5 text-[28px] font-bold leading-none [font-variant-numeric:tabular-nums]"
-             style={{ color: ON_BRAND }}>
-            {formatRupees(earnings.money.balance_minor)}
-          </p>
-        </div>
-        {/*
-          Earned this month, only when she earned something.
-
-          The hero figure is her BALANCE, not the month's earnings, and the
-          difference matters. Balance is money she has and can act on; this
-          month's earnings is a score. For a woman between jobs the API
-          honestly returns 0 and -100%, and "Rs 0, down 100%" as the first
-          thing she sees every morning is accurate and cruel — it tells her
-          something she already knows and nothing she can use.
-
-          So the month sits underneath, and only when there is something to
-          report. Nothing is hidden: the full picture, including a bad month,
-          is one tap away in the wallet.
-        */}
-        {earnings.money.earned_this_month_minor > 0 && (
-          <span className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-bold"
-                style={{ background: "color-mix(in srgb, var(--ux-on-brand) 16%, transparent)", color: ON_BRAND }}>
-            <I name="TrendingUp" className="h-3.5 w-3.5" sw={2.4} />
-            {formatRupees(earnings.money.earned_this_month_minor)} this month
-          </span>
-        )}
-      </TransitionLink>
-      )}
-
-      </>,
+    earnings: <TransitionLink href="/app/payments" className="block rounded-2xl border p-4" style={{ background: "var(--ux-surface)", borderColor: "var(--ux-line)" }}><span className="text-lg font-bold">My Payments</span><p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>Pay directly by UPI. Submit your transaction reference and track confirmation.</p><span className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-bold" style={{ color: "var(--ux-brand)" }}>View payments <I name="ArrowRight" className="h-4 w-4" /></span></TransitionLink>,
     sakhi: <>
       {/*
         ── what used to be a six-tile launcher ──────────────────────────────
@@ -234,8 +165,8 @@ export function MobileHome() {
             className="ux-sq flex items-center gap-3 rounded-[12px] p-4"
             style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
             {journey.cover
-              ? <Image src={journey.cover} alt="" width={56} height={56}
-                       className="h-14 w-14 shrink-0 rounded-[12px] object-cover" sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" />
+              ? <Img src={journey.cover} width={56} height={56}
+                     className="h-14 w-14 shrink-0 rounded-[12px] object-cover" />
               : <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[12px]"
                       style={{ background: "var(--ux-brand-tint-2)" }}>
                   <I name="BookOpen" className="h-6 w-6" style={{ color: "var(--ux-brand)" }} />
@@ -268,14 +199,20 @@ export function MobileHome() {
         <div className="ux-hscroll flex gap-3">
           {opportunities.slice(0, 6).map((o: Record<string, unknown>, i: number) => (
             <TransitionLink key={String(o.id ?? i)} href={`/app/opportunities/${String(o.id ?? "")}`}
-              className="ux-sq flex w-[76vw] max-w-[300px] shrink-0 flex-col gap-1 rounded-[12px] p-4"
+              className="ux-sq flex w-[76vw] max-w-[300px] shrink-0 flex-col overflow-hidden rounded-[12px]"
               style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
-              <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
-                {String(o.title ?? "Opportunity")}
-              </p>
-              <p className="truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>
-                {[o.org, o.pay].filter(Boolean).map(String).join(" · ")}
-              </p>
+              {/* A picture of the work itself — tailoring, a kitchen, a laptop. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={artFor([String(o.title ?? ""), String(o.org ?? "")], "job", null, String(o.id ?? i))} alt="" loading="lazy"
+                   className="h-[128px] w-full object-cover" style={{ background: "var(--ux-surface-2)" }} />
+              <span className="flex flex-col gap-1 p-4">
+                <span className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
+                  {String(o.title ?? "Opportunity")}
+                </span>
+                <span className="truncate text-[13px]" style={{ color: "var(--ux-muted)" }}>
+                  {[o.org, o.pay].filter(Boolean).map(String).join(" · ")}
+                </span>
+              </span>
             </TransitionLink>
           ))}
         </div>
@@ -295,12 +232,11 @@ export function MobileHome() {
                   image icon, and beats a stock photograph that implies a
                   course is something it is not. */}
               {r.cover
-                ? <Image src={String(r.cover)} alt="" width={480} height={270}
-                         className="h-[112px] w-full object-cover" sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 240px" />
-                : <span className="grid h-[112px] w-full place-items-center"
-                        style={{ background: "var(--ux-brand-tint-2)" }}>
-                    <I name="GraduationCap" className="h-7 w-7" style={{ color: "var(--ux-brand)" }} />
-                  </span>}
+                ? <Img src={String(r.cover)} width={480} height={270}
+                       className="h-[112px] w-full object-cover" />
+                // eslint-disable-next-line @next/next/no-img-element
+                : <img src={artFor([String(r.title ?? r.name ?? ""), String(r.category ?? "")], "course", null, String(r.id ?? i))} alt=""
+                       loading="lazy" className="h-[112px] w-full object-cover" style={{ background: "var(--ux-surface-2)" }} />}
               <div className="p-4">
                 <p className="truncate text-[15px] font-bold" style={{ color: "var(--ux-ink)" }}>
                   {String(r.title ?? r.name ?? "")}
@@ -357,7 +293,7 @@ export function MobileHome() {
         196px in total against a 844px screen. Everything she can act on still
         begins in the first viewport.
       */}
-      <header className="-mt-1 mb-3.5 overflow-hidden rounded-[18px]"
+      <header data-banner="home" className="-mt-1 mb-3.5 overflow-hidden rounded-[18px]"
               style={{ background: "var(--ux-brand-900)", border: "1px solid var(--ux-line)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/home-banner.webp"
@@ -378,11 +314,16 @@ export function MobileHome() {
           </p>
         </div>
       </header>
+      <div className="mb-4"><StartFromHome /></div>
 
       {/* Her cycle, first — the owner's mockup puts it straight under her
           name. When she does not track it is one quiet invitation line, and
           discreet mode removes it entirely. See HomeCycleCard. */}
       <div className="mb-4"><HomeCycleCard /></div>
+
+      {/* The whole app as eight pictures in their colours — how a woman who
+          cannot read the names finds every part of it. See ModulePictures. */}
+      <ModulePictures className="mb-6" />
 
       {personal && (
         <div className="mb-4 flex flex-col gap-4">
@@ -442,11 +383,11 @@ function HomeSkeleton() {
   const tr = useT();
   const bar = { background: "var(--ux-surface-2)", borderRadius: 8 };
   return (
-    <div className="lg:hidden" aria-busy="true" aria-live="polite">
-      <span className="sr-only">{tr("mobileHome.loadingYourHomeScreen")}</span>
-      {/* Matches the banner the loaded screen opens with — 139px of photograph
-          and a 57px plum bar — so nothing jumps when the data lands. */}
-      <div className="-mt-1 mb-3.5 ux-shimmer h-[196px]" style={{ ...bar, borderRadius: 18 }} />
+    <div className="lg:hidden">
+      <span role="status" className="sr-only">{tr("mobileHome.loadingYourHomeScreen")}</span>
+      {/* Reserve the shared banner height so loading does not shift the page. */}
+      <div data-banner className="-mt-1 mb-3.5 ux-shimmer" style={bar} />
+      <div className="mb-4"><StartFromHome /></div>
       <div className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {Array.from({ length: 8 }, (_, i) => (
           <div key={i} className="ux-shimmer h-[104px]" style={{ ...bar, borderRadius: 16 }} />

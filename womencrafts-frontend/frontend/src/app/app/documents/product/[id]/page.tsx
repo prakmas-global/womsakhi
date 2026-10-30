@@ -1,8 +1,11 @@
 "use client";
 
-import { use, useEffect, useMemo, useRef, useState } from "react";
+import { PlaceMark } from "@/components/ux/nav/Place";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { apiSaveListing, apiUpdateListing } from "@/lib/shop-api";
+import { apiListings, apiSaveListing, apiUpdateListing, type Listing } from "@/lib/shop-api";
+import { apiUploadImage, uploadErrorMessage, validateImage, ACCEPTED_IMAGE_TYPES } from "@/lib/uploads-api";
+import { useResource } from "@/lib/use-resource";
 import { messageFrom } from "@/lib/use-action";
 import * as Icons from "@/components/ux/icons";
 
@@ -13,6 +16,19 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { useBusiness } from "@/components/ux/business";
 import { rupees } from "@/components/ux/shop/data";
 import { useT } from "@/i18n";
+import { Picks, Select, Stepper } from "@/components/ux/kit/form";
+import { ChooseCategoryPrompt, SubChips, useShopCategories } from "@/components/ux/shop/categories";
+import { subsFor } from "@/lib/shop-categories-api";
+
+const MAKE_TIMES = ["Ready now", "1 day", "2 days", "3 days", "1 week", "2 weeks"];
+const ABOUT_PHRASES = [
+  "Handmade", "Pure cotton", "Made to order", "Can be washed at home",
+  "Any size on request", "Colours can be changed", "Ready to send",
+];
+const togglePhrase = (note: string, phrase: string) => {
+  const parts = note.split(". ").map((x) => x.trim().replace(/\.$/, "")).filter(Boolean);
+  return (parts.includes(phrase) ? parts.filter((x) => x !== phrase) : [...parts, phrase]).join(". ");
+};
 
 const BLANK = { id: "new", name: "", price_minor: 0, stock: 0, sold: 0,
   art: "/ux/art/course-photographing-handmade-product.webp", live: false };
@@ -75,11 +91,69 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
 
+  /**
+   * Her photographs — up to four, the first is what buyers see.
+   *
+   * The four slots used to be buttons with no handler: a listing could not
+   * get a photo once it existed. Now each empty slot uploads (the same uploads
+   * API the add wizard uses), each photo can be made first or removed, and on
+   * an existing listing every change is saved straight away (PATCH writes only
+   * the fields sent — `photo` and `photos`).
+   */
+  const raw = useResource(
+    useCallback(async (s: AbortSignal) => (await apiListings(s)).find((l) => l.id === id) ?? null, [id]),
+    null as Listing | null,
+  );
+  // Filed under her shop's one category: which kind of product this is.
+  // Tapped, not typed: the quick names are her category's own sub-categories.
+  const cats = useShopCategories();
+  const productSubs = useMemo(() => subsFor(cats.storeCat, "product"), [cats.storeCat]);
+  const NAME_PICKS = productSubs.map((x) => x.name);
+  const [subPick, setSubPick] = useState<string | null>(null);
+  const sub = subPick ?? raw.data?.subcategory_key ?? "";
+  const subOk = productSubs.some((x) => x.key === sub);
+  const [photos, setPhotos] = useState<string[] | null>(null);
+  const current = photos ?? (raw.data ? (raw.data.photos?.length ? raw.data.photos : raw.data.photo ? [raw.data.photo] : []) : []);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoProblem, setPhotoProblem] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-    setSaved(false);
-  };
+  async function storePhotos(next: string[]) {
+    const prev = current;
+    setPhotos(next);
+    setPhotoProblem("");
+    if (isNew) return; // saved with the listing
+    try {
+      // PATCH takes the whole listing's identity; kind and title ride along.
+      await apiUpdateListing(id, { kind: "product", title: raw.data?.title || form.name.trim(), photo: next[0] ?? "", photos: next });
+      refetch();
+    } catch (e) {
+      setPhotos(prev);
+      setPhotoProblem(messageFrom(e, "That photo change did not save. Try again in a moment."));
+    }
+  }
+
+  async function addPhotos(files: File[]) {
+    const room = 4 - current.length;
+    if (!files.length || room <= 0) return;
+    const bad = files.map(validateImage).find(Boolean);
+    if (bad) { setPhotoProblem(bad); return; }
+    setPhotoBusy(true);
+    setPhotoProblem("");
+    try {
+      const urls: string[] = [];
+      for (const f of files.slice(0, room)) urls.push((await apiUploadImage(f)).url);
+      await storePhotos([...current, ...urls]);
+    } catch (e) {
+      setPhotoProblem(uploadErrorMessage(e));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+
+  const put = (k: keyof typeof form, value: string) => { setForm((f) => ({ ...f, [k]: value })); setSaved(false); };
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => put(k, e.target.value);
 
   /** Rupees in, paise out — converted once, here. */
   const price_minor = useMemo(() => {
@@ -92,8 +166,9 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
     if (form.name.trim().length < 3) m.push("a name");
     if (price_minor <= 0) m.push("a price");
     if (form.about.trim().length < 20) m.push("a description buyers can read");
+    if (isNew && !subOk) m.push("what kind of product it is");
     return m;
-  }, [form, price_minor]);
+  }, [form, price_minor, isNew, subOk]);
 
   /** Save the product. This used to set a flag and send nothing. */
   async function save() {
@@ -105,6 +180,9 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
       desc: form.about.trim(),
       price_minor,
       stock: Number(form.stock) || 0,
+      ...(isNew ? { photo: current[0] ?? "", photos: current } : {}),
+      // Sent when she has chosen (or must choose): the server checks it sits in her shop's category.
+      ...(subOk && (isNew || subPick !== null) ? { category_key: cats.storeCat?.key ?? "", subcategory_key: sub } : {}),
     };
     try {
       if (isNew) await apiSaveListing(body);
@@ -154,7 +232,7 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
             <div className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
               <div className="h-[132px] overflow-hidden" style={{ background: "var(--ux-tint-orange)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img loading="lazy" decoding="async" src={base.art} alt="" className="h-full w-full object-cover" />
+                <img loading="lazy" decoding="async" src={current[0] || base.art} alt="" className="h-full w-full object-cover" />
               </div>
               <div className="p-3.5">
                 <p className="text-sm font-semibold" style={{ color: form.name ? "var(--ux-ink)" : "var(--ux-faint)" }}>
@@ -235,9 +313,12 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
     >
       <Back to="/app/documents" label={tr("documentsProduct.yourShop")} className="mb-4" />
 
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>
-        {isNew ? "Add something you sell" : form.name || "Edit product"}
-      </h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>
+          {isNew ? "Add something you sell" : form.name || "Edit product"}
+        </h1>
+      </div>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         {isNew ? tr("documentsProduct.fourThingsAndItIsListed")
               : tr("documentsProduct.changesReachBuyersStraightAway")}
@@ -245,30 +326,59 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
 
       <Card className="mb-[16px]">
         <SectionHead title="Photos" sub={tr("documentsProduct.theFirstOneIsWhatBuyers")} />
-        <div className="ux-deck grid grid-cols-4 gap-2.5">
-          {[0, 1, 2, 3].map((i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={i === 0 ? "Current primary photo" : `Add photo ${i + 1}`}
-              className="ux-i ux-sq grid aspect-square place-items-center overflow-hidden rounded-[12px] border"
-              style={{ borderColor: i === 0 ? "var(--ux-brand)" : "var(--ux-line)",
-                       borderStyle: i === 0 ? "solid" : "dashed", ["--i" as string]: i }}
-            >
-              {i === 0 ? (
-                <>
+        <input ref={fileInput} type="file" accept={ACCEPTED_IMAGE_TYPES.join(",")} multiple hidden
+               onChange={(e) => { void addPhotos(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => {
+            const url = current[i];
+            if (url) {
+              return (
+                <div key={url + i} className="ux-sq relative aspect-square overflow-hidden rounded-[12px] border"
+                     style={{ borderColor: i === 0 ? "var(--ux-brand)" : "var(--ux-line)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img loading="lazy" decoding="async" src={base.art} alt="" className="ux-art h-full w-full object-cover" />
-                </>
-              ) : (
+                  <img loading="lazy" decoding="async" src={url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                  {i === 0 && (
+                    <span className="absolute start-1.5 top-1.5 rounded-full px-2 py-0.5 text-2xs font-bold"
+                          style={{ background: "var(--ux-brand)", color: "var(--ux-on-brand)" }}>First</span>
+                  )}
+                  <div className="absolute inset-x-1.5 bottom-1.5 flex justify-between gap-1">
+                    {i > 0 ? (
+                      <button type="button" disabled={photoBusy} onClick={() => void storePhotos([url, ...current.filter((_, j) => j !== i)])}
+                              className="rounded-full px-2 py-1 text-2xs font-bold" style={{ background: "rgba(255,255,255,.92)", color: "var(--ux-ink)" }}>
+                        Make first
+                      </button>
+                    ) : <span />}
+                    <button type="button" disabled={photoBusy} aria-label={`Remove photo ${i + 1}`}
+                            onClick={() => void storePhotos(current.filter((_, j) => j !== i))}
+                            className="grid h-7 w-7 place-items-center rounded-full" style={{ background: "rgba(255,255,255,.92)", color: "var(--ux-ink)" }}>
+                      <Icons.X className="h-[14px] w-[14px]" />
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            const next = i === current.length;
+            return (
+              <button key={`empty-${i}`} type="button" disabled={!next || photoBusy}
+                      onClick={() => fileInput.current?.click()}
+                      aria-label={`Add photo ${i + 1}`}
+                      className="ux-press ux-sq grid aspect-square place-items-center rounded-[12px] border"
+                      style={{ borderColor: "var(--ux-line)", borderStyle: "dashed", opacity: next ? 1 : 0.45 }}>
                 <span className="flex flex-col items-center gap-1.5">
-                  <Icons.Plus className="ux-ico h-[20px] w-[20px]" style={{ color: "var(--ux-faint)" }} />
-                  <span className="text-2xs" style={{ color: "var(--ux-faint)" }}>Add</span>
+                  {photoBusy && next
+                    ? <Icons.Loader className="h-[20px] w-[20px] animate-spin" style={{ color: "var(--ux-brand)" }} />
+                    : <Icons.Plus className="h-[20px] w-[20px]" style={{ color: next ? "var(--ux-brand)" : "var(--ux-faint)" }} />}
+                  <span className="text-2xs font-semibold" style={{ color: next ? "var(--ux-brand)" : "var(--ux-faint)" }}>
+                    {photoBusy && next ? "Uploading…" : "Add photo"}
+                  </span>
                 </span>
-              )}
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
+        {photoProblem && (
+          <p role="alert" className="mt-2.5 text-xsm" style={{ color: "var(--ux-danger-ink)" }}>{photoProblem}</p>
+        )}
         <p className="mt-3 flex items-start gap-2.5 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           <Icons.Camera className="mt-[1px] h-[14px] w-[14px] shrink-0" style={{ color: "var(--ux-brand)" }} />
@@ -282,18 +392,32 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
         <div className="space-y-4">
           <Field label={tr("documentsProduct.whatIsItCalled")} hint={tr("documentsProduct.whatABuyerWouldSearchFor")}>
             <TextInput value={form.name} onChange={set("name")} placeholder={tr("documentsProduct.cottonKurta")} />
+            {!form.name.trim() && NAME_PICKS.length > 0 && (
+              <Picks options={NAME_PICKS} value={form.name} label="Quick names"
+                     onPick={(x) => { put("name", x); setSubPick(productSubs.find((r) => r.name === x)?.key ?? sub); }} />
+            )}
           </Field>
 
-          <div className="grid grid-cols-2 gap-4">
+          <Field label={cats.storeCat ? `What kind of ${cats.storeCat.name.toLowerCase()}?` : "What kind of product?"}
+                 hint={cats.storeCat ? `Your shop sells ${cats.storeCat.name}.` : undefined}>
+            {cats.data && !cats.storeCat ? <ChooseCategoryPrompt compact />
+              : <SubChips subs={productSubs} value={sub} parent={cats.storeCat} onPick={(x) => { setSubPick(x.key); setSaved(false); }}
+                          empty={cats.storeCat ? `${cats.storeCat.name} doesn't take products. List it as a service instead.` : "Loading…"} />}
+          </Field>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Price" hint={tr("documentsProduct.inRupeesBuyersSeeThisExactly")}>
               <TextInput value={form.rupees} onChange={set("rupees")} placeholder="1200" inputMode="numeric" />
             </Field>
             <Field label={tr("documentsProduct.howManyAreReady")} hint={tr("documentsProduct.leaveIfYouMakeEachOne")}>
-              <TextInput value={form.stock} onChange={set("stock")} placeholder="0" inputMode="numeric" />
+              <Stepper value={form.stock} onChange={(x) => put("stock", x)} label={tr("documentsProduct.howManyAreReady")} presets={[0, 1, 5, 10, 25]} />
             </Field>
           </div>
 
           <Field label={tr("documentsProduct.describeIt")} hint={tr("documentsProduct.whatItIsMadeOfHow")}>
+            <Picks options={ABOUT_PHRASES} value={form.about.split(". ")} multi label="Tap to add to the description"
+                   onPick={(x) => put("about", togglePhrase(form.about, x))} />
+            <div className="mt-2.5" />
             <textarea
               value={form.about}
               onChange={(e) => { setForm((f) => ({ ...f, about: e.target.value })); setSaved(false); }}
@@ -305,7 +429,7 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
           </Field>
 
           <Field label={tr("documentsProduct.howLongToMakeOne")} hint={tr("documentsProduct.beHonestALateOrderCosts")}>
-            <TextInput value={form.made} onChange={set("made")} placeholder={tr("documentsProduct.days")} />
+            <Select value={form.made} onChange={(x) => put("made", x)} label={tr("documentsProduct.howLongToMakeOne")} options={MAKE_TIMES} />
           </Field>
         </div>
       </Card>

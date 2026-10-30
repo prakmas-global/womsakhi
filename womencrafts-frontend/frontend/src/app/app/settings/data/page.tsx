@@ -146,6 +146,7 @@ export default function MyDataPage() {
   };
 
   const deleteAll = async () => {
+    if (!askDelete || deleting) return;
     setDeleting(true);
     try {
       await apiDeleteAnswers();
@@ -232,8 +233,8 @@ export default function MyDataPage() {
           disabled={!jobs}
           busy={saving === "employer_visibility"}
           onChange={(v) => void change("employer_visibility", v)}
-          whenOn="Employers and partners with WomSakhi accounts can find your name, skills and city."
-          whenOff={jobs ? "Employers can't find you. Your work profile is only used to send you matches."
+          whenOn="Verified WomSakhi members who are hiring can find your first name, area and only the skills you switch on in My work profile. Your phone number is never shown."
+          whenOff={jobs ? "People hiring can't find you. Your work profile is only used to send you matches."
             : "Turn on job updates first — employers can only see a work profile you keep."}
         />
       </Group>

@@ -9,9 +9,56 @@
 export interface Course {
   id: string; title: string; lessons: number; level: string;
   rating: string; count: string; pct?: number; thumb: string;
+  /** The teacher chose this picture — screens must not swap in the category's. */
+  ownCover?: boolean;
   tag?: "Bestseller" | "New" | "Popular" | "Trending";
   category: string; hours?: string; author?: string;
+  /** Who teaches it: "WomSakhi team" or the member's name. */
+  teacher?: string;
+  /** Taught by a member (not the WomSakhi team). */
+  byMember?: boolean;
+  /** 0 = free. Paise. */
+  priceMinor?: number;
+  /** Her own course. */
+  mine?: boolean;
+  /** "" | pending | active | completed | withdrawn */
+  myStatus?: string;
+  /** "" | awaiting | claimed | paid | declined */
+  paymentStatus?: string;
 }
+
+/** A picture per category, so a shelf of courses is not one image repeated. */
+const ART: Record<string, string> = {
+  "Digital Literacy": "/ux/art/course-working-laptop-smiling.webp",
+  Entrepreneurship: "/ux/art/course-handmade-market-stall.webp",
+  Handicrafts: "/ux/art/course-sewing-machine.webp",
+  "Personal Development": "/ux/art/course-presenting-to-group.webp",
+  Sustainability: "/ux/art/course-photographing-handmade-product.webp",
+  "Health & Wellness": "/ux/art/course-meditation.webp",
+  "Cooking & Food": "/ux/art/course-cooking-packing-orders.webp",
+  "Beauty & Care": "/ux/art/course-teaching-another-woman.webp",
+  "Money & Savings": "/ux/art/course-counting-coins-calculator.webp",
+  Languages: "/ux/art/course-confident-microphone.webp",
+  // The shorter names older programmes were seeded with.
+  Tailoring: "/ux/art/course-sewing-machine.webp",
+  Beauty: "/ux/art/course-teaching-another-woman.webp",
+  Food: "/ux/art/course-cooking-packing-orders.webp",
+  Digital: "/ux/art/course-working-laptop-smiling.webp",
+  Business: "/ux/art/course-reviewing-tablet-charts.webp",
+  Career: "/ux/art/course-presenting-to-group.webp",
+};
+/** The older programmes' short category names, folded into today's list. */
+const SAME_AS: Record<string, string> = {
+  Tailoring: "Handicrafts", Beauty: "Beauty & Care", Food: "Cooking & Food",
+  Digital: "Digital Literacy", Business: "Entrepreneurship", Career: "Personal Development",
+};
+export const normCategory = (category: string) => SAME_AS[category] ?? category;
+
+/** A duration worth showing — not "4 lessons", which the lesson count already says. */
+export const realDuration = (d?: string) => (d && !/^\d+\s+lessons?$/i.test(d.trim()) ? d : "");
+
+export const courseArt = (category: string, cover?: string) =>
+  cover || ART[category] || "/ux/art/course-reading-open-book.webp";
 
 export const CONTINUING: Course[] = [
   { id: "dm-basics", title: "Digital Marketing Basics", lessons: 12, level: "Beginner", rating: "4.8", count: "1.2k",

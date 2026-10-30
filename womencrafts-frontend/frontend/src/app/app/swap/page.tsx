@@ -1,17 +1,21 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Btn, Card, Chip, EmptyState, I, IconTile, SectionHead, SourceNote, Stat, v } from "@/components/ux/kit";
+import { Btn, Card, Chip, EmptyState, I, SectionHead, SourceNote, Stat, v } from "@/components/ux/kit";
 import { useResource } from "@/lib/use-resource";
 import { apiOfferSwap, apiRemoveSwap, apiSwapTaken, apiSwaps, type SwapCondition, type SwapItem, type Swaps } from "@/lib/life-api";
 import { Sheet } from "@/components/ux/kit/sheet";
-import { Label, Select, Text } from "@/components/ux/kit/form";
+import { Label, Picks, Select, Text } from "@/components/ux/kit/form";
 import { useT } from "@/i18n";
-import { ListGroup } from "@/components/ux/mobile/ListRow";
+import { MessageHer } from "@/components/ux/MessageHer";
+import { MediaCard, MediaGrid } from "@/components/ux/media/MediaCard";
+import { artFor } from "@/components/ux/media/art";
 import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
-import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
+import { GroupLabel, PhoneTitle, phonePrimary } from "@/components/ux/PhoneParts";
 
 /**
  * Circle swap — the second-hand economy women already run.
@@ -33,13 +37,14 @@ import { GroupLabel, PhoneRow, PhoneTitle, phonePrimary } from "@/components/ux/
  * item — outgrown every single year, needed every single June.
  */
 
-const CONDITION: Record<SwapCondition, { tint: string; ink: string }> = {
-  "as new": { tint: "--ux-tint-green", ink: "--ux-green-ink" },
-  good: { tint: "--ux-tint-blue", ink: "--ux-blue-ink" },
-  "worn but fine": { tint: "--ux-surface-2", ink: "--ux-muted" },
-};
 
 type Filter = "all" | "free" | "children";
+
+/** What usually goes round, one tap each — uniforms first, as the comment above says. */
+const WHAT_IDEAS = ["School uniform", "School books", "School bag", "Children's shoes",
+  "Baby clothes", "Toys", "Saree", "Kurta", "Utensils"];
+const SIZE_IDEAS = ["Baby", "Age 2–4", "Class 1–2", "Class 3–4", "Class 5–7", "Class 8–10", "Adult"];
+const WANTS_IDEAS = ["Free", "Swap for something", "Swap for a uniform", "Swap for books"];
 
 export default function SwapPage() {
   const tr = useT();
@@ -123,20 +128,34 @@ export default function SwapPage() {
     finally { setBusy(null); }
   }, [what, size, condition, wants, swaps]);
 
+  /** "Ask her for it" — a real thread with the woman passing it on. */
+  const askHer = (s: SwapItem) => s.owner_id ? (
+    <MessageHer userId={s.owner_id} name={s.from || "her"} label={tr("swap.askHerForIt")} variant="primary" full
+                about={`Swap: ${s.what}`}
+                phrases={[`Is the ${s.what.toLowerCase()} still there?`, "I can collect it this week", "When can I come?", "Thank you so much"]} />
+  ) : (
+    <Btn size="sm" full icon="MessageCircle" href="/app/messages">{tr("swap.askHerForIt")}</Btn>
+  );
+
   return (
     <HomeShell active="/app/swap">
       <div className="flex flex-col gap-5">
 
         <PhoneTitle title={tr("swap.passItOn")} sub={tr("swap.whatSomeoneNearYouNoLonger")}
                     note={tr("swap.uniformsOutgrownBabyThingsFinishedWith")}>
+          {/* The same form as the desktop button — this one used to show a tip
+              and open nothing, so on a phone nothing could be offered. */}
           <Btn icon="Plus" className={`mt-4 ${phonePrimary}`}
-               onClick={() => setNote("Photograph it where it is. No studio, no measurements, no listing fee.")}>{tr("swap.offerSomething")}</Btn>
+               onClick={() => { setOffering(true); setErr(null); }}>{tr("swap.offerSomething")}</Btn>
         </PhoneTitle>
         <header className="hidden flex-wrap items-end gap-4 lg:flex">
           <div className="min-w-0 flex-1">
             <p className="text-2xs font-extrabold uppercase tracking-[0.2em]" style={{ color: v("--ux-brand") }}>{tr("swap.passItOn")}</p>
-            <h1 className="mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-                style={{ color: v("--ux-ink") }}>{tr("swap.whatSomeoneNearYouNoLonger")}</h1>
+            <div className="mt-2 flex min-w-0 items-center gap-3">
+              <PlaceMark size={44} />
+              <h1 className="text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                  style={{ color: v("--ux-ink") }}>{tr("swap.whatSomeoneNearYouNoLonger")}</h1>
+            </div>
             <p className="mt-1.5 max-w-[56ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
               Uniforms outgrown, baby things finished with, a lehenga worn once. Collected in
               person from a woman you know. No prices, no posting, no fee.
@@ -157,6 +176,21 @@ export default function SwapPage() {
                   tint="--ux-surface-2" ink="--ux-muted" />
           </div>
         </Card>
+
+        {/* Things she wants back — a lehenga, a pram — go on Rent & borrow, not here. */}
+        <Link href="/app/rent" className="ux-press ux-hov flex items-center gap-3 rounded-[18px] border p-3.5"
+              style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] text-white" style={{ background: "var(--ux-pic-ground)" }}>
+            <I name="KeyRound" className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block text-sm" style={{ color: v("--ux-ink") }}>Want it back after?</b>
+            <span className="block text-xs" style={{ color: v("--ux-muted") }}>
+              Rent it out for a few days instead — or borrow something you need only once.
+            </span>
+          </span>
+          <I name="ChevronRight" className="h-5 w-5 shrink-0" style={{ color: v("--ux-brand") }} />
+        </Link>
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
@@ -191,75 +225,36 @@ export default function SwapPage() {
                               body={tr("swap.tryAnotherFilterOrOfferSomething")}
                               action={<Btn size="sm" variant="outline" onClick={() => setFilter("all")}>{tr("swap.showEverything")}</Btn>} /></Card>
           ) : (
-            <>
-            {/* On a phone: one grouped list — the thing, its condition, who and
-                how far, what she wants for it, and the button. */}
-            <ListGroup className="lg:hidden">
+            /* One picture-led card per thing, phone and laptop alike: what it
+               is, its condition, who is passing it on, what she wants back. */
+            <MediaGrid>
               {shown.map((s) => {
-                const c = CONDITION[s.condition];
+                const free = s.wants.toLowerCase().startsWith("free");
                 return (
-                  <PhoneRow key={s.id} icon={s.icon} tint={s.tint} ink={s.ink}
-                            title={
-                              <span className="flex flex-wrap items-center gap-2">
-                                {s.what}
-                                <span className="rounded-full px-2 py-[2px] text-[13px] font-semibold"
-                                      style={{ background: v(c.tint), color: v(c.ink) }}>{s.condition}</span>
-                              </span>
-                            }
-                            meta={[s.from, s.size].filter(Boolean).join(" · ")}
-                            body={s.wants}>
-                    {s.mine ? (
-                      <div className="mt-3 flex gap-2">
+                  <MediaCard key={s.id}
+                    image={artFor([s.what, s.size], "swap", null, s.id)} alt={s.what}
+                    topLeft={{ text: s.condition.charAt(0).toUpperCase() + s.condition.slice(1) }}
+                    topRight={free ? { text: "Free", tone: "green" } : { text: "Swap", tone: "dark" }}
+                    overlay={s.size ? <><I name="Tag" className="h-[13px] w-[13px]" /> {s.size}</> : undefined}
+                    title={s.what}
+                    subtitle={s.mine ? "You are passing this on" : `From ${s.from}`}
+                    avatar={{ name: s.from || "W" }}
+                    highlight={s.mine}
+                    footer={s.mine ? (
+                      <div className="flex gap-2">
                         <Btn size="sm" full variant="outline" disabled={busy === s.id}
                              onClick={() => claim(s.id)}>Mark gone</Btn>
                         <Btn size="sm" full variant="ghost" disabled={busy === s.id}
                              onClick={() => drop(s.id)}>Remove</Btn>
                       </div>
-                    ) : (
-                      <Btn size="sm" full className="mt-3 max-lg:px-4" icon="MessageCircle"
-                           href="/app/messages">{tr("swap.askHerForIt")}</Btn>
-                    )}
-                  </PhoneRow>
+                    ) : askHer(s)}>
+                    <p className="line-clamp-2 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
+                      <span className="font-semibold" style={{ color: v("--ux-ink") }}>In return: </span>{s.wants}
+                    </p>
+                  </MediaCard>
                 );
               })}
-            </ListGroup>
-            <div className="hidden gap-3 sm:grid-cols-2 lg:grid">
-              {shown.map((s) => {
-                const c = CONDITION[s.condition];
-                return (
-                  <Card key={s.id} pad={16}>
-                    <div className="flex items-start gap-3.5">
-                      <IconTile icon={s.icon} tint={s.tint} ink={s.ink} size={44} radius={13} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{s.what}</p>
-                          <span className="rounded-full px-2 py-[2px] text-2xs font-bold"
-                                style={{ background: v(c.tint), color: v(c.ink) }}>{s.condition}</span>
-                        </div>
-                        <p className="mt-0.5 text-xs" style={{ color: v("--ux-muted") }}>
-                          {[s.from, s.size].filter(Boolean).join(" · ")}
-                        </p>
-                        <p className="mt-2 text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                          {s.wants}
-                        </p>
-                      </div>
-                    </div>
-                    {s.mine ? (
-                      <div className="mt-3 flex gap-2">
-                        <Btn size="sm" full variant="outline" disabled={busy === s.id}
-                             onClick={() => claim(s.id)}>Mark gone</Btn>
-                        <Btn size="sm" full variant="ghost" disabled={busy === s.id}
-                             onClick={() => drop(s.id)}>Remove</Btn>
-                      </div>
-                    ) : (
-                      <Btn size="sm" full className="mt-3" icon="MessageCircle"
-                           href="/app/messages">{tr("swap.askHerForIt")}</Btn>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
-            </>
+            </MediaGrid>
           )}
         </div>
 
@@ -308,9 +303,11 @@ export default function SwapPage() {
         <div className="flex flex-col gap-4">
           <div><Label need>What is it</Label>
             <Text value={what} onChange={setWhat} label="What you are passing on"
-                  placeholder="School uniform, girls" max={120} /></div>
+                  placeholder="School uniform, girls" max={120} />
+            <Picks options={WHAT_IDEAS} value={what} onPick={setWhat} label="Usual things" /></div>
           <div><Label hint="If it matters">Size</Label>
-            <Text value={size} onChange={setSize} label="What size" placeholder="Class 3–4" max={40} /></div>
+            <Text value={size} onChange={setSize} label="What size" placeholder="Class 3–4" max={40} />
+            <Picks options={SIZE_IDEAS} value={size} onPick={(x) => setSize(size === x ? "" : x)} label="Sizes" /></div>
           <div><Label>Condition</Label>
             <Select value={condition} onChange={(x) => setCondition(x as SwapCondition)} label="What condition it is in"
                     options={[
@@ -320,7 +317,8 @@ export default function SwapPage() {
                     ]} /></div>
           <div><Label hint="Never money">What you would like back</Label>
             <Text value={wants} onChange={setWants} label="What you would like in return"
-                  placeholder="Free — my daughter outgrew it" max={120} /></div>
+                  placeholder="Free — my daughter outgrew it" max={120} />
+            <Picks options={WANTS_IDEAS} value={wants} onPick={setWants} label="In return" /></div>
           {err && (
             <p className="flex items-start gap-2 rounded-[12px] px-3.5 py-3 text-xsm leading-relaxed"
                style={{ background: v("--ux-danger-tint"), color: v("--ux-danger-ink") }}>

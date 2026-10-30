@@ -225,12 +225,12 @@ export function ListGroup({
   return (
     <section className={className}>
       {title && (
-        <h3
+        <h2
           className="px-4 pb-1.5 text-[12px] font-semibold uppercase tracking-[0.07em]"
           style={{ color: "var(--ux-muted)" }}
         >
           {title}
-        </h3>
+        </h2>
       )}
       <div
         className="overflow-hidden rounded-[var(--ux-r-lg)] border [&>*:last-child_[data-ux-sep]]:hidden"

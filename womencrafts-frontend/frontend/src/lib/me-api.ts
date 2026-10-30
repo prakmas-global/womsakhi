@@ -55,6 +55,8 @@ export interface ApiBooking {
   price: number;
   note?: string;
   status: string; cancelled_reason?: string; booked_on: string;
+  /** How to join — https:// link or a place, set by the team; "" until then. */
+  meeting?: string;
 }
 
 export interface ApiCertificate {
@@ -142,6 +144,18 @@ export interface ApiMentor {
   expertise: string[]; languages: string[]; experience_years: number; location: string;
   availability: string; rating: number; rating_count: number; sessions_done: number;
   requested: boolean;
+  /** staff | member — a member mentor runs her own sessions. */
+  owner_kind?: string;
+  /** A member mentor's account id — she can be messaged directly. "" for staff mentors. */
+  owner_id?: string;
+  /** Per session, paise. 0 = free. */
+  price_minor?: number;
+  session_mode?: string;
+  session_minutes?: number;
+  /** Her own mentor profile. */
+  is_mine?: boolean;
+  /** Skills a member mentor proved by passing a skill test. */
+  verified_skills?: { skill: string; title: string; score: number; code: string }[];
 }
 
 export const apiNotifications = (s?: AbortSignal) => get<ApiNotification[]>("/me/notifications", s);

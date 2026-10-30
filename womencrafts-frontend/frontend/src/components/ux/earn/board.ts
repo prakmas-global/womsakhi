@@ -49,13 +49,8 @@ export const EARN_PLACES: EarnPlace[] = [
     ],
   },
   {
-    /*
-      Two chips, not nine. Seven of the old ones named features that do not
-      exist — a pre-order book, a standing-order list, a live sale. The screens
-      behind them now say so plainly and are reachable from `/app/shop`; a
-      shortcut on the Earn board is a promise that they work.
-    */
-    id: "shop", icon: "Sparkles", title: "Ways to sell", sub: "What you charge, who comes back",
+    // Was "Ways to sell"; now the Selling tools page inside My shop.
+    id: "shop", icon: "Sparkles", title: "Selling tools", sub: "Advances, monthly customers, appointments",
     href: "/app/shop", pink: true, art: "earn-ways", artW: 427, artH: 440,
     chips: [
       { label: "What should you charge", href: "/app/shop/pricing" },
@@ -76,29 +71,16 @@ export const EARN_PLACES: EarnPlace[] = [
     href: "/app/kitchen", pink: true, art: "earn-kitchen", artW: 440, artH: 293, chips: [],
   },
   {
-    id: "books", icon: "BookOpen", title: "Who owes you money", sub: "And proof of what you earn",
-    href: "/app/books", art: "earn-books", artW: 440, artH: 212,
+    id: "money", icon: "PiggyBank", title: "My Money", sub: "Your everyday money notebook",
+    href: "/app/money", pink: true, art: "scene-woman-writing-notes", artW: 440, artH: 409,
     chips: [
-      { label: "Proof you earn", href: "/app/books/proof" },
-      { label: "Your busy months", href: "/app/books/season" },
+      { label: "Money in & out", href: "/app/money" },
+      { label: "Customer dues", href: "/app/books" },
+      { label: "Bills & plans", href: "/app/money?tab=plans" },
+      { label: "Notes", href: "/app/money?tab=notes" },
     ],
   },
-  {
-    id: "money", icon: "PiggyBank", title: "Your money", sub: "Is there enough for what cannot wait",
-    href: "/app/money", pink: true, art: "earn-money", artW: 440, artH: 409,
-    chips: [
-      { label: "What you paid", href: "/app/payments" },
-      { label: "If something goes wrong", href: "/app/cover" },
-    ],
-  },
-  {
-    id: "wallet", icon: "Wallet", title: "Your wallet", sub: "Your balance, and taking it out",
-    href: "/app/wallet", art: "earn-wallet", artW: 440, artH: 206,
-    chips: [
-      { label: "Your statement", href: "/app/wallet/statement" },
-      { label: "Take money out", href: "/app/wallet/withdraw" },
-    ],
-  },
+
 ];
 
 /**

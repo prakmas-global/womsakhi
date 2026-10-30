@@ -17,13 +17,13 @@ actually did and the ops console has something to read.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date as _Date, datetime, timedelta, timezone
 from secrets import compare_digest
 import re
 from typing import Annotated, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 from app.core.config import settings
@@ -721,18 +721,38 @@ async def travel_end(body: JourneyIn, me: dict = Depends(get_current_user)):
 
 class MoodIn(BaseModel):
     mood: str
-    note: str = ""
+    note: str = Field("", max_length=300)
     style: str | None = None
+    #: The cycle tracker's feelings (app/models/cycle.py FEELINGS); unknown ones are dropped.
+    feelings: list[str] | None = Field(None, max_length=8)
 
 
 @router.post("/mood/check-in", summary="How are you today?")
 async def mood_check_in(body: MoodIn, me: dict = Depends(get_current_user)):
     from app.engines import mood as mood_engine
     out = await mood_engine.check_in(user_id=str(me["_id"]), mood=body.mood,
-                                     note=body.note, style=body.style)
+                                     note=body.note, style=body.style, feelings=body.feelings)
     if not out.get("ok"):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Unknown mood")
     return out
+
+
+@router.get("/mood/history", summary="My check-ins, newest first")
+async def mood_history(days: int = Query(60, ge=1, le=366), me: dict = Depends(get_current_user)):
+    from app.engines import mood as mood_engine
+    return {"days": await mood_engine.history(user_id=str(me["_id"]), days=days)}
+
+
+@router.delete("/mood/{on}", summary="Take back a day's check-in")
+async def mood_clear(on: str, me: dict = Depends(get_current_user)):
+    from app.engines import mood as mood_engine
+    try:
+        day = _Date.fromisoformat(on[:10]).isoformat()
+    except ValueError:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick a valid date.")
+    if not await mood_engine.clear(user_id=str(me["_id"]), date=day):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No check-in that day")
+    return {"cleared": day}
 
 
 @router.get("/mood/card", summary="One card, if she wants one")

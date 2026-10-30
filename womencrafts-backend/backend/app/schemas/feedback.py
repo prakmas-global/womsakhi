@@ -2,7 +2,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, field_validator
 
-FeedbackType = Literal["Program Feedback", "Suggestion", "Complaint"]
+#: A label from the `feedback_types` master (app/core/masters.py) — staff edit the list.
+FeedbackType = str
 FeedbackStatus = Literal["Resolved", "In Review", "Open"]
 Sentiment = Literal["Positive", "Neutral", "Negative"]
 

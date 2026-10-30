@@ -1,255 +1,52 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import * as Icons from "@/components/ux/icons";
-
-import {
-  ActionBtn, Btn, Card, EmptyState, IconTile, Pill,
-  SectionHead, SourceNote, Tabs, escapeHtml, letterhead, plural,
-  printDocument
-} from "@/components/ux/kit";
-import { Rows, rowMemo } from "@/components/ux/kit/rows";
+import { useCallback, useMemo, useState } from "react";
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { SegmentedControl } from "@/components/ux/mobile/SegmentedControl";
-import { usePayoutMethods, useOrders, type UxOrder } from "@/components/ux/business";
-import { useAction, type Action } from "@/lib/use-action";
-import { apiStartOrder } from "@/lib/member-api";
-import { useMe } from "@/components/ux/me";
+import { Btn, Card, I, v } from "@/components/ux/kit";
+import { apiClient } from "@/lib/api";
+import { useResource } from "@/lib/use-resource";
 
-import { PayoutMethod } from "@/components/ux/money/parts";
-import { rupeesExact } from "@/components/ux/money/data";
-import { formatMoneyOrNothing } from "@/components/ux/kit/money";
-import { COPY } from "@/components/ux/copy";
-import { useT } from "@/i18n";
-
-type Status = "paid" | "refunded" | "failed" | "created";
-
-/** Shaped to `Order` in lib/member-api — id, title, amount_minor, status, method. */
-
-const TONE: Record<Status, { pill: "green" | "blue" | "orange" | "neutral"; word: string }> = {
-  paid:     { pill: "green",   word: "Paid" },
-  refunded: { pill: "blue",    word: "Refunded to you" },
-  failed:   { pill: "orange",  word: "Did not go through" },
-  created:  { pill: "neutral", word: "Waiting" },
-};
-
-/**
- * Money — what she has paid for, and how.
- *
- * Separate from Earn on purpose. Money coming in and money going out answer
- * different questions, and a single combined ledger makes both harder to read.
- */
-export default function PaymentsPage() {
-  const tr = useT();
-  const { data: ORDERS, source } = useOrders();
-  const { data: PAYOUT_METHODS } = usePayoutMethods();
-
-  /**
-   * Retry a declined payment.
-   *
-   * Starts a fresh order for the same thing and sends her to checkout for it.
-   * Navigating straight to the failed order's checkout — which is what the
-   * button did — lands her on a payment that has already been refused.
-   */
-  const retry = useAction(
-    async (_id: string, purpose: string, referenceId: string) => {
-      const started = await apiStartOrder(purpose as "booking" | "program", referenceId);
-      window.location.href = `/app/checkout/${started.order.id}`;
-    },
-    { fallbackError: "We could not start that again. Try in a moment." },
-  );
-  const ME = useMe();
-  const [tab, setTab] = useState("All");
-
-  const shown = useMemo(() => ORDERS.filter((o) => {
-    if (tab === "Paid") return o.status === "paid";
-    if (tab === "Refunds") return o.status === "refunded";
-    if (tab === "Problems") return o.status === "failed";
-    return true;
-  }), [tab, ORDERS]);
-
-  const spent = ORDERS.filter((o) => o.status === "paid").reduce((a, o) => a + o.amount_minor, 0);
-  const back = ORDERS.filter((o) => o.status === "refunded").reduce((a, o) => a + o.amount_minor, 0);
-  const trouble = ORDERS.filter((o) => o.status === "failed").length;
-
-  return (
-    <HomeShell
-      active="/app/payments"
-      rail={
-        <div className="space-y-[16px]">
-          <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("payments.thisYear")} />
-            <div className="space-y-3.5">
-              {[
-                ["Paid out", formatMoneyOrNothing(spent, "Nothing yet"), "ArrowUpRight", "--ux-tint-violet", "--ux-violet"],
-                // No refunds is good news, and "₹0" does not read as good news
-                // — it reads as a figure that failed to load.
-                ["Came back to you", formatMoneyOrNothing(back, "None"), "RotateCcw", "--ux-tint-blue", "--ux-blue"],
-                ["Needs attention", `${trouble}`, "TriangleAlert", "--ux-tint-orange", "--ux-orange"],
-              ].map(([label, val, icon, tint, ink]) => (
-                <div key={label} className="ux-hov flex items-center gap-3">
-                  <IconTile icon={icon} tint={tint} ink={ink} size={38} />
-                  <div className="min-w-0">
-                    <p className="text-lg font-bold leading-none tabular-nums" style={{ color: "var(--ux-ink)" }}>{val}</p>
-                    <p className="mt-1 truncate text-xs" style={{ color: "var(--ux-muted)" }}>{label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("payments.howYouPay")} action="Manage"
-                         onAction={() => { window.location.href = "/app/settings/payments"; }} />
-            <div className="space-y-2.5">
-              {PAYOUT_METHODS.map((m) => <PayoutMethod key={m.id} m={m} />)}
-            </div>
-            <div className="mt-3">
-              <Btn href="/app/settings/payments" variant="outline" size="sm" full icon="Plus">{tr("payments.addAPaymentMethod")}</Btn>
-            </div>
-          </Card>
-
-          <Card className="ux-onscroll-soft">
-            <SectionHead title={tr("payments.somethingWrong")} icon="ShieldCheck" />
-            <p className="text-xsm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
-              If money left your account but the payment did not go through, it comes back on its own
-              within 5–7 working days. If it does not, tell us and we will chase it.
-            </p>
-            <div className="mt-3.5">
-              <Btn href="/app/help" variant="soft" size="sm" full iconEnd="ArrowRight">{tr("payments.raiseAProblem")}</Btn>
-            </div>
-          </Card>
-        </div>
-      }
-    >
-      <div className="mb-6 flex items-end justify-between gap-4 max-lg:flex-col max-lg:items-stretch lg:mb-[20px]">
-        <div>
-          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("payments.whatYouPaid")}</h1>
-          <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
-            {shown.length} {plural("payment", shown.length)}
-            {trouble > 0 && ` · ${trouble} needs a look`}
-          </p>
-
-      <SourceNote source={source} what="payments" />
-        </div>
-        {/* Four short filters are a segmented control on a phone — equal
-            segments across the width, where the tab strip beside the title
-            had 46px left for "Refunds". */}
-        <div className="hidden lg:flex">
-          <Tabs items={["All", "Paid", "Refunds", "Problems"]} active={tab} onChange={setTab} />
-        </div>
-        <SegmentedControl className="lg:hidden" label={tr("payments.whatYouPaid")} value={tab} onChange={setTab}
-                          options={["All", "Paid", "Refunds", "Problems"].map((t) => ({ value: t, label: t }))} />
-      </div>
-
-      {shown.length ? (
-        <Rows
-          items={shown}
-          keyOf={(o) => o.id}
-          render={(o, i) => <PaymentRow item={o} index={i} retry={retry} me={ME} />}
-          className="ux-deck ux-stagger space-y-[12px]"
-        />
-      ) : (
-        <Card>
-          <EmptyState
-            icon="Receipt"
-            title={tab === "Problems" ? "Nothing has gone wrong" : `No ${tab.toLowerCase()} yet`}
-            body={tr("payments.coursesSessionsAndCircleContributionsYou")}
-            action={<Btn onClick={() => setTab("All")} variant="soft">{tr("payments.showEverything")}</Btn>}
-          />
-        </Card>
-      )}
-    </HomeShell>
-  );
+interface PaymentRecord {
+  id: string; kind: string; direction: "sent" | "received"; title: string; recipient: string;
+  amount_minor: number; status: string; reference: string; note: string; href: string;
+  submitted_at: string; confirmed_at: string; updated_at: string; method: string; legacy: boolean; currency: string;
 }
+interface Activity { items: PaymentRecord[]; currency: string; mode: string }
+const EMPTY: Activity = { items: [], currency: "INR", mode: "direct_upi" };
+const STATES: Record<string, string> = { awaiting: "Awaiting payment", claimed: "Awaiting confirmation", paid: "Confirmed received", declined: "Not confirmed", cancelled: "Cancelled", created: "Earlier pending record", failed: "Earlier failed record", refunded: "Refund recorded" };
+const day = (value: string) => new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium" }).format(new Date(value));
 
-
-/**
- * One payment.
- *
- * Split out of the list and memoised on `item` so that changing the tab, or a
- * retry going out on one row, does not re-render every other receipt. With a
- * few payments that is invisible; the women this is for keep years of them.
- */
-const PaymentRow = rowMemo(function PaymentRow({
-  item, index, retry, me,
-}: {
-  item: UxOrder;
-  index: number;
-  retry: Action<[string, string, string]>;
-  me: { name: string };
-}) {
-  const tr = useT();
-  return (
-    <Card className="ux-i ux-onscroll" style={{ ["--i" as string]: index }}>
-          <div className="flex items-start gap-3.5">
-            <IconTile icon={item.icon} tint={item.tint} ink={item.ink} size={46} radius={12} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-2">
-                <h2 className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: "var(--ux-ink)" }}>
-                  {item.title}
-                </h2>
-                <Pill tone={TONE[item.status].pill} size="sm">{TONE[item.status].word}</Pill>
-              </div>
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 text-xs" style={{ color: "var(--ux-muted)" }}>
-                <span>{item.purpose}</span>
-                <span className="inline-flex items-center gap-1"><Icons.CreditCard className="h-3.5 w-3.5" /> {item.method}</span>
-                <span className="inline-flex items-center gap-1"><Icons.Clock className="h-3.5 w-3.5" /> {item.when}</span>
-              </p>
-            </div>
-            <div className="shrink-0 text-end">
-              {/* Exact paise here: this is the one screen where a receipt has
-                  to match her bank statement to the last digit. */}
-              <p className="text-base font-bold tabular-nums" style={{ color: "var(--ux-ink)" }}>
-                {rupeesExact(item.amount_minor)}
-              </p>
-              <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-faint)" }}>{item.ref}</p>
-            </div>
-          </div>
-
-          <div className="mt-3.5 flex items-center justify-between gap-4 border-t pt-3.5"
-               style={{ borderColor: "var(--ux-line)" }}>
-            <span className="text-xs" style={{ color: "var(--ux-faint)" }}>
-              {item.status === "failed"
-                ? "No money left your account."
-                : item.status === "refunded"
-                  ? tr("payments.returnedToTheWayYouPaid")
-              : tr("payments.receiptAvailable")}
-            </span>
-            <span className="flex items-center gap-2">
-              {/* A real receipt. Refunds and failures say so on the page
-                  rather than printing a document that claims she paid. */}
-              <ActionBtn variant="outline" size="sm" icon="Download" doneIcon="Printer"
-                         done={COPY.saveAsPdf}
-                         act={() => printDocument(`Receipt — ${item.title}`, `
-                           ${letterhead("Receipt", `${me.name} · ${escapeHtml(item.when)}`)}
-                           <table><tbody>
-                             <tr><td>What</td><td>${escapeHtml(item.title)}</td></tr>
-                             <tr><td>Why</td><td>${escapeHtml(item.purpose)}</td></tr>
-                             <tr><td>${tr("payments.paidWith")}</td><td>${escapeHtml(item.method)}</td></tr>
-                             <tr><td>Status</td><td>${escapeHtml(TONE[item.status].word)}</td></tr>
-                             <tr class="total"><td>Amount</td><td class="num">${rupeesExact(item.amount_minor)}</td></tr>
-                           </tbody></table>
-                           <p class="foot">Reference ${escapeHtml(item.ref)}.
-                           ${item.status === "failed" ? "No money left your account." :
-                             item.status === "refunded" ? "This amount was returned to the way you paid." :
-                             "Verify at womsakhi.com/verify."}</p>`)}>
-                Receipt
-              </ActionBtn>
-              {item.status === "failed" && (
-                /* A fresh attempt, not a re-open of the failed order. The
-                   server deliberately gives a declined payment its own
-                   record — that history is what you need when somebody
-                   disputes a charge — so retrying starts a new one for the
-                   same thing rather than resurrecting the old one. */
-                <Btn variant="primary" size="sm" icon="RotateCcw"
-                     className={retry.busyWith === item.id ? "pointer-events-none opacity-60" : ""}
-                     onClick={() => void retry.run(item.id, item.purpose, item.reference_id)}>
-                  {retry.busyWith === item.id ? "Starting…" : "Try again"}
-                </Btn>
-              )}
-            </span>
-          </div>
-      </Card>
-  );
-});
+export default function PaymentsPage() {
+  const records = useResource(useCallback(async (signal: AbortSignal) => (await apiClient.get<Activity>("/payments/activity", { signal })).data, []), EMPTY);
+  const [direction, setDirection] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [hidden, setHidden] = useState(false);
+  const rows = useMemo(() => records.data.items.filter(row => (direction === "all" || row.direction === direction) && (status === "all" || row.status === status)), [records.data.items, direction, status]);
+  const money = (minor: number, currency: string) => new Intl.NumberFormat("en-IN", { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(minor / 100);
+  return <HomeShell active="/app/payments">
+    <header className="mb-5"><p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: v("--ux-brand") }}><I name="Receipt" className="h-4 w-4" /> Direct UPI payment records</p><h1 className="mt-2 text-2xl font-extrabold">My Payments</h1>
+      <p className="mt-2 max-w-[65ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>Pay the provider directly using their UPI ID. Submit your transaction reference, then wait for the recipient to check their UPI account and confirm receipt.</p>
+      <div className="mt-3 flex flex-wrap gap-2"><Btn href="/app/money" variant="outline" size="sm" icon="NotebookPen">My Money notebook</Btn><Btn href="/app/teach" variant="ghost" size="sm">My courses</Btn><Btn href="/app/mentoring" variant="ghost" size="sm">My mentoring</Btn></div>
+    </header>
+    <div className="space-y-4" data-my-payments>
+      <Card><h2 className="text-sm font-bold">UPI payment → Submit reference → Recipient confirms</h2><p className="mt-2 text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>Submitting proof means “Awaiting confirmation”. It does not confirm receipt. WomSakhi does not hold or transfer this payment, and no wallet balance is created.</p></Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Payment direction">{[["all", "All"], ["sent", "Payments I make"], ["received", "Payments to me"]].map(([id, label]) => <button key={id} type="button" onClick={() => setDirection(id)} aria-pressed={direction === id} className="min-h-11 rounded-full border px-3 text-xs font-semibold" style={{ background: v(direction === id ? "--ux-brand-tint" : "--ux-surface"), color: v(direction === id ? "--ux-brand" : "--ux-ink"), borderColor: v("--ux-line") }}>{label}</button>)}</div>
+        <button type="button" onClick={() => setHidden(!hidden)} aria-label={hidden ? "Show payment amounts" : "Hide payment amounts"} aria-pressed={hidden} className="grid h-11 w-11 place-items-center rounded-full border" style={{ borderColor: v("--ux-line") }}><I name={hidden ? "EyeOff" : "Eye"} className="h-5 w-5" /></button>
+      </div>
+      <label className="block text-sm font-semibold">Payment status<select aria-label="Payment status" value={status} onChange={event => setStatus(event.target.value)} className="wc-field mt-1 block min-h-11 w-full rounded-xl border px-3 text-sm" style={{ background: v("--ux-surface"), color: v("--ux-ink"), borderColor: v("--ux-line") }}><option value="all">All statuses</option>{["awaiting", "claimed", "paid", "declined", "cancelled"].map(key => <option key={key} value={key}>{STATES[key]}</option>)}</select></label>
+      {records.source === "error" ? <Card><p role="alert">Your payment records could not load. Your saved submissions have not changed.</p><div className="mt-3"><Btn variant="outline" onClick={records.refetch}>Try again</Btn></div></Card>
+        : records.source === "loading" ? <p role="status">Loading payment records…</p>
+        : rows.length === 0 ? <Card><h2 className="font-bold">No matching payment records</h2><p className="mt-2 text-sm" style={{ color: v("--ux-muted") }}>Paid course and mentoring requests appear here. Use their detail pages to pay by UPI and submit a reference.</p></Card>
+        : <ul className="space-y-3">{rows.map(row => <li key={row.id} data-payment-id={row.id}><Card><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0 flex-1"><h2 className="break-words text-sm font-bold">{row.title}</h2><p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>{row.direction === "sent" ? `To ${row.recipient}` : "Payment to you"} · {row.legacy ? "Earlier payment record" : "Direct UPI"}</p></div><span className="text-base font-bold tabular-nums" aria-label={hidden ? "Amount hidden" : undefined}>{hidden ? "••••" : money(row.amount_minor, row.currency || records.data.currency)}</span></div>
+          <p className="mt-3 text-sm font-semibold" style={{ color: v(row.status === "paid" ? "--ux-green-ink" : "--ux-ink") }}>{row.legacy ? `Earlier record: ${row.status}` : STATES[row.status] || "Recorded status"}</p>
+          {row.reference && <p className="mt-2 break-all text-xs" style={{ color: v("--ux-muted") }}>UPI reference: {row.reference}</p>}
+          {row.submitted_at && <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>Submitted {day(row.submitted_at)}</p>}
+          {row.confirmed_at && <p className="mt-1 text-xs" style={{ color: v("--ux-muted") }}>{row.legacy ? "Recorded" : "Recipient confirmed"} {day(row.confirmed_at)}</p>}
+          {row.note && <p className="mt-2 break-words text-sm">Recipient’s note: {row.note}</p>}
+          <div className="mt-3"><Btn href={row.href} variant="outline" size="sm">{row.legacy ? "View details" : row.direction === "received" && ["claimed", "awaiting"].includes(row.status) ? "Review payment" : row.status === "awaiting" && row.direction === "sent" ? "Pay by UPI & submit reference" : "View payment details"}</Btn></div>
+        </Card></li>)}</ul>}
+      <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>Includes up to 500 course and 500 mentoring payment records, plus up to 200 earlier payment records. These records are separate from your personal notebook and are not a bank statement.</p>
+    </div>
+  </HomeShell>;
+}

@@ -59,6 +59,7 @@ import {
   type CommunityAction,
 } from "@/lib/community-admin-api";
 import { memberError } from "@/lib/member-api";
+import { useMaster } from "@/lib/masters-api";
 
 /**
  * Circles — the rooms of the platform.
@@ -117,6 +118,12 @@ export default function AdminCirclesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState<CircleInput>(EMPTY_FORM);
+  // Topics come from Masters. A circle with an older free-text topic keeps it
+  // as an option until staff move it.
+  const { labels: topicLabels } = useMaster("circle_topics", ["Business & Ideas", "Health & Wellness", "Career & Skills",
+    "Money & Finance", "Family & Life", "Success Stories", "Safety & Rights"]);
+  const topicOptions = form.topic && !topicLabels.some((t) => t.toLowerCase() === form.topic.toLowerCase())
+    ? [...topicLabels, form.topic] : topicLabels;
 
   const [roster, setRoster] = useState<AdminCircle | null>(null);
   const [members, setMembers] = useState<CircleMember[]>([]);
@@ -495,7 +502,8 @@ export default function AdminCirclesPage() {
         <div className="space-y-3">
           <Input label="Name" required value={form.name} onChange={(e) => set("name")(e.target.value)}
                  placeholder="Tailoring & Stitching Sisters" />
-          <Input label="Topic" value={form.topic} onChange={(e) => set("topic")(e.target.value)} placeholder="Craft" />
+          <Select label="Topic" value={form.topic} onChange={(e) => set("topic")(e.target.value)}
+                  placeholder="Choose a topic" options={topicOptions} />
           <Textarea label="What is this circle for?" value={form.desc} onChange={(e) => set("desc")(e.target.value)} />
           <Input label="One guideline" value={form.guidelines} onChange={(e) => set("guidelines")(e.target.value)}
                  placeholder="Share what you know. Nobody here is a beginner for asking." />

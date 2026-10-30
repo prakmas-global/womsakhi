@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -207,7 +208,10 @@ export default function AdvancedDailyLog() {
         <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--cy-period-ink)" }}>Private daily health log</p>
-            <h1 className="ux-screen-title mt-1 text-[34px] font-bold" style={{ color: "var(--ux-ink)" }}>How is your body today?</h1>
+            <div className="mt-1 flex min-w-0 items-center gap-3">
+              <PlaceMark size={44} />
+              <h1 className="ux-screen-title text-[34px] font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>How is your body today?</h1>
+            </div>
             <p className="mt-1 text-[14px]" style={{ color: "var(--ux-muted)" }}>Choose only what matters today. Every field is optional.</p>
           </div>
           <label className="rounded-[14px] px-4 py-2" style={{ background: "var(--ux-surface)", border: "1px solid var(--ux-line)" }}>
@@ -221,7 +225,7 @@ export default function AdvancedDailyLog() {
         <CycleDesktopNav active="Daily log" />
 
         {!log || loading ? <div className="h-[520px] animate-pulse rounded-[24px]" style={{ background: "var(--ux-surface-2)" }} /> : (
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="ux-split-xl grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
             <div className="grid gap-5 lg:grid-cols-2">
               <Card title="Period and flow" sub="Quick details improve your personal pattern" icon="Droplets">
                 <div className="mb-4 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Period today">

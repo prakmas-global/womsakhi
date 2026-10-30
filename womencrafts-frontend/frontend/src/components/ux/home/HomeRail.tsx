@@ -5,7 +5,7 @@ import { useT } from "@/i18n";
 import * as Icons from "@/components/ux/icons";
 
 import { useHome } from "@/components/ux/live";
-import { formatRupees, AvatarStack, Skeleton } from "@/components/ux/kit";
+import { AvatarStack, Skeleton } from "@/components/ux/kit";
 import {
   clock, lost, rowsOf, blockOf, Gone,
   type HomeCircle, type HomeProgress,
@@ -50,7 +50,7 @@ function Card({ children, className, style }: {
 function Head({ title, action, href }: { title: string; action: string; href: string }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h3 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h3>
+      <h2 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{title}</h2>
       <Link href={href}
             className="ux-hov -my-2.5 flex min-h-[44px] shrink-0 items-center gap-1 py-2.5 text-xs font-semibold"
             style={{ color: "var(--ux-brand)" }}>
@@ -125,7 +125,6 @@ export function HomeRail() {
     return source === "loading" ? <RailSkeleton /> : null;
   }
 
-  const money = home.earnings?.money;
   const events = home.upcoming.slice(0, 3);
   const circles = rowsOf<HomeCircle>(home.circles).filter((c) => c.joined);
   const progress = blockOf<HomeProgress>(home.progress);
@@ -237,52 +236,11 @@ export function HomeRail() {
         identical expression from the identical field, 300px to the left. This
         one kept it because this one also offers the thing she would do with it.
       */}
-      <section className="relative overflow-hidden rounded-[16px] p-4"
-               style={{ background: "linear-gradient(140deg, var(--ux-brand-900), var(--ux-fill) 62%, var(--ux-rib-3) 132%)" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img loading="lazy" decoding="async" src="/ux/art/icon-wallet.webp" alt="" aria-hidden
-             className="pointer-events-none absolute -bottom-2 -right-2 w-[112px]"
-             style={{ maskImage: "radial-gradient(70% 70% at 45% 45%, #000 55%, transparent 88%)",
-                      WebkitMaskImage: "radial-gradient(70% 70% at 45% 45%, #000 55%, transparent 88%)" }} />
-        <div className="relative">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-bold" style={{ color: "var(--ux-on-brand)" }}>{tr("homeRail.yourBalance")}</h3>
-            <Link href="/app/wallet"
-                  /* `-my-1 py-1`: 24px of touchable height without the
-                     label moving a pixel — WCAG 2.2 asks for 24, the text
-                     alone measured 16. Same pattern as `SectionHead`. */
-                  className="ux-hov -my-1 flex items-center gap-1 py-1 text-xs font-semibold"
-                  style={{ color: "var(--ux-on-brand-2)" }}>
-              {tr("homeRail.viewWallet")} <Icons.ChevronRight className="h-[13px] w-[13px]" />
-            </Link>
-          </div>
-          {money ? (
-            <>
-              <p className="mt-2 text-2xlm font-bold leading-none tracking-[-0.03em] tabular-nums"
-                 style={{ color: "var(--ux-on-brand)" }}>
-                {formatRupees(money.balance_minor)}
-              </p>
-              <p className="mt-1 text-xs" style={{ color: "var(--ux-on-brand-2)" }}>{tr("homeRail.availableBalance")}</p>
-            </>
-          ) : (
-            // Her wallet did not answer. A zero here would be a statement about
-            // her money, and this is a statement about the request.
-            <p className="mt-2 text-xsm font-semibold leading-snug" style={{ color: "var(--ux-on-brand-2)" }}>
-              {tr("homeRail.weCouldNotReachYourWallet")}
-            </p>
-          )}
-          <Link href="/app/wallet/withdraw"
-                className="ux-press ux-btn-g mt-3.5 inline-flex min-h-[44px] items-center gap-2 rounded-[12px] px-4 text-xsm font-bold"
-                style={{ background: "var(--ux-on-brand-btn)", color: "var(--ux-on-brand-btn-ink)" }}>
-            {tr("opportunities.takeMoneyOut")}
-            <Icons.ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </section>
+      <Card><h2 className="text-sm font-bold">My Payments</h2><p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>Pay by UPI, submit your reference and track the recipient’s confirmation.</p><div className="mt-3"><Link href="/app/payments" className="inline-flex min-h-11 items-center text-sm font-bold" style={{ color: "var(--ux-brand)" }}>View payment records <Icons.ArrowRight className="ms-2 h-4 w-4" /></Link></div></Card>
 
       <Card>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{tr("homeRail.yourProgress")}</h3>
+          <h2 className="text-sm font-bold tracking-tight" style={{ color: "var(--ux-ink)" }}>{tr("homeRail.yourProgress")}</h2>
         </div>
         {/* The chip here said "This Month". None of these figures are scoped to
             a month — they are every programme she has ever joined — so the chip

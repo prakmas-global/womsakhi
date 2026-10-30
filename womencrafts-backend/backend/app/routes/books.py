@@ -7,12 +7,12 @@ quietly dropped — a statement with a gap in it is one a landlord will not take
 """
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.core.rbac import require_active_member
 from app.db.mongodb import get_database
@@ -24,21 +24,45 @@ router = APIRouter(prefix="/me/books", tags=["Member · Money"])
 class EntryIn(BaseModel):
     who: str = Field(min_length=1, max_length=80)
     what: str = Field(default="", max_length=140)
-    minor: int = Field(ge=0)
+    minor: int = Field(gt=0)
     state: str = "paid"
     via: str = "person"
     on: datetime | None = None
     due: datetime | None = None
 
 
+    @field_validator("who")
+    @classmethod
+    def nonblank_customer(cls, value):
+        if not value.strip():
+            raise ValueError("Add the customer name.")
+        return value.strip()
+
+
 class EntryPatch(BaseModel):
     who: str | None = Field(default=None, max_length=80)
     what: str | None = Field(default=None, max_length=140)
-    minor: int | None = Field(default=None, ge=0)
+    minor: int | None = Field(default=None, gt=0)
     state: str | None = None
     via: str | None = None
     on: datetime | None = None
     due: datetime | None = None
+
+
+    @field_validator("who")
+    @classmethod
+    def nonblank_customer(cls, value):
+        if value is not None and not value.strip():
+            raise ValueError("Add the customer name.")
+        return value.strip() if value else value
+
+
+def _receipt_date(on):
+    if on:
+        zone = timezone(timedelta(hours=5, minutes=30))
+        value = on.replace(tzinfo=timezone.utc) if on.tzinfo is None else on
+        if value.astimezone(zone).date() > datetime.now(zone).date():
+            raise HTTPException(422, "Record only money you have already received.")
 
 
 def _col():
@@ -77,6 +101,8 @@ async def add_entry(body: EntryIn, me: dict = Depends(require_active_member)):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"state must be one of {', '.join(STATES)}")
     if body.via not in VIA:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"via must be one of {', '.join(VIA)}")
+    if body.state == "paid":
+        _receipt_date(body.on)
     doc = BookEntryModel.create_document(
         user_id=str(me["_id"]), who=body.who, what=body.what, minor=body.minor,
         state=body.state, via=body.via, on=body.on, due=body.due,
@@ -88,7 +114,10 @@ async def add_entry(body: EntryIn, me: dict = Depends(require_active_member)):
 
 @router.patch("/{entry_id}", summary="Change one — usually to mark it paid")
 async def edit_entry(entry_id: str, body: EntryPatch, me: dict = Depends(require_active_member)):
-    patch = {k: v for k, v in body.model_dump(exclude_unset=True).items() if v is not None}
+    existing = await _col().find_one({"_id": _oid(entry_id), "user_id": str(me["_id"])})
+    if not existing:
+        raise HTTPException(404, "No such entry")
+    patch = {k: v for k, v in body.model_dump(exclude_unset=True).items() if v is not None or k == "due"}
     if patch.get("state") and patch["state"] not in STATES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "unknown state")
     if patch.get("via") and patch["via"] not in VIA:
@@ -97,6 +126,10 @@ async def edit_entry(entry_id: str, body: EntryPatch, me: dict = Depends(require
     # counting days late against money that has already arrived.
     if patch.get("state") == "paid":
         patch["due"] = None
+        if existing.get("state") != "paid" and "on" not in patch:
+            patch["on"] = datetime.now(timezone.utc)
+    if patch.get("state", existing.get("state")) == "paid":
+        _receipt_date(patch.get("on"))
     patch["updated_at"] = datetime.now(timezone.utc)
 
     doc = await _col().find_one_and_update(
@@ -117,14 +150,11 @@ async def delete_entry(entry_id: str, me: dict = Depends(require_active_member))
     return {"ok": True}
 
 
-@router.get("/proof", summary="Proof of income, counted from her own rows")
+@router.get("/proof", summary="Business income summary from recorded customer receipts")
 async def proof(months: int = 6, me: dict = Depends(require_active_member)):
-    """
-    What a landlord, a school or a scheme will actually accept.
+    """Summarize recorded received payments; exclude outstanding dues and upcoming work.
 
-    Only `paid` rows count. Owed and promised money is real to her and means
-    nothing to anybody assessing her, and putting it in a statement is the
-    fastest way to have the whole statement disbelieved.
+    This is record keeping, not verification or official certification of income.
     """
     months = max(1, min(int(months), 24))
     rows = await _col().find(

@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 import { useT } from "@/i18n";
 import Image from "next/image";
@@ -199,18 +200,18 @@ export default function JourneyPage() {
   return (
     <HomeShell active="/app/journey" rail={rail} loadFailed="your journey">
       <div className={styles.page} data-dashboard="journey">
-        <section className={styles.hero} aria-labelledby="journey-title">
+        <section data-banner data-page-hero className={styles.hero} aria-labelledby="journey-title">
           <Image src="/ux/journey/journey-hero-v1.webp" alt={tr("journey.womenOfDifferentAgesAndBackgrounds")} fill priority sizes="(max-width: 760px) 100vw, 70vw" />
           <div className={styles.heroShade} />
           <div className={styles.heroCopy}>
             <p>{tr("ch.journey.label")}</p>
-            <h1 id="journey-title">{tr("journey.smallSteps")}<br /><em>{tr("journey.bigDreams")}</em></h1>
+            <div className="mb-2"><PlaceMark size={44} /></div><h1 id="journey-title">{tr("journey.smallSteps")}<br /><em>{tr("journey.bigDreams")}</em></h1>
             <span>{tr("journey.yourJourneyIsUniqueExploreLearn")}</span>
           </div>
           <p className={styles.heroWords}>Learn<br />Earn<br />Connect<br />Grow<br />Together <Heart /></p>
         </section>
         <nav className={styles.tabs} aria-label={tr("journey.journeyAreas")}>
-          {[['Overview','Sparkles','/app/journey'],['Learning','BookOpen','/app/learn'],['Work','Briefcase','/app/work'],['Earn','IndianRupee','/app/earn'],['Circle','Users','/app/circle'],['Health & Wellness','Heart','/app/wellness'],['Goals','Target','/app/goals']].map(([label,icon,href],index)=><Link href={href} key={label} aria-current={index===0?'page':undefined}><span>{icon==='BookOpen'?<BookOpen/>:icon==='Briefcase'?<BriefcaseBusiness/>:icon==='IndianRupee'?<IndianRupee/>:icon==='Users'?<UsersRound/>:icon==='Heart'?<Heart/>:icon==='Target'?<Target/>:<Target/>}</span>{label}</Link>)}
+          {[['Overview','Sparkles','/app/journey'],['Learning','BookOpen','/app/learn'],['Work','Briefcase','/app/work'],['Earn','IndianRupee','/app/earn'],['Community','Users','/app/community'],['Health & Wellness','Heart','/app/wellness'],['Goals','Target','/app/goals']].map(([label,icon,href],index)=><Link href={href} key={label} aria-current={index===0?'page':undefined}><span>{icon==='BookOpen'?<BookOpen/>:icon==='Briefcase'?<BriefcaseBusiness/>:icon==='IndianRupee'?<IndianRupee/>:icon==='Users'?<UsersRound/>:icon==='Heart'?<Heart/>:icon==='Target'?<Target/>:<Target/>}</span>{label}</Link>)}
         </nav>
 
         <div className={styles.featureGrid}>

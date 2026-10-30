@@ -34,6 +34,8 @@ class ListingCard(BaseModel):
     low_stock: bool
     out_of_stock: bool
     category: str
+    category_key: str = ""
+    subcategory_key: str = ""
     place: str
     travels_km: int
     photo: str
@@ -75,10 +77,26 @@ class PublicShop(BaseModel):
     name: str
     #: The category most of her listings are in. Derived from them, not typed.
     trade: str
+    #: Her store category's picture as staff set it ("" = none: the page picks
+    #: one from `trade`). Stands in for a cover she has not added.
+    trade_image: str = ""
     #: The place she has written on her own listings, when they agree on one.
     place: str
     listings: list[ListingCard] = []
     listing_count: int
+    #: Skills she proved by passing a WomSakhi skill test — the test, her best
+    #: score and the certificate code a buyer can check. Nothing personal.
+    verified_skills: list[dict] = []
+    #: Her store, as she set it up (app/core/store.py). `shop_name` falls back
+    #: to "<first name>'s shop"; the pictures are "" until she adds them.
+    shop_name: str = ""
+    tagline: str = ""
+    logo: str = ""
+    cover: str = ""
+    gallery: list[str] = Field(default_factory=list)
+    #: False while she has closed her store; the page says so above her things.
+    open: bool = True
+    away_line: str = ""
 
 
 class ListingResponse(BaseModel):
@@ -95,6 +113,9 @@ class ListingResponse(BaseModel):
     low_stock: bool
     out_of_stock: bool
     category: str
+    category_key: str = ""
+    subcategory_key: str = ""
+    paused_reason: str = ""
     place: str
     travels_km: int
     photo: str
@@ -131,6 +152,11 @@ class ListingCreate(BaseModel):
     rate: str = Field("", description=" | ".join(ListingModel.RATES))
     stock: Optional[int] = Field(None, ge=0)
     category: str = Field("", max_length=60)
+    #: Keys in the staff-controlled tree. The sub-category must sit under her
+    #: store's category (checked by the server); `category` is then set to the
+    #: sub-category's name for display.
+    category_key: str = Field("", max_length=40)
+    subcategory_key: str = Field("", max_length=40)
     place: str = Field("", max_length=120)
     travels_km: int = Field(0, ge=0, le=200)
     photo: MediaRef = Field("", max_length=400)
@@ -189,6 +215,11 @@ class ShopSummary(BaseModel):
     """Everything the My Business screen needs, in one request."""
 
     name: str
+    #: From Store settings; "" until she adds them.
+    logo: str = ""
+    cover: str = ""
+    #: False while she has closed her store for now.
+    open: bool = True
     #: Her shop's handle — the bare slug, and nothing else. `/s/<handle>`
     #: resolves it and `GET /public/shop/<handle>` serves it. It used to be
     #: "womsakhi.in/<member_id>": a domain-and-path shape that matched no route
