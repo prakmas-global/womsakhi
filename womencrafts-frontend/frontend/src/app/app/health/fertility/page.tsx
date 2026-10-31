@@ -24,6 +24,7 @@ import {
 } from "@/lib/cycle-api";
 import { addDays, fmtDay, nowHHMM, today as ymdToday, type Entry, type KindData } from "@/lib/health-api";
 import { WatchListen } from "@/components/ux/health/WatchListen";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Fertility — the cycle tracker, laid out the way the Health module is.
@@ -77,7 +78,7 @@ export default function FertilityPage() {
   return (
     <HealthFrame active="/app/health/fertility" hue="pink" icon="Flower2" eyebrow="Fertility"
                  title="Fertility" sub="Understand your cycle and plan your future. Everything here is private to you."
-                 art="/ux/health/ill/hero-fertility.webp" tabs={TABS}
+                 art={illSrc("hero-fertility")} tabs={TABS}
                  actions={state ? (
                    <>
                      {loggedToday

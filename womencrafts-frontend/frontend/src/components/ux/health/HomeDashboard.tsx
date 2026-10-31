@@ -14,7 +14,7 @@ import {
 import { useAppointments } from "./appointments";
 import { TIPS } from "./fitness-data";
 import {
-  Chips, Cols, Empty, HUE, HealthFrame, I, Panel, lastDays, sumOn, useEntries, useHealthSettings, type Hue,
+  Chips, Empty, HUE, HealthFrame, I, Panel, SectionQuote, lastDays, sumOn, useEntries, useHealthSettings, type Hue,
 } from "./kit";
 import { HealthOnboarding } from "./HealthOnboarding";
 import { HealthSettingsTab } from "./HealthSettingsTab";
@@ -24,6 +24,7 @@ import { MealFlow, SleepFlow, WaterButtons, WorkoutFlow, fmtTime } from "./Quick
 import { ReminderSheet } from "./ReminderSheet";
 import { WatchListen } from "./WatchListen";
 import css from "./home.module.css";
+import { artSrc, illSrc } from "@/components/ux/health/art";
 
 /**
  * The Health home — her day at a glance, after the approved Health & Wellness
@@ -60,10 +61,11 @@ const MOOD_CHOICES: { id: Mood; label: string }[] = [
   { id: "good", label: "Good" }, { id: "tired", label: "Tired" }, { id: "low", label: "Low" },
   { id: "anxious", label: "Anxious" }, { id: "angry", label: "Upset" }, { id: "unwell", label: "Unwell" },
 ];
-const art = (code: string) => `/ux/health/emoji/${code}.webp`;
+const art = artSrc;
 
 /** Kinds the history tab and "Recent activities" read. */
-const LOGGED: HealthKind[] = ["water", "workout", "meal", "sleep", "journal", "activity", "symptom", "pregsym", "kick", "measure", "game", "reminder", "document"];
+const LOGGED: HealthKind[] = ["water", "workout", "meal", "sleep", "journal", "activity", "symptom", "pregsym", "kick", "measure", "game", "reminder", "document",
+  "anc", "pregtest", "pregrisk", "delivery", "postnatal"];
 
 const KIND_INFO: Record<string, { label: string; icon: string; hue: Hue; href: string }> = {
   water: { label: "Water", icon: "Droplets", hue: "blue", href: "/app/health/nutrition" },
@@ -79,6 +81,11 @@ const KIND_INFO: Record<string, { label: string; icon: string; hue: Hue; href: s
   game: { label: "Calm game", icon: "Gamepad2", hue: "amber", href: "/app/health/games" },
   reminder: { label: "Reminder", icon: "CalendarClock", hue: "magenta", href: "/app/health/reminders" },
   document: { label: "Document", icon: "FileText", hue: "blue", href: "/app/health/records?tab=records" },
+  anc: { label: "Antenatal check-up", icon: "Stethoscope", hue: "lilac", href: "/app/health/pregnancy?tab=consultation" },
+  pregtest: { label: "Pregnancy test or scan", icon: "FlaskConical", hue: "lilac", href: "/app/health/pregnancy?tab=care&part=tests" },
+  pregrisk: { label: "Doctor is watching", icon: "ShieldAlert", hue: "lilac", href: "/app/health/pregnancy?tab=care&part=risks" },
+  delivery: { label: "The birth", icon: "Baby", hue: "lilac", href: "/app/health/pregnancy?tab=care&part=birth" },
+  postnatal: { label: "Check after the birth", icon: "HeartPulse", hue: "lilac", href: "/app/health/pregnancy?tab=care&part=birth" },
 };
 
 function describe(e: Entry): string {
@@ -96,6 +103,11 @@ function describe(e: Entry): string {
     case "game": return GAMES.find((g) => g.id === d.game)?.name ?? String(d.game);
     case "reminder": return String(d.title);
     case "document": return String(d.title);
+    case "anc": return d.status === "Missed" ? "Missed" : [d.bp && `BP ${d.bp}`, d.weight && `${d.weight} kg`].filter(Boolean).join(", ") || "Recorded";
+    case "pregtest": return `${d.name} · ${String(d.status).toLowerCase()}`;
+    case "pregrisk": return String(d.factor);
+    case "delivery": return `${d.mode} · ${(d.babies as unknown[]).length} ${(d.babies as unknown[]).length === 1 ? "baby" : "babies"}`;
+    case "postnatal": return String(d.check);
     default: return e.kind;
   }
 }
@@ -256,27 +268,27 @@ export function HomeDashboard() {
   const preg = pregInfo(settings.pregnancy);
   const mentorUp = liveAppts.filter((a) => a.kind === "mentor").length;
   const doctorUp = liveAppts.filter((a) => a.kind === "doctor").length;
-  type Card = { id: string; label: string; href: string; hue: Hue; ill: string; emoji: string; big?: boolean; stat: string; act: { label: string; quick?: Quick | "reminder"; href?: string; plus?: boolean } };
+  type Card = { id: string; label: string; href: string; hue: Hue; ill: string; stat: string; act: { label: string; quick?: Quick | "reminder"; href?: string; plus?: boolean } };
   const allCards: Card[] = [
-    { id: "fitness", label: "Fitness", href: "/app/health/fitness", hue: "orange", ill: "hero-fitness", emoji: EMOJI.workout, big: true,
+    { id: "fitness", label: "Fitness", href: "/app/health/fitness", hue: "orange", ill: "hero-fitness",
       stat: workoutMins ? `${workoutMins} of ${settings.activeGoal} min today` : "Start moving today", act: { label: "Log workout", quick: "workout", plus: true } },
-    { id: "nutrition", label: "Nutrition & Diet", href: "/app/health/nutrition", hue: "green", ill: "hero-nutrition", emoji: EMOJI.nutrition, big: true,
+    { id: "nutrition", label: "Nutrition & Diet", href: "/app/health/nutrition", hue: "green", ill: "hero-nutrition",
       stat: `${mealsToday ? `${mealsToday} ${mealsToday === 1 ? "meal" : "meals"} · ` : ""}${waterMl ? litres(waterMl) : "0 ml"} water`, act: { label: "Log meal", quick: "meal", plus: true } },
-    { id: "sleep", label: "Sleep", href: "/app/health/sleep", hue: "violet", ill: "hero-sleep", emoji: EMOJI.sleep,
+    { id: "sleep", label: "Sleep", href: "/app/health/sleep", hue: "violet", ill: "hero-sleep",
       stat: lastSleep ? `${hm(sleepOn(lastSleep.date))} last logged` : "Track your rest", act: { label: "Log sleep", quick: "sleep", plus: true } },
-    { id: "mental", label: "Mental Wellness", href: "/app/health/mind", hue: "blue", ill: "hero-mental", emoji: EMOJI.mental,
+    { id: "mental", label: "Mental Wellness", href: "/app/health/mind", hue: "blue", ill: "hero-mental",
       stat: moodToday ? `Feeling ${(MOOD_CHOICES.find((m) => m.id === moodToday)?.label ?? moodToday).toLowerCase()} today` : "How are you feeling?", act: { label: "Check in", quick: "mood", plus: true } },
-    { id: "games", label: "Games & Stress Relief", href: "/app/health/games", hue: "amber", ill: "hero-games", emoji: EMOJI.games,
+    { id: "games", label: "Games & Stress Relief", href: "/app/health/games", hue: "amber", ill: "hero-games",
       stat: gamesToday ? `${gamesToday} played today` : `${GAMES.length} calming games`, act: { label: "Play", href: "/app/health/games" } },
-    { id: "fertility", label: "Fertility", href: "/app/health/fertility", hue: "pink", ill: "hero-fertility", emoji: EMOJI.fertility,
+    { id: "fertility", label: "Fertility", href: "/app/health/fertility", hue: "pink", ill: "hero-fertility",
       stat: "Know your cycle", act: { label: "Open", href: "/app/health/fertility" } },
-    { id: "pregnancy", label: "Pregnancy", href: "/app/health/pregnancy", hue: "lilac", ill: "hero-pregnancy", emoji: EMOJI.pregnancy,
+    { id: "pregnancy", label: "Pregnancy", href: "/app/health/pregnancy", hue: "lilac", ill: "hero-pregnancy",
       stat: preg ? `Week ${preg.week} · ${["", "1st", "2nd", "3rd"][preg.trimester]} trimester` : "Start week-by-week tracking", act: { label: "Open", href: "/app/health/pregnancy" } },
-    { id: "reminders", label: "Appointments & Reminders", href: "/app/health/reminders", hue: "magenta", ill: "hero-reminders", emoji: EMOJI.reminder,
+    { id: "reminders", label: "Appointments & Reminders", href: "/app/health/reminders", hue: "magenta", ill: "hero-reminders",
       stat: activeRem ? `${activeRem} active` : "Never miss a thing", act: { label: "Add", quick: "reminder", plus: true } },
-    { id: "mentor", label: "Mentor Connect", href: "/app/health/mentors", hue: "orange", ill: "mentor", emoji: EMOJI.mentor,
+    { id: "mentor", label: "Mentor Connect", href: "/app/health/mentors", hue: "orange", ill: "mentor",
       stat: mentorUp ? `${mentorUp} upcoming` : "Grow with a guide", act: { label: "Find", href: "/app/health/mentors?tab=match" } },
-    { id: "doctor", label: "Doctor Consultation", href: "/app/health/doctors", hue: "green", ill: "hero-records", emoji: EMOJI.doctor,
+    { id: "doctor", label: "Doctor Consultation", href: "/app/health/doctors", hue: "green", ill: "hero-doctor",
       stat: doctorUp ? `${doctorUp} upcoming` : "Online or in person", act: { label: "Book", href: "/app/health/doctors" } },
   ];
   const cards = allCards.filter((c) => !(c.id === "fertility" && !settings.trackCycle) && !(c.id === "pregnancy" && !settings.trackPreg));
@@ -288,9 +300,9 @@ export function HomeDashboard() {
 
   /* ── rings ── */
   const ring = [
-    { q: "water" as Quick, name: "Water", colour: "#8fe3b8", p: pct(waterMl, goalMl), value: waterMl ? litres(waterMl) : "0 ml", of: `of ${litres(goalMl)}` },
-    { q: "workout" as Quick, name: "Move", colour: "#ffc58a", p: pct(workoutMins, settings.activeGoal), value: `${workoutMins} min`, of: `of ${settings.activeGoal} min` },
-    { q: "sleep" as Quick, name: "Sleep", colour: "#c9c2ff", p: pct(sleepH, settings.sleepGoal), value: sleepH ? hm(sleepH) : "–", of: "last night" },
+    { q: "water" as Quick, name: "Water", colour: "var(--ux-violet)", icon: "Droplets", hue: "blue" as Hue, p: pct(waterMl, goalMl), value: waterMl ? litres(waterMl) : "0 ml", of: `of ${litres(goalMl)}` },
+    { q: "workout" as Quick, name: "Move", colour: "var(--ux-brand)", icon: "Footprints", hue: "orange" as Hue, p: pct(workoutMins, settings.activeGoal), value: `${workoutMins} min`, of: `of ${settings.activeGoal} min` },
+    { q: "sleep" as Quick, name: "Sleep", colour: "var(--ws-gold)", icon: "Moon", hue: "violet" as Hue, p: pct(sleepH, settings.sleepGoal), value: sleepH ? hm(sleepH) : "–", of: "last night" },
   ];
   const moodLabel = MOOD_CHOICES.find((m) => m.id === moodToday)?.label ?? moodToday;
   // A new tip each day (counted from her date, so render stays pure), and another on tap.
@@ -317,7 +329,7 @@ export function HomeDashboard() {
   return (
     <HealthFrame active="/app/wellness" hue="magenta" icon="Heart" eyebrow="WomSakhi wellness" tabs={TABS}
                  title="Health & Wellness" sub="Everything you have logged, and how your Health & Wellness is set up."
-                 bare={(tab) => tab === "main"}
+                 art={illSrc("journey")} bare={(tab) => tab === "main"}
                  actions={<Btn variant="outline" icon="ArrowLeft" href="/app/wellness">Back to your day</Btn>}>
       {(tab) => tab === "activity" ? <History /> : tab === "settings" ? (
         <HealthSettingsTab settings={settings} save={save}
@@ -325,7 +337,10 @@ export function HomeDashboard() {
       ) : showSetup ? (
         <HealthOnboarding settings={settings} first={first} save={save} onDone={() => { setSetupAgain(false); day.reload(); recent.reload(); reminders.reload(); }} />
       ) : (
-        <>
+        // Two columns, as Work's dashboard: her day on the left, and the quote,
+        // what is coming up and what she did last on a 320px column at the right.
+        <div className={css.layout} data-health-layout>
+          <div className={css.main}>
           {customize && (
             <Panel title="Customize your dashboard" sub="Choose what to show. Your choice is saved to your account." hue="magenta" tint
                    action={<Btn size="sm" onClick={() => setCustomize(false)}>Done</Btn>}>
@@ -341,73 +356,73 @@ export function HomeDashboard() {
             </Panel>
           )}
 
-          {/* ── the stage ── */}
-          <section className={css.stage} aria-labelledby="health-greet" data-health-stage>
-            <div className={css.orbs} aria-hidden><i /><i /><i /></div>
-            <div>
-              <p className={css.eyebrow}>WomSakhi · your wellness space</p>
-              <h1 id="health-greet" className={css.greet}>{onClient ? greet() : "Welcome"}{first ? `, ${first}` : ""}</h1>
-              <p className={css.line}>{line}</p>
+          {/* ── the banner, as Earn's and Work's open: her day in one line, and one tap to log ── */}
+          <section className={css.hero} aria-labelledby="health-greet" data-health-stage>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className={css.heroImg} src={illSrc("hero-mental")} alt="" aria-hidden />
+            <div className={css.heroContent}>
+              <p className={css.eyebrow}>Health <span>·</span> Wellness <span>·</span> Care</p>
+              <h1 id="health-greet">{onClient ? greet() : "Welcome"}{first ? <>,<br /><em>{first}</em></> : null}</h1>
+              <p className={css.heroSub}>{line}</p>
               {!hidden("quick") && (
-                <div className={css.dock} role="group" aria-label="Log in one tap">
+                <div className={css.quick} role="group" aria-label="Log in one tap">
                   {([["water", "Water", EMOJI.water], ["meal", "Meal", EMOJI.meal], ["workout", "Workout", EMOJI.workout],
                      ["mood", "Mood", EMOJI.mood], ["sleep", "Sleep", EMOJI.sleep]] as const).map(([q, l, e]) => (
-                    <button key={q} type="button" className={css.dk} aria-expanded={quick === q} aria-controls="quick-sheet" onClick={() => openQuick(q)}>
+                    <button key={q} type="button" className={css.qf} aria-expanded={quick === q} aria-controls="quick-sheet" onClick={() => openQuick(q)}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={art(e)} alt="" /><span>{l}</span>
+                      <img src={art(e)} alt="" />{l}
                     </button>
                   ))}
-                  <button type="button" className={css.dk} onClick={() => setRemSheet(true)}>
+                  <button type="button" className={css.qf} onClick={() => setRemSheet(true)}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={art(EMOJI.reminder)} alt="" /><span>Reminder</span>
+                    <img src={art(EMOJI.reminder)} alt="" />Reminder
                   </button>
                 </div>
               )}
-              <div className={css.chips}>
-                <span className={css.chip}>
+              <div className={css.heroLinks}>
+                <span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={art(EMOJI.fire)} alt="" />{streakDays}-day streak
                 </span>
-                <Link className={css.chip} href="/app/wellness?tab=activity"><I name="List" className="h-[15px] w-[15px]" />Activity history</Link>
-                <button type="button" className={css.chip} aria-pressed={customize} onClick={() => setCustomize(!customize)}>
-                  <I name="LayoutGrid" className="h-[15px] w-[15px]" />Customize
-                </button>
+                <Link href="/app/wellness?tab=activity"><I name="List" />Activity history</Link>
+                <button type="button" aria-pressed={customize} onClick={() => setCustomize(!customize)}><I name="LayoutGrid" />Customize</button>
               </div>
             </div>
-            {!hidden("overview") && (
-              <div className={css.right}>
-                <div className={css.orbit}>
-                  <svg viewBox="0 0 260 260" aria-hidden>
-                    {ring.map((x, i) => {
-                      const r = 118 - i * 20, c = 2 * Math.PI * r;
-                      return (
-                        <g key={x.name}>
-                          <circle cx="130" cy="130" r={r} fill="none" stroke="rgba(255,255,255,.14)" strokeWidth="13" />
-                          <circle className={css.arc} cx="130" cy="130" r={r} fill="none" stroke={x.colour} strokeWidth="13" strokeLinecap="round"
-                                  strokeDasharray={c.toFixed(1)} strokeDashoffset={(c * (1 - x.p / 100)).toFixed(1)} transform="rotate(-90 130 130)" />
-                        </g>
-                      );
-                    })}
-                  </svg>
-                  <button type="button" className={css.core} onClick={() => openQuick("mood")}
-                          aria-label={moodToday ? `Mood today: ${moodLabel}. Change it` : "Check in your mood"}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {moodToday ? <img className={css.mood} src={art(MOOD_EMOJI[moodToday] ?? EMOJI.mood)} alt="" /> : <img className={css.ill} src="/ux/health/ill/hero-home.webp" alt="" />}
-                  </button>
-                  <span className={css.coreLabel}>{moodToday ? `Feeling ${String(moodLabel).toLowerCase()}` : "Tap to check in"}</span>
-                </div>
-                <div className={css.legend}>
-                  {ring.map((x) => (
-                    <button key={x.name} type="button" className={css.ol} onClick={() => openQuick(x.q)} aria-label={`${x.name}: ${x.value} ${x.of}. Log ${x.name.toLowerCase()}`}>
-                      <i style={{ background: x.colour }} />
-                      <span><b>{x.value}</b><small>{x.name} · {x.of}</small></span>
-                      <span className={css.pct}>{Math.round(x.p)}%</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
+
+          {/* ── today, as Work's four stat tiles: tap one to log it ── */}
+          {!hidden("overview") && (
+            <div className={css.tiles} data-health-tiles>
+              {ring.map((x) => (
+                <button key={x.name} type="button" className={css.tile} onClick={() => openQuick(x.q)}
+                        style={{ "--tile-tint": HUE[x.hue].tint, "--tile-ink": HUE[x.hue].ink } as React.CSSProperties}
+                        aria-label={`${x.name}: ${x.value} ${x.of}. Log ${x.name.toLowerCase()}`}>
+                  <span><I name={x.icon} /></span>
+                  <div>
+                    <strong>{x.value}</strong>
+                    <small>{x.name} · {x.of}</small>
+                    <span className={css.bar} aria-hidden><i style={{ width: `${Math.round(x.p)}%` }} /></span>
+                  </div>
+                  <I name="ChevronRight" />
+                </button>
+              ))}
+              <button type="button" className={css.tile} onClick={() => openQuick("mood")}
+                      style={{ "--tile-tint": HUE.pink.tint, "--tile-ink": HUE.pink.ink } as React.CSSProperties}
+                      aria-label={moodToday ? `Mood today: ${moodLabel}. Change it` : "Check in your mood"}>
+                <span>
+                  {moodToday
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={art(MOOD_EMOJI[moodToday] ?? EMOJI.mood)} alt="" className="h-7 w-7" />
+                    : <I name="Smile" />}
+                </span>
+                <div>
+                  <strong>{moodToday ? moodLabel : "Check in"}</strong>
+                  <small>Mood today</small>
+                </div>
+                <I name="ChevronRight" />
+              </button>
+            </div>
+          )}
           {sheet}
           <WorkoutFlow open={flow === "workout"} onClose={() => setFlow("")} onSave={(d, date) => saveQuick("workout", d, date, "Workout saved")} />
           <MealFlow open={flow === "meal"} onClose={() => setFlow("")} onSave={(d, date) => saveQuick("meal", d, date, "Meal saved")} />
@@ -424,19 +439,18 @@ export function HomeDashboard() {
                 <h2 id="explore-h">Explore your wellness</h2>
                 <span>Tap a card to open it, or use its button to log in one step.</span>
               </div>
-              <div className={css.bento} data-bento>
+              {/* Every card the same size: 5 across when that fills the rows evenly, else 4. */}
+              <div className={css.bento} data-bento style={{ "--cols": cards.length % 5 === 0 ? 5 : 4 } as React.CSSProperties}>
                 {cards.map((c) => (
-                  <article key={c.id} className={`${css.card}${c.big ? ` ${css.big}` : ""}`}
+                  <article key={c.id} className={css.card}
                            style={{ "--card-ink": HUE[c.hue].ink, "--card-tint": HUE[c.hue].tint } as React.CSSProperties}>
                     <Link href={c.href} className={css.cover} aria-label={`Open ${c.label}`} />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className={css.cardIll} src={`/ux/health/ill/${c.ill}.webp`} alt="" loading="lazy" />
+                    <img className={css.cardIll} src={illSrc(c.ill)} alt="" loading="lazy" />
                     <div className={css.shade} />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className={css.card3d} src={art(c.emoji)} alt="" />
                     <div className={css.body}>
                       <h3>{c.label}</h3>
-                      <p className={css.stat}>{c.stat}</p>
+                      <p className={css.cardStat}>{c.stat}</p>
                       {c.act.href
                         ? <Link className={css.act} href={c.act.href}>{c.act.label}</Link>
                         : <button type="button" className={css.act}
@@ -450,8 +464,6 @@ export function HomeDashboard() {
             </section>
           )}
 
-          <Cols
-            main={<>
               {!hidden("tips") && (
                 <section className={css.tip} aria-label="Tip of the day">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -532,8 +544,43 @@ export function HomeDashboard() {
                   </div>
                 </Panel>
               )}
-            </>}
-            side={<>
+          </div>
+          <aside className={css.rail} aria-label="Coming up and recent">
+              <SectionQuote path="/app/wellness" />
+              {!hidden("overview") && (
+                <Panel title="Today's goals" sub={`${goalsDone} of 5 done today`}>
+                  <div className={css.goals} data-health-rings>
+                    <div className={css.orbit}>
+                      <svg viewBox="0 0 260 260" aria-hidden>
+                        {ring.map((x, i) => {
+                          const r = 116 - i * 26, c = 2 * Math.PI * r;
+                          return (
+                            <g key={x.name}>
+                              <circle cx="130" cy="130" r={r} fill="none" stroke="var(--ux-surface-2)" strokeWidth="18" />
+                              <circle className={css.arc} cx="130" cy="130" r={r} fill="none" stroke={x.colour} strokeWidth="18" strokeLinecap="round"
+                                      strokeDasharray={c.toFixed(1)} strokeDashoffset={(c * (1 - x.p / 100)).toFixed(1)} transform="rotate(-90 130 130)" />
+                            </g>
+                          );
+                        })}
+                      </svg>
+                      <button type="button" className={css.core} onClick={() => openQuick("mood")}
+                              aria-label={moodToday ? `Mood today: ${moodLabel}. Change it` : "Check in your mood"}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {moodToday ? <img className={css.mood} src={art(MOOD_EMOJI[moodToday] ?? EMOJI.mood)} alt="" /> : <img className={css.ill} src={illSrc("hero-home")} alt="" />}
+                      </button>
+                    </div>
+                    <div className={css.legend}>
+                      {ring.map((x) => (
+                        <button key={x.name} type="button" className={css.ol} onClick={() => openQuick(x.q)} title={`${x.name} · ${x.of}`}
+                                aria-label={`${x.name}: ${x.value} ${x.of}. Log ${x.name.toLowerCase()}`}>
+                          <i style={{ background: x.colour }} />
+                          <span><b>{x.value}</b><small>{x.name} · <em className={css.pct}>{Math.round(x.p)}%</em></small></span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </Panel>
+              )}
               {!hidden("upcoming") && (
                 <Panel title="Upcoming" action={<Btn size="sm" variant="ghost" iconEnd="ArrowRight" href="/app/health/reminders">View all</Btn>}>
                   {upcomingRem.length || liveAppts.length ? (
@@ -613,9 +660,8 @@ export function HomeDashboard() {
                   <p className="text-xs" style={{ color: "var(--ux-muted)" }}>Based on what you&rsquo;ve logged. Not medical advice.</p>
                 </Panel>
               )}
-            </>}
-          />
-        </>
+          </aside>
+        </div>
       )}
     </HealthFrame>
   );
@@ -630,6 +676,7 @@ const GROUPS: { id: string; label: string; kinds: HealthKind[] }[] = [
   { id: "sleep", label: "Sleep", kinds: ["sleep"] },
   { id: "mind", label: "Mind & calm", kinds: ["journal", "activity", "game"] },
   { id: "body", label: "Body & records", kinds: ["symptom", "pregsym", "kick", "measure", "document"] },
+  { id: "pregnancy", label: "Pregnancy care", kinds: ["anc", "pregtest", "pregrisk", "delivery", "postnatal", "pregsym", "kick"] },
 ];
 
 function History() {
@@ -669,8 +716,9 @@ function History() {
                             <b className="block truncate text-sm" style={{ color: "var(--ux-ink)" }}>{describe(e)}</b>
                             <span className="text-xs" style={{ color: "var(--ux-muted)" }}>{k.label}</span>
                           </span>
-                          <Btn size="sm" variant="ghost" icon="Pencil" href={k.href} ariaLabel={`Edit in ${k.label}`}>Edit</Btn>
-                          <Btn size="sm" variant="ghost" icon="Trash2" ariaLabel={`Delete ${k.label}`} onClick={() => remove(e.id)}>Delete</Btn>
+                          {/* Icons only on a phone, so the entry keeps the room to be read. */}
+                          <Btn size="sm" variant="ghost" icon="Pencil" href={k.href} ariaLabel={`Edit in ${k.label}`}><span className="max-sm:sr-only">Edit</span></Btn>
+                          <Btn size="sm" variant="ghost" icon="Trash2" ariaLabel={`Delete ${k.label}`} onClick={() => remove(e.id)}><span className="max-sm:sr-only">Delete</span></Btn>
                         </li>
                       );
                     })}

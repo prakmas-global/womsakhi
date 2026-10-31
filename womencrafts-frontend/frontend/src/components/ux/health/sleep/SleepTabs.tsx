@@ -147,7 +147,7 @@ function Consistency({ ss, days }: { ss: Entry<"sleep">[]; days: { day: string; 
   const X = (m: number) => left + (m / span) * (W - left - 10);
   const ticks = [0, 3, 6, 9, 12, 15, 18];
   return (
-    <div className="overflow-x-auto">
+    <div className="ux-scroll-x">
       <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full min-w-[300px] max-w-[640px]" role="img" aria-label="Bedtime to wake-up for each of the last 7 nights">
         {ticks.map((h) => {
           const x = X(h * 60), clock = (18 + h) % 24;
@@ -561,7 +561,7 @@ function Drift({ ss, days, target }: { ss: Entry<"sleep">[]; days: { day: string
   const Y = (m: number) => top + ((m - lo) / Math.max(1, hi - lo)) * ch;
   const line = pts.filter((p) => p.m !== null).map((p) => `${X(p.i).toFixed(1)},${Y(p.m as number).toFixed(1)}`).join(" ");
   return (
-    <div className="overflow-x-auto">
+    <div className="ux-scroll-x">
       <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full min-w-[300px] max-w-[640px]" role="img" aria-label="Bedtime each night for two weeks">
         <line x1={left} x2={W} y1={Y(fromEvening(target))} y2={Y(fromEvening(target))} stroke="var(--ux-ink)" strokeOpacity=".35" strokeDasharray="4 4" />
         <text x={left - 6} y={Y(fromEvening(target)) + 4} textAnchor="end" fontSize="10.5" fontWeight="700" fill="var(--ux-muted)">{fmt12(target).replace(":00", "")}</text>

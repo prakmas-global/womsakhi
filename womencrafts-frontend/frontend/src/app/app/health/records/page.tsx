@@ -26,6 +26,7 @@ import { apiChecklist, apiSaveChecklist, type Checklist } from "@/lib/my-records
 import {
   AllergySheet, DocumentSheet, HistorySheet, MedicineSheet, Private, ReadingSheet, Row, Trend, TrendChart, printSummary,
 } from "./record-parts";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Health Records — her readings, allergies, history, papers and medicines, in
@@ -81,11 +82,11 @@ export default function RecordsPage() {
   return (
     <HealthFrame active="/app/health/records" hue="blue" icon="FileHeart" eyebrow="Health Records" title="Health Records"
                  sub="Keep your health information safe and in one place. Only you can see it."
-                 art="/ux/health/ill/hero-records.webp" tabs={TABS}
+                 art={illSrc("hero-records")} tabs={TABS}
                  actions={<>
                    <Btn icon="Plus" onClick={() => setSheet("reading")}>Add reading</Btn>
                    <Btn variant="outline" icon="FileText" onClick={() => setSheet("document")}>Add report</Btn>
-                   <Btn variant="ghost" icon={hide ? "Eye" : "EyeOff"} onClick={() => save({ privateMode: !hide }, hide ? "Details shown" : "Details hidden on screen")}>
+                   <Btn variant="on-brand" icon={hide ? "Eye" : "EyeOff"} onClick={() => save({ privateMode: !hide }, hide ? "Details shown" : "Details hidden on screen")}>
                      {hide ? "Show details" : "Hide details"}
                    </Btn>
                  </>}>

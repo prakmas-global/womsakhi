@@ -27,6 +27,7 @@ Nothing here is ever shown to anyone else — not her circle, not staff screens.
 from __future__ import annotations
 
 import re
+import secrets
 from datetime import date as Date, datetime, timedelta, timezone
 from typing import Any, Literal, Optional
 
@@ -218,6 +219,144 @@ class VideoWatch(_K):
     seconds: int = Field(0, ge=0, le=6 * 3600)
 
 
+# ── pregnancy care (Pregnancy → Check-ups, Tests, Risks, Birth & after) ───────
+# Everything here is what SHE records from her own care — her ANC card, her
+# reports, what her doctor told her. The app does not diagnose: a test is
+# "outside range" only against the range printed on her report, and a risk
+# level is the one her doctor gave. Each entry carries `preg`, the id of the
+# pregnancy it belongs to, so a closed pregnancy keeps its own record.
+
+PregId = Field("", max_length=20)
+DateOrBlank = Field("", pattern=r"^(\d{4}-\d{2}-\d{2})?$")
+BP = Field("", pattern=r"^$|^\d{2,3}/\d{2,3}$")
+Num = Field("", pattern=r"^$|^\d{1,4}(\.\d{1,2})?$")
+
+
+class AncVisit(_K):
+    """One antenatal check-up as it happened (the date is the entry's date)."""
+    preg: str = PregId
+    status: Literal["Done", "Missed"] = "Done"
+    where: str = Text80
+    doctor: str = Text80
+    bp: str = BP                      # "120/80"
+    weight: str = Num                 # kg
+    symptoms: list[str] = Field(default_factory=list, max_length=12)
+    exam: str = Text200               # what was examined, in her words
+    fhr: str = Field("", pattern=r"^$|^\d{2,3}$")   # baby's heart rate, beats a minute, as told
+    fundal: str = Field("", pattern=r"^$|^\d{1,2}$")  # bump measurement, cm
+    movements: Literal["", "Normal", "Less than usual", "Not felt yet"] = ""
+    plan: str = Text200               # treatment plan / advice given
+    notes: str = Text200
+    next_date: str = DateOrBlank
+
+
+class PregTest(_K):
+    """A test or scan from ordered to reviewed (the date is when it was ordered or done)."""
+    preg: str = PregId
+    name: str = Field(..., min_length=1, max_length=60)
+    group: Literal["Blood test", "Urine test", "Sugar test", "Scan", "Other"] = "Blood test"
+    status: Literal["Ordered", "Sample given", "Processing", "Result ready", "Reviewed"] = "Ordered"
+    result: str = Field("", max_length=60)
+    unit: str = Field("", max_length=20)
+    ref_low: str = Num                # the range printed on her report
+    ref_high: str = Num
+    doctor_note: str = Text200        # what her doctor said about it
+    follow_up: str = Text200
+    file_id: str = Field("", max_length=40)
+    file_name: str = Field("", max_length=120)
+
+
+class PregRisk(_K):
+    """Something her doctor is watching, and what is being done about it."""
+    preg: str = PregId
+    factor: str = Field(..., min_length=1, max_length=60)
+    level: Literal["Not told", "Low", "Moderate", "High"] = "Not told"
+    detail: str = Text200
+    referral: str = Text80            # specialist she was sent to
+    plan: str = Text200               # extra monitoring or care plan
+    status: Literal["Being watched", "Under review", "Resolved"] = "Being watched"
+    review_date: str = DateOrBlank
+
+
+class Baby(_K):
+    name: str = Text40
+    sex: Literal["", "Girl", "Boy", "Not said"] = ""
+    weight_g: int = Field(0, ge=0, le=7000)
+    time: str = Field("", pattern=r"^$|" + HHMM)
+    condition: str = Text80           # first condition, as told
+
+
+class Delivery(_K):
+    """The birth (the entry's date is the delivery date)."""
+    preg: str = PregId
+    admitted_on: str = DateOrBlank
+    admitted_time: str = Field("", pattern=r"^$|" + HHMM)
+    weeks_at_admission: int = Field(0, ge=0, le=45)
+    labour_notes: str = Text200
+    interventions: str = Text200
+    mode: Literal["Vaginal", "Assisted vaginal", "Caesarean"] = "Vaginal"
+    place: str = Text80
+    complications: str = Text200
+    outcome: str = Text80
+    babies: list[Baby] = Field(default_factory=list, max_length=6)
+
+
+class Postnatal(_K):
+    """A check after the birth, for her or for a baby."""
+    preg: str = PregId
+    who: Literal["Mother", "Baby"] = "Mother"
+    baby: str = Text40
+    check: str = Field(..., min_length=1, max_length=60)
+    findings: str = Text200
+    complications: str = Text200
+    feeding: Literal["", "Breastfeeding", "Formula", "Both", "Not yet"] = ""
+    counselling: str = Text200
+    next_date: str = DateOrBlank
+
+
+class PastPregnancy(_K):
+    year: str = Field("", pattern=r"^$|^(19|20)\d{2}$")
+    outcome: Literal["Live birth", "Miscarriage", "Stillbirth", "Termination", "Ectopic", "Other"] = "Live birth"
+    mode: Literal["", "Vaginal", "Assisted vaginal", "Caesarean"] = ""
+    note: str = Text80
+
+
+class Dating(_K):
+    """A due date her doctor or a scan confirmed, kept with the older ones."""
+    on: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    edd: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    method: Literal["Dating scan", "Doctor"] = "Dating scan"
+    note: str = Text80
+
+
+class Pregnancy(_K):
+    #: This pregnancy's own id (her entries carry it); set by the server.
+    id: str = Field("", max_length=20)
+    basis: Literal["lmp", "due"] = "lmp"
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    doctor: str = Text80
+    hospital: str = Text80
+    confirmedOn: str = DateOrBlank
+    confirmMethod: Literal["", "Home test", "Blood test", "Ultrasound", "Doctor's exam"] = ""
+    plurality: Literal["Single", "Twins", "Triplets or more"] = "Single"
+    gravida: int = Field(0, ge=0, le=20)   # times pregnant, this one included
+    para: int = Field(0, ge=0, le=20)      # births after 20 weeks before this one
+    #: The due date confirmed by a scan or her doctor — when set, weeks and the due date follow it.
+    edd: str = DateOrBlank
+    dating: list[Dating] = Field(default_factory=list, max_length=20)
+    previous: list[PastPregnancy] = Field(default_factory=list, max_length=15)
+    history: str = Field("", max_length=500)   # relevant medical and pregnancy history
+    notes: str = Field("", max_length=500)
+    status: Literal["Ongoing", "Delivered"] = "Ongoing"
+
+
+class PregEpisode(_K):
+    """A pregnancy she has closed: its profile as it was, and how it ended."""
+    pregnancy: Pregnancy
+    outcome: str = Field(..., min_length=1, max_length=80)
+    closed_on: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+
 #: kind → (model, dated). Dated kinds need a date; undated kinds keep "".
 KINDS: dict[str, tuple[type[_K], bool]] = {
     "workout": (Workout, True),
@@ -239,6 +378,12 @@ KINDS: dict[str, tuple[type[_K], bool]] = {
     "reminder": (Reminder, True),
     "game": (GameSession, True),
     "vwatch": (VideoWatch, False),
+    "anc": (AncVisit, True),
+    "pregtest": (PregTest, True),
+    "pregrisk": (PregRisk, True),
+    "delivery": (Delivery, True),
+    "postnatal": (Postnatal, True),
+    "pregepisode": (PregEpisode, True),
 }
 
 
@@ -399,13 +544,6 @@ DIETS = ("Vegetarian", "Eggetarian", "Non-vegetarian", "Vegan")
 RETIRED_DIETS = {"Jain": "Vegetarian"}
 
 
-class Pregnancy(_K):
-    basis: Literal["lmp", "due"] = "lmp"
-    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
-    doctor: str = Text80
-    hospital: str = Text80
-
-
 class HealthSettings(_K):
     name: str = Text40
     waterGoal: int = Field(8, ge=1, le=20)          # glasses of 250 ml
@@ -475,14 +613,25 @@ class HealthSettings(_K):
         return v
 
 
+def _new_preg_id() -> str:
+    return "p" + secrets.token_hex(6)
+
+
 @router.get("/settings", response_model=HealthSettings, summary="My health goals and preferences")
 async def get_settings(me: dict = Depends(require_active_member)):
-    doc = await _db()[SETTINGS].find_one({"user_id": str(me["_id"])}) or {}
+    uid = str(me["_id"])
+    doc = await _db()[SETTINGS].find_one({"user_id": uid}) or {}
     doc.pop("_id", None); doc.pop("user_id", None); doc.pop("updated_at", None)
     try:
-        return HealthSettings(**doc)
+        out = HealthSettings(**doc)
     except ValidationError:
         return HealthSettings()
+    # A pregnancy saved before pregnancies had ids gets one now, once, so the
+    # records she adds from here on can say which pregnancy they belong to.
+    if out.pregnancy and not out.pregnancy.id:
+        out.pregnancy.id = _new_preg_id()
+        await _db()[SETTINGS].update_one({"user_id": uid}, {"$set": {"pregnancy.id": out.pregnancy.id}})
+    return out
 
 
 @router.put("/settings", response_model=HealthSettings, summary="Change my health goals and preferences")
@@ -493,6 +642,8 @@ async def put_settings(patch: dict[str, Any], me: dict = Depends(require_active_
     have.pop("_id", None); have.pop("user_id", None); have.pop("updated_at", None)
     try:
         merged = HealthSettings(**{**have, **(patch or {})})
+        if merged.pregnancy and not merged.pregnancy.id:
+            merged.pregnancy.id = _new_preg_id()
     except ValidationError as exc:
         first = exc.errors()[0]
         where = ".".join(str(p) for p in first.get("loc", ()))

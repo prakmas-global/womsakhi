@@ -687,3 +687,23 @@
 @media (max-width: 760px) {
   [data-dashboard] nav[class*="__filters"] > button[class*="__filterButton"] { display: none !important; }
 }
+
+/* ── Health & Wellness ──────────────────────────────────────────────────────
+   Health's sections are built from shared cards (`.ux-card`) that elsewhere
+   are glassy and lifted. Inside Health they take Work's and Earn's panel:
+   a flat surface, a hairline and 8px corners, steady under the pointer.
+   A card that sets its own tint keeps it (inline styles win over this). */
+[data-dashboard="health"] .ux-card {
+  background: var(--ux-surface);
+  border: 1px solid var(--ux-line);
+  border-radius: var(--ux-r-sm, 8px);
+  box-shadow: none;
+}
+[data-dashboard="health"] .ux-card:hover,
+[data-dashboard="health"] .ux-card:active {
+  transform: none;
+  box-shadow: none;
+}
+[data-dashboard="health"] .ux-card.ux-hov:hover {
+  border-color: color-mix(in srgb, var(--ux-brand) 42%, var(--ux-line));
+}

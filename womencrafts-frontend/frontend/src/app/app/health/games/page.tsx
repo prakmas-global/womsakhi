@@ -10,6 +10,7 @@ import { MoodFace, lookOf } from "@/components/ux/health/mind/parts";
 import { CATS, GAMES, gameName, type Game, type GameCat } from "@/components/ux/games/catalog";
 import { apiMoodHistory } from "@/lib/engines-api";
 import { fmtDay, today, type Entry } from "@/lib/health-api";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Games & Stress Relief — a mindful break, one tap away.
@@ -51,7 +52,7 @@ export default function GamesHub() {
     <HealthFrame active="/app/health/games" hue="amber" icon="Gamepad2" eyebrow="Games & Stress Relief"
                  title="Take a mindful break"
                  sub="Small, quiet games for a heavy moment. Every game works with one tap, and nothing counts against you."
-                 art="/ux/health/ill/hero-games.webp" tabs={TABS}
+                 art={illSrc("hero-games")} tabs={TABS}
                  actions={<Btn icon="Play" href={suggest.href}>Start playing</Btn>}>
       {(tab) => {
         if (tab === "activity") return <Activity sessions={sessions.rows} loading={sessions.loading} favs={favs} onDelete={sessions.remove} />;

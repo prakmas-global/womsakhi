@@ -1,3 +1,4 @@
+import { illSrc } from "./art";
 import type { Entry } from "@/lib/health-api";
 import { addDays } from "@/lib/health-api";
 
@@ -29,22 +30,22 @@ export const ROUTINES: Routine[] = [
     steps: [["Easy seated breathing", 60], ["Cat–cow", 60], ["Child's pose", 60], ["Downward dog", 60], ["Low lunge, each side", 120],
       ["Mountain pose", 60], ["Tree pose, each side", 120], ["Seated forward fold", 90], ["Bridge pose", 90], ["Lying twist", 120], ["Rest", 60]] },
   { id: "strength", name: "Strength Basics", cat: "Strength", level: "Beginner", activity: "Strength training",
-    desc: "Three easy rounds using your body weight.", image: "/ux/art/scene-woman-climbing-steps.webp",
+    desc: "Three easy rounds using your body weight.", image: illSrc("fit-strength"),
     steps: [["Warm-up: march on the spot", 120],
       ...rep([["Squats to a chair", 45], ["Rest", 30], ["Wall push-ups", 45], ["Rest", 30], ["Glute bridges", 45], ["Rest", 30], ["Bird-dog, alternate sides", 45], ["Rest", 30]], 3),
       ["Cool-down stretch", 180]] },
   { id: "desk", name: "Desk Stretch Break", cat: "Stretching", level: "Easy", activity: "Stretching",
-    desc: "Loosen your neck, back and legs without leaving your chair.", image: "/ux/art/scene-woman-at-laptop-thinking.webp",
+    desc: "Loosen your neck, back and legs without leaving your chair.", image: illSrc("fit-desk"),
     steps: [["Neck rolls", 60], ["Shoulder rolls", 60], ["Chest opener", 60], ["Seated twist, each side", 120], ["Wrist and finger stretch", 60],
       ["Seated forward fold", 60], ["Hamstring stretch, each leg", 120], ["Slow deep breaths", 60]] },
   { id: "walk", name: "Brisk Walk", cat: "Cardio", level: "Easy", activity: "Walking",
-    desc: "Warm up, walk briskly, then cool down.", image: "/ux/art/scene-woman-walking-with-bag.webp",
+    desc: "Warm up, walk briskly, then cool down.", image: illSrc("fit-walk"),
     steps: [["Warm-up at an easy pace", 300], ["Brisk walk: you can talk but not sing", 1200], ["Cool-down at an easy pace", 300]] },
   { id: "dance", name: "Dance Cardio", cat: "Dance", level: "Beginner", activity: "Dance",
-    desc: "Simple steps to music you love.", image: "/ux/art/scene-women-celebrating.webp",
+    desc: "Simple steps to music you love.", image: illSrc("fit-dance"),
     steps: [["Warm-up: sway and step", 180], ["Side steps with arm swings", 240], ["Grapevine", 240], ["Knee lifts", 180], ["Free dance", 180], ["Cool-down", 180]] },
   { id: "pilates", name: "Pilates Core", cat: "Pilates", level: "Intermediate", activity: "Pilates",
-    desc: "Steady core work done lying down.", image: "/ux/art/course-meditation.webp",
+    desc: "Steady core work done lying down.", image: illSrc("fit-pilates"),
     steps: [["Breathing set-up", 60], ["Pelvic tilts", 90], ["Dead bug", 90], ["Rest", 30], ["Side-lying leg lifts, each side", 120], ["Plank on knees", 60],
       ["Rest", 30], ["Swimming", 90], ["Rest", 30], ["Single-leg stretch", 90], ["Child's pose", 210]] },
 ];

@@ -21,6 +21,7 @@ import { DocumentSheet } from "@/app/app/health/records/record-parts";
 import { useResource } from "@/lib/use-resource";
 import { WatchListen } from "@/components/ux/health/WatchListen";
 import { PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Doctor Consultation — book a doctor our team has added and checked.
@@ -81,7 +82,7 @@ export default function DoctorConsultation() {
 
   return (
     <HealthFrame active="/app/health/doctors" hue="green" icon="Stethoscope" eyebrow="Doctor Consultation"
-                 title="Doctor Consultation" art="/ux/health/ill/hero-records.webp"
+                 title="Doctor Consultation" art={illSrc("hero-doctor")}
                  sub="Book a video, phone or clinic consultation with a doctor our team has checked. You share only what you choose."
                  tabs={TABS}
                  actions={<>

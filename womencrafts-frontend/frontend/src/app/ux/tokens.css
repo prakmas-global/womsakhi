@@ -2552,24 +2552,18 @@
 
 /* The rail's list, which is the only part of the sidebar that scrolls.
 
-   `scrollbar-gutter: stable` because the list crosses the overflow threshold
-   whenever a taller section opens — without a reserved gutter every label in
-   the column steps sideways by the scrollbar's width at that moment, which
-   reads as the whole rail twitching. `overscroll-behavior: contain` so
-   reaching the end of the list does not hand the wheel to the page behind it. */
+   It scrolls without a visible scrollbar: the bar (with Windows' arrow
+   buttons) sat in the middle of the sidebar and read as clutter. The wheel,
+   touch, and keyboard focus all still scroll it. With no bar there is nothing
+   to reserve a gutter for, so labels no longer shift when a tall section
+   opens. `overscroll-behavior: contain` so reaching the end of the list does
+   not hand the wheel to the page behind it. */
 .ux-rail-scroll {
   overflow-y: auto;
-  scrollbar-gutter: stable;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--ux-line) transparent;
+  scrollbar-width: none;
 }
-.ux-rail-scroll::-webkit-scrollbar { width: 6px; }
-.ux-rail-scroll::-webkit-scrollbar-track { background: transparent; }
-.ux-rail-scroll::-webkit-scrollbar-thumb {
-  background: var(--ux-line);
-  border-radius: 3px;
-}
+.ux-rail-scroll::-webkit-scrollbar { display: none; }
 
 /* The line down the side of an open section, and the stub that reaches out to
    each child. Drawn rather than bordered so the line can stop at the last
