@@ -15,7 +15,8 @@ import { apiBase } from "./api-base";
 export type HealthKind =
   | "workout" | "meal" | "plan" | "water" | "sleep" | "journal" | "activity"
   | "symptom" | "pregsym" | "kick" | "contraction" | "measure" | "allergy"
-  | "medication" | "history" | "document" | "reminder" | "game" | "vwatch";
+  | "medication" | "history" | "document" | "reminder" | "game" | "vwatch"
+  | "anc" | "pregtest" | "pregrisk" | "delivery" | "postnatal" | "pregepisode";
 
 export type MealType = "Breakfast" | "Lunch" | "Evening snack" | "Dinner";
 
@@ -40,7 +41,35 @@ export interface KindData {
   reminder: { title: string; category: string; time?: string; repeat: "Once" | "Every day" | "Every week" | "Every month"; where?: string; note?: string; done?: string[]; cancelled?: boolean; snooze?: string };
   game: { game: string; seconds: number; score?: number; scoreLabel?: string; mood?: string };
   vwatch: { video_id: string; favorite?: boolean; completed?: boolean; seconds?: number };
+  /* Pregnancy care: what she records from her own care. `preg` is the pregnancy's id. */
+  anc: {
+    preg: string; status?: "Done" | "Missed"; where?: string; doctor?: string; bp?: string; weight?: string; symptoms?: string[];
+    exam?: string; fhr?: string; fundal?: string; movements?: "" | "Normal" | "Less than usual" | "Not felt yet";
+    plan?: string; notes?: string; next_date?: string;
+  };
+  pregtest: {
+    preg: string; name: string; group: "Blood test" | "Urine test" | "Sugar test" | "Scan" | "Other";
+    status: PregTestStatus; result?: string; unit?: string; ref_low?: string; ref_high?: string;
+    doctor_note?: string; follow_up?: string; file_id?: string; file_name?: string;
+  };
+  pregrisk: {
+    preg: string; factor: string; level: "Not told" | "Low" | "Moderate" | "High"; detail?: string; referral?: string;
+    plan?: string; status: "Being watched" | "Under review" | "Resolved"; review_date?: string;
+  };
+  delivery: {
+    preg: string; admitted_on?: string; admitted_time?: string; weeks_at_admission?: number; labour_notes?: string;
+    interventions?: string; mode: "Vaginal" | "Assisted vaginal" | "Caesarean"; place?: string; complications?: string;
+    outcome?: string; babies: Baby[];
+  };
+  postnatal: {
+    preg: string; who: "Mother" | "Baby"; baby?: string; check: string; findings?: string; complications?: string;
+    feeding?: "" | "Breastfeeding" | "Formula" | "Both" | "Not yet"; counselling?: string; next_date?: string;
+  };
+  pregepisode: { pregnancy: Pregnancy; outcome: string; closed_on: string };
 }
+
+export type PregTestStatus = "Ordered" | "Sample given" | "Processing" | "Result ready" | "Reviewed";
+export interface Baby { name?: string; sex?: "" | "Girl" | "Boy" | "Not said"; weight_g?: number; time?: string; condition?: string }
 
 export interface Entry<K extends HealthKind = HealthKind> {
   id: string;
@@ -52,7 +81,21 @@ export interface Entry<K extends HealthKind = HealthKind> {
   updated_at: string;
 }
 
-export interface Pregnancy { basis: "lmp" | "due"; date: string; doctor?: string; hospital?: string }
+export interface Pregnancy {
+  /** This pregnancy's id, set by the server; her pregnancy records carry it. */
+  id?: string;
+  basis: "lmp" | "due"; date: string; doctor?: string; hospital?: string;
+  confirmedOn?: string; confirmMethod?: "" | "Home test" | "Blood test" | "Ultrasound" | "Doctor's exam";
+  plurality?: "Single" | "Twins" | "Triplets or more";
+  /** Times pregnant (this one included), and births after 20 weeks before this one. */
+  gravida?: number; para?: number;
+  /** The due date a scan or her doctor confirmed; when set, weeks and the due date follow it. */
+  edd?: string;
+  dating?: { on: string; edd: string; method: "Dating scan" | "Doctor"; note?: string }[];
+  previous?: { year?: string; outcome: "Live birth" | "Miscarriage" | "Stillbirth" | "Termination" | "Ectopic" | "Other"; mode?: "" | "Vaginal" | "Assisted vaginal" | "Caesarean"; note?: string }[];
+  history?: string; notes?: string;
+  status?: "Ongoing" | "Delivered";
+}
 
 export interface HealthSettings {
   name: string;

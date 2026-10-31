@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Text } from "@/components/ux/kit/form";
 import { escapeHtml, letterhead, printDocument } from "@/components/ux/kit/download";
@@ -66,8 +66,20 @@ export function Row({ icon, hue = "blue", title, meta, actions, children }: {
 /* ── a line chart over time (two lines for blood pressure) ───────────── */
 
 export function TrendChart({ rows, type }: { rows: Entry<"measure">[]; type: string }) {
+  // Drawn at the width it is given, 1:1 (as BarChart is): a fixed 300px drawing
+  // stretched across a wide card blew the labels and the line up to triple size.
+  const box = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
   const pts = rows.filter((r) => r.data.type === type).sort((a, b) => a.date.localeCompare(b.date)).slice(-14);
   const bp = !!measOf(type)?.bp;
+  const drawn = pts.length >= 2;
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setWidth(Math.round(e.contentRect.width)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [drawn]);
   if (pts.length < 2) {
     return <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Add another {type.toLowerCase()} reading to see a trend.</p>;
   }
@@ -77,13 +89,13 @@ export function TrendChart({ rows, type }: { rows: Entry<"measure">[]; type: str
   const lo = Math.min(...all), hi = Math.max(...all);
   const pad = Math.max(1, (hi - lo) * 0.15);
   const min = lo - pad, max = hi + pad;
-  const W = Math.max(300, pts.length * 56), H = 190, top = 18, bottom = 28, left = 26, right = 26;
+  const W = Math.max(width || 300, pts.length * 56), H = 190, top = 18, bottom = 28, left = 26, right = 26;
   const x = (i: number) => left + (i * (W - left - right)) / (pts.length - 1);
   const y = (v: number) => top + (H - top - bottom) * (1 - (v - min) / (max - min));
   const line = (vals: number[]) => vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   return (
-    <div className="overflow-x-auto" data-trend={type}>
-      <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full min-w-[300px]" role="img"
+    <div ref={box} className="ux-scroll-x min-w-0" data-trend={type}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block" role="img"
            aria-label={`${type} over time: ${pts.map((p) => `${fmtDay(p.date)} ${p.data.value}`).join(", ")}`}>
         {[0.25, 0.5, 0.75].map((f) => (
           <line key={f} x1={left} x2={W - right} y1={top + (H - top - bottom) * f} y2={top + (H - top - bottom) * f} stroke="var(--ux-line)" />

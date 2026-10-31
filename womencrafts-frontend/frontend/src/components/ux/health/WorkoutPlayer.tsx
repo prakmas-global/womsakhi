@@ -98,7 +98,7 @@ export function WorkoutPlayer({ routine, onClose, onFinish }: {
             <Btn variant="outline" size="sm" icon="SkipForward" onClick={next}>Skip</Btn>
             <Btn variant="soft" size="sm" icon="Flag" onClick={finishNow}>Finish now</Btn>
           </div>
-          <ol className="flex max-h-[220px] flex-col gap-0.5 overflow-y-auto text-[13.5px]">
+          <ol className="flex max-h-[220px] flex-col gap-0.5 ux-noscroll overflow-y-auto text-[13.5px]">
             {routine.steps.map(([s, sec], k) => (
               <li key={k} className="flex justify-between gap-3 rounded-[9px] px-2.5 py-1.5"
                   style={{ background: k === i ? h.tint : "transparent", color: k < i ? "var(--ux-muted)" : "var(--ux-ink)",

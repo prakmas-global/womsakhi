@@ -1,0 +1,100 @@
+/*
+  Pregnancy overview: the 40-week dial, this week in three parts, and the road
+  ahead. Flat Health panels (dashboard-contract.css) with the brand's violet,
+  magenta and gold for the three trimesters.
+*/
+
+/* ── the dial and this week ─────────────────────────────────────────────── */
+.journey { container-type: inline-size; display: flex; flex-direction: column; gap: 14px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; }
+.eyebrow { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ux-lilac-ink); }
+.head h2 { margin: 2px 0 0; color: var(--ux-ink); }
+.headSub { margin: 2px 0 0; font-size: 13px; color: var(--ux-muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.legend li {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 999px;
+  background: var(--ux-surface-2); font-size: 12px; font-weight: 700; color: var(--ux-ink-2);
+}
+.legend i { width: 8px; height: 8px; border-radius: 999px; background: var(--tri); }
+.legend li[data-on] { background: color-mix(in srgb, var(--tri) 16%, var(--ux-surface)); color: var(--ux-ink); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: center; }
+@container (min-width: 620px) { .grid { grid-template-columns: 300px minmax(0, 1fr); gap: 22px; } }
+
+.dialWrap { position: relative; width: min(100%, 300px); aspect-ratio: 1; margin: 0 auto; border-radius: 50%; outline: none; touch-action: manipulation; }
+.dialWrap:focus-visible { box-shadow: 0 0 0 3px var(--ux-surface), 0 0 0 5px var(--ux-brand); }
+.dial { display: block; width: 100%; height: 100%; overflow: visible; }
+.seg { cursor: pointer; transition: opacity .2s, stroke-width .2s; }
+.seg:hover { opacity: 1 !important; stroke-width: 26; }
+.now { filter: drop-shadow(0 0 5px currentColor); animation: glow 2.4s ease-in-out infinite; }
+@keyframes glow { 50% { filter: drop-shadow(0 0 10px currentColor); } }
+@media (prefers-reduced-motion: reduce) { .now { animation: none; } .seg { transition: none; } .babyImg { transition: none !important; } }
+.tick { font-size: 10.5px; font-weight: 800; fill: var(--ux-muted); }
+
+.centre {
+  position: absolute; inset: 21%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; text-align: center; border-radius: 50%; pointer-events: none;
+}
+.centre > * { pointer-events: auto; }
+.centreTag { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ux-lilac-ink); }
+.centreWeek { display: flex; align-items: baseline; gap: 4px; line-height: 1; color: var(--ux-ink); }
+.centreWeek b { font-size: 46px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.centreWeek small { font-size: 12px; font-weight: 700; color: var(--ux-muted); }
+.baby {
+  display: grid; place-items: center; width: 54px; height: 54px; margin: 4px 0 2px; overflow: hidden;
+  border-radius: 50%; background: var(--ux-tint-lilac);
+}
+.babyImg { width: 100%; height: 100%; object-fit: contain; transition: transform .5s; }
+.centreSize { max-width: 128px; font-size: 11.5px; font-weight: 700; line-height: 1.25; color: var(--ux-ink-2); }
+.back {
+  margin-top: 4px; padding: 3px 10px; border: 1px solid var(--ux-line-strong); border-radius: 999px; cursor: pointer;
+  background: var(--ux-surface); font-size: 11.5px; font-weight: 800; color: var(--ux-brand);
+}
+
+/* this week, in three parts */
+.week { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.weekTitle { margin: 0; font-size: 13px; font-weight: 800; color: var(--ux-ink); }
+.part { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px; border-radius: var(--ux-r-sm, 8px); background: var(--ux-surface-2); }
+.part > span { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--tint); color: var(--ink); }
+.part p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--ux-ink); }
+.part b { display: block; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ux-muted); }
+.part a { font-weight: 800; color: var(--ux-brand); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { min-width: 0; padding: 8px 10px; border: 1px solid var(--ux-line); border-radius: var(--ux-r-sm, 8px); }
+.stat strong { display: block; font-size: 16px; font-weight: 800; line-height: 1.2; color: var(--ux-ink); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat small { display: block; font-size: 11.5px; color: var(--ux-muted); }
+.triBar { display: block; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 999px; background: var(--ux-surface-2); }
+.triBar i { display: block; height: 100%; border-radius: inherit; background: var(--tri); }
+
+/* ── what's next: a road with stops ────────────────────────────────────── */
+/* A phone swipes along one row; a wider panel wraps the stops into rows, each joined to the next. */
+.roadWrap { container-type: inline-size; }
+.road { display: grid; grid-auto-flow: column; grid-auto-columns: 74%; gap: 10px; margin: 0; padding: 8px 0 2px; list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.road::-webkit-scrollbar { display: none; }
+@container (min-width: 560px) { .road { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); row-gap: 18px; overflow: visible; } }
+.stop::after { content: ""; position: absolute; top: -3px; left: 28px; right: -10px; height: 2px; background: repeating-linear-gradient(90deg, var(--ux-line-strong) 0 6px, transparent 6px 11px); }
+.stop:last-child::after { display: none; }
+.stop { position: relative; display: flex; flex-direction: column; padding-top: 6px; scroll-snap-align: start; min-width: 0; }
+.stop::before {
+  content: ""; position: absolute; z-index: 1; top: -8px; left: 12px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--ux-surface); border: 3px solid var(--ux-line-strong);
+}
+.stop[data-state="now"]::before, .stop[data-state="next"]::before { border-color: var(--ux-brand); background: var(--ux-brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ux-brand) 22%, transparent); }
+.stop[data-state="done"]::before { border-color: var(--ux-green-ink); background: var(--ux-green-ink); }
+.card {
+  flex: 1; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 11px 12px; text-align: start; border: 1px solid var(--ux-line);
+  border-radius: var(--ux-r-sm, 8px); background: var(--ux-surface); color: var(--ux-ink); text-decoration: none;
+}
+a.card:hover { border-color: color-mix(in srgb, var(--ux-brand) 42%, var(--ux-line)); }
+.stop[data-state="now"] .card, .stop[data-state="next"] .card { border-color: color-mix(in srgb, var(--ux-brand) 50%, var(--ux-line)); background: color-mix(in srgb, var(--ux-brand) 5%, var(--ux-surface)); }
+.stop[data-state="done"] .card { opacity: .72; }
+.cardTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cardTop > span:first-child { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--ux-tint-lilac); color: var(--ux-lilac-ink); }
+.badge { padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; background: var(--ux-surface-2); color: var(--ux-muted); white-space: nowrap; }
+.stop[data-state="now"] .badge, .stop[data-state="next"] .badge { background: var(--ux-brand); color: var(--ux-on-brand); }
+.stop[data-state="done"] .badge { background: var(--ux-tint-green); color: var(--ux-green-ink); }
+.card h3 { margin: 4px 0 0; color: var(--ux-ink); }
+.card p { margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--ux-muted); }
+.when { margin-top: auto !important; padding-top: 6px; font-size: 12px !important; font-weight: 700; color: var(--ux-ink-2) !important; }
+.roadFoot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.toggle { padding: 0; border: 0; background: none; cursor: pointer; font-size: 12.5px; font-weight: 800; color: var(--ux-brand); }

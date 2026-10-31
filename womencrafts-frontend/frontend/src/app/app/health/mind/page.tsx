@@ -18,6 +18,7 @@ import { fmtDay, today, type Entry } from "@/lib/health-api";
 import type { Mood } from "@/lib/engines-api";
 import { WatchListen } from "@/components/ux/health/WatchListen";
 import { Sounds } from "@/components/ux/health/Sounds";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Mental Wellness — a calmer mind. Everything here is private.
@@ -89,7 +90,7 @@ export default function MentalWellnessPage() {
     <HealthFrame active="/app/health/mind" hue="blue" icon="Brain" eyebrow="Mental Wellness"
                  title="A calmer mind, a happier you"
                  sub="Check in with yourself, write it down, and take a few quiet minutes. Everything here is private."
-                 art="/ux/health/ill/hero-mental.webp" tabs={TABS}
+                 art={illSrc("hero-mental")} tabs={TABS}
                  actions={<>
                    <Btn icon="Smile" onClick={() => checkIn(0)}>Check in</Btn>
                    <Btn variant="outline" icon="Wind" href="/app/health/games/breathe">Breathing break</Btn>
