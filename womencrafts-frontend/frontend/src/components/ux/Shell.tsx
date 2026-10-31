@@ -889,7 +889,7 @@ export function Shell({
   const [more, setMore] = useState(false);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden" style={{ background: "var(--ux-canvas)" }}
+    <div data-member-shell data-wide={wide ? "" : undefined} className="flex h-screen flex-col overflow-hidden" style={{ background: "var(--ux-canvas)" }}
          data-immersive={immersive ? "" : undefined}>
       <div className={immersive ? "hidden lg:contents" : "contents"}>
         <Topbar user={user} onMore={() => setMore(true)} />
@@ -899,6 +899,7 @@ export function Shell({
       {!immersive && <MobileNav />}
       <MoreSheet open={more} onClose={() => setMore(false)} />
       {!immersive && <SafetyPin />}
+      {!immersive && <div className="ux-utility-ground" aria-hidden />}
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
 

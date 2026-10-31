@@ -242,7 +242,7 @@ export function NewMessage({ rows, onPick, full = false }: {
               className={`ux-press ux-btn-g flex items-center justify-center gap-2 font-bold ${
                 full ? "min-h-[50px] w-full rounded-[14px] text-[17px]"
                      : "min-h-[46px] rounded-[12px] px-4 text-xsm"}`}
-              style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+              style={{ background: "var(--ux-action-gradient)",
                        color: "var(--ux-on-brand)", boxShadow: "var(--ux-shadow-glow-2)" }}>
         <Icons.Plus className="h-[18px] w-[18px]" />{tr("messages.newMessage")}</button>
       {open && (
@@ -376,7 +376,7 @@ export function Inbox({
               <button key={f.value} type="button" onClick={() => setFilter(f.value)} aria-pressed={on}
                       className="ux-press flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-semibold"
                       style={on
-                        ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+                        ? { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }
                         : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
                 {f.label}
                 {n > 0 && (
@@ -435,7 +435,7 @@ export function Inbox({
                 <button key={f.value} type="button" onClick={() => setFilter(f.value)} aria-pressed={on}
                         className="ux-press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold"
                         style={on
-                          ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+                          ? { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }
                           : { background: "transparent", border: "1px solid var(--ux-line)", color: "var(--ux-muted)" }}>
                   {f.label}
                   {n > 0 && (
@@ -510,7 +510,7 @@ function PhoneRow({ row, onOpen }: { row: ConvRow; onOpen: (id: string) => void 
       trailing={row.unread > 0
         ? (
           <span className="grid h-[20px] min-w-[20px] shrink-0 place-items-center rounded-full px-1.5 text-[12px] font-bold"
-                style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
             {row.unread}
           </span>
         )
@@ -552,7 +552,7 @@ export function Row({ row, on, onOpen }: { row: ConvRow; on: boolean; onOpen: (i
           )}
           {row.unread > 0 && (
             <span className="ms-auto grid h-[19px] min-w-[19px] place-items-center rounded-full px-1.5 text-[12px] font-bold"
-                  style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                  style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
               {row.unread}
             </span>
           )}
@@ -1246,7 +1246,7 @@ export function Bubble({
              onContextMenu={(e) => { if (!desktop && actions.length) { e.preventDefault(); onMenu(true); } }}
              style={{
                ...(out
-                 ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)",
+                 ? { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)",
                      borderRadius: bubbleRadius("out", first), boxShadow: "var(--ux-shadow-glow-2)" }
                  : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)",
                      borderRadius: bubbleRadius("in", first), boxShadow: "0 1px 1px rgb(0 0 0 / 0.03)" }),
@@ -1281,7 +1281,7 @@ export function Bubble({
                 </button>
                 <button type="button" onClick={onEditSave} disabled={saving || !editing.trim()} title="Save the edit"
                         className="flex min-h-[44px] items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold disabled:opacity-50 lg:min-h-[34px]"
-                        style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                        style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
                   {saving && <Icons.Loader2 className="h-[13px] w-[13px] animate-spin" />} Save
                 </button>
               </div>

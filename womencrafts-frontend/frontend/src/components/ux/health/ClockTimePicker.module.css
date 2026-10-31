@@ -1,0 +1,16 @@
+.picker{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;color:var(--ux-ink)}
+.display{display:flex;align-items:center;justify-content:center;gap:18px}
+.digits{display:flex;align-items:center;gap:4px;font-size:36px;font-weight:750;font-variant-numeric:tabular-nums}
+.picker button{cursor:pointer;border:1px solid transparent;color:var(--ux-ink);font:inherit}
+.digits button{border-radius:14px;padding:4px 12px;background:var(--ux-surface-2)}
+.period{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700}
+.period button{padding:7px 14px;border-radius:9px;background:var(--ux-surface-2)}
+.picker button[aria-pressed=true]{background:var(--ux-tint-violet);color:var(--ux-violet-ink);border-color:var(--ux-violet-ink)}
+.hint{margin:0;text-align:center;font-size:12px;line-height:1.5;color:var(--ux-muted)}
+.clock{position:relative;width:min(264px,100%);aspect-ratio:1;border-radius:50%;background:var(--ux-surface-2);border:1px solid var(--ux-line)}
+.clock button{position:absolute;width:44px;height:44px;transform:translate(-50%,-50%);border-radius:50%;background:transparent;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums}
+.hand{position:absolute;left:calc(50% - 1px);bottom:50%;width:2px;height:40%;background:var(--ux-violet-ink);transform-origin:bottom center;pointer-events:none}
+.centre{position:absolute;left:calc(50% - 4px);top:calc(50% - 4px);width:8px;height:8px;border-radius:50%;background:var(--ux-violet-ink)}
+.exact{display:flex;align-items:center;gap:12px;font-size:13px;font-weight:650}
+.exact input{min-height:44px;max-width:180px;border:1px solid var(--ux-line-strong);border-radius:12px;padding:8px 12px;background:var(--ux-surface);color:var(--ux-ink);font:inherit}
+.picker button:focus-visible,.exact input:focus-visible{outline:2px solid var(--ux-violet-ink);outline-offset:3px}

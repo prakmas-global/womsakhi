@@ -86,7 +86,7 @@ export function MobileHome() {
         <section role="alert" className="rounded-[20px] border p-4" style={{ background: "var(--ux-surface)", borderColor: "var(--ux-line)" }}>
           <h1 className="text-xl font-extrabold" style={{ color: "var(--ux-ink)" }}>Your home</h1>
           <p className="mt-2 text-sm" style={{ color: "var(--ux-muted)" }}>Your updates could not load. You can still explore learning, your shop and work from home below.</p>
-          <button type="button" onClick={refetch} className="mt-3 min-h-[44px] rounded-full px-4 text-sm font-bold" style={{ color: "var(--ux-on-brand)", background: "var(--ux-brand)" }}>Try again</button>
+          <button type="button" onClick={refetch} className="mt-3 min-h-[44px] rounded-full px-4 text-sm font-bold" style={{ color: "var(--ux-on-brand)", background: "var(--ux-fill)" }}>Try again</button>
         </section>
         <StartFromHome />
       </div>
@@ -279,28 +279,16 @@ export function MobileHome() {
         screen whose edges did not line up with the rest. Now it uses the
         shell's inset, whatever that is.
       */}
-      {/*
-        The banner, at the owner's instruction.
-
-        This screen carried no image at all — the note above explains why, and
-        the reasoning still holds for a hero that spends a whole viewport on an
-        announcement. What the owner is asking for is different and fair: this
-        is the first screen a woman lands on, the laptop opens with the
-        banner, and the phone opened with a grey line of text.
-
-        So it is the same composition as the laptop's, sized for a phone: the
-        photograph at its own 2.8:1, her greeting on the plum bar under it,
-        196px in total against a 844px screen. Everything she can act on still
-        begins in the first viewport.
-      */}
+      {/* The complete home artwork, at its original proportions, with her
+          greeting on the plum strip immediately underneath. */}
       <header data-banner="home" className="-mt-1 mb-3.5 overflow-hidden rounded-[18px]"
               style={{ background: "var(--ux-brand-900)", border: "1px solid var(--ux-line)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/ux/art/home-banner.webp"
              alt={tr("mobileHome.sixWomenWorkingTogetherAtA")}
              decoding="async" fetchPriority="high" width={1900} height={760}
-             className="block w-full object-cover object-center"
-             style={{ aspectRatio: "2.8 / 1" }} />
+             className="block w-full object-contain object-center"
+             style={{ aspectRatio: "1900 / 760" }} />
         <div className="px-4 py-3"
              style={{ background: "linear-gradient(102deg, var(--ux-brand-900) 0%, var(--ux-fill) 78%, var(--ux-rib-2) 130%)" }}>
           <p className="text-[12.5px] font-semibold" style={{ color: "var(--ux-on-brand-2)" }}>{greeting()},</p>

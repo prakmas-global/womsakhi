@@ -760,6 +760,9 @@ async def set_enrollment_status(
     if not existing:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That enrolment is not on this programme")
 
+    if payload.status in EnrollmentModel.LEARNING and not ProgramModel.payment_confirmed(program, existing):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "The course owner must confirm payment before this paid enrolment can be activated or completed.")
+
     now = datetime.now(timezone.utc)
     updates: dict = {"status": payload.status, "updated_at": now}
     if payload.status == EnrollmentModel.STATUS_COMPLETED:

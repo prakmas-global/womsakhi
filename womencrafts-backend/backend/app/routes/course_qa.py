@@ -46,8 +46,8 @@ async def _course_and_role(program_id: str, me: dict) -> tuple[dict, bool]:
     if program.get("owner_id") == uid:
         return program, True
     enrolled = await get_database()[EnrollmentModel.collection_name].find_one(
-        {"user_id": uid, "program_id": program_id, "status": {"$in": EnrollmentModel.LEARNING}}, {"_id": 1})
-    if not enrolled:
+        {"user_id": uid, "program_id": program_id})
+    if not ProgramModel.can_learn(program, enrolled):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Join the course to see and ask questions.")
     return program, False
 

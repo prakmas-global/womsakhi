@@ -588,7 +588,7 @@ function Event({
             <Link href={n.href} onClick={readAll}
                   className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
                   style={loud
-                    ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+                    ? { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }
                     : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
               {l.label}
               <Icons.ArrowRight className="h-[13px] w-[13px]" />

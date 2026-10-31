@@ -102,7 +102,7 @@ export function PicTiles({ tiles, value, onPick, label, size = "md", className =
                   style={{ background: "linear-gradient(180deg, rgba(16,6,24,0) 25%, rgba(16,6,24,.85))" }} />
             {picked && (
               <span className="ux-pop absolute end-2 top-2 grid h-5 w-5 place-items-center rounded-full"
-                    style={{ background: "var(--ux-brand)", color: "#fff" }}>
+                    style={{ background: "var(--ux-fill)", color: "#fff" }}>
                 <Icons.Check className="h-3 w-3" strokeWidth={3} />
               </span>
             )}

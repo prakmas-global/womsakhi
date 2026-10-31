@@ -12,7 +12,7 @@ import { JOB_KINDS } from "@/lib/work-api";
 const LOOK: Record<string, { title: string; sub: string; icon: string }> = {
   Job: { title: "A job", sub: "Regular work", icon: "Briefcase" },
   Freelance: { title: "Freelance", sub: "Work as it comes", icon: "Sparkles" },
-  "Craft order": { title: "Order to make", sub: "Pieces made for you", icon: "Package" },
+  "Craft order": { title: "Big order", sub: "Pieces made for you", icon: "Package" },
   Internship: { title: "Internship", sub: "Learn on the job", icon: "GraduationCap" },
   Training: { title: "Training", sub: "You teach the work", icon: "Presentation" },
 };

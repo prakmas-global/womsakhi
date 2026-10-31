@@ -181,7 +181,7 @@ export function HomeRail() {
           </div>
           <Link href={nextField?.href || "/app/profile"}
                 className="ux-press ux-btn-g mt-3 flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] text-xsm font-bold"
-                style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
             {tr("homeRail.continueNow")}
             <Icons.ArrowRight className="h-4 w-4" />
           </Link>

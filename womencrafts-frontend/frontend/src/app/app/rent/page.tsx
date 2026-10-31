@@ -95,7 +95,7 @@ export default function RentBoardPage() {
               style={{ background: "linear-gradient(90deg,rgba(55,20,40,.96),rgba(55,20,40,.86) 40%,rgba(55,20,40,.25) 72%,transparent 90%)" }} />
         <span aria-hidden className="absolute inset-0 lg:hidden"
               style={{ background: "linear-gradient(180deg,rgba(55,20,40,.55),rgba(55,20,40,.95))" }} />
-        <div className="relative z-[1] flex max-w-[580px] flex-col gap-3 p-5 text-white lg:p-7">
+        <div className="relative z-[1] flex h-full max-w-[580px] flex-col justify-center gap-3 p-5 text-white lg:p-7">
           <div className="flex min-w-0 items-center gap-3">
             <PlaceMark size={44} />
             <h1 className="ux-screen-title min-w-0 text-3xl font-extrabold leading-[1.08] tracking-[-0.02em]" style={{ color: "#fff" }}>
@@ -105,6 +105,10 @@ export default function RentBoardPage() {
           <p className="max-w-[440px] text-sm leading-relaxed opacity-95">
             Borrow what you need for a few days from verified women near you — or earn from the things you own.
           </p>
+
+        </div>
+      </section>
+      <div className="mb-5 space-y-3" style={{ color: v("--ux-ink-2") }}>
           <label className="flex h-[52px] items-center gap-2.5 rounded-[16px] ps-4 pe-1.5 shadow-lg" style={{ background: v("--ux-surface"), color: v("--ux-ink") }}>
             <Icons.Search className="h-5 w-5 shrink-0" style={{ color: v("--ux-brand") }} />
             <input value={typed} onChange={(e) => setTyped(e.target.value)} type="search" maxLength={60}
@@ -121,10 +125,10 @@ export default function RentBoardPage() {
             <Btn href="/app/rent/new" icon="Plus">Rent something out</Btn>
             <Link href="/app/rent/bookings"
                   className="ux-press inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border px-4 text-xs font-bold"
-                  style={{ borderColor: "rgba(255,255,255,.3)", background: "rgba(255,255,255,.14)", color: "#fff" }}>
+                  style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }}>
               <Icons.CalendarCheck className="h-4 w-4" /> My rentals
               {waiting.length > 0 && (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px]" style={{ background: "#fff", color: v("--ux-brand") }}>
+                <span className="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px]" style={{ background: v("--ux-brand-tint"), color: v("--ux-brand") }}>
                   {waiting.length}
                 </span>
               )}
@@ -133,8 +137,7 @@ export default function RentBoardPage() {
               <Icons.BadgeCheck className="h-4 w-4" /> Every woman here is verified
             </span>
           </div>
-        </div>
-      </section>
+      </div>
 
       {waiting.length > 0 && (
         <section aria-labelledby="rent-waiting" className="mb-5">

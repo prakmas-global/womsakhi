@@ -1,0 +1,14 @@
+{
+  "batch": "reading-room-demo-v1",
+  "course_id": "97b788805c0129236adba48e",
+  "title": "[DEMO] Small Steps, Strong Beginnings",
+  "members": 3,
+  "inserted": {
+    "courses": 1,
+    "enrollments": 3
+  },
+  "course_url": "http://localhost:3100/app/programs/97b788805c0129236adba48e",
+  "article_url": "http://localhost:3100/app/programs/97b788805c0129236adba48e/lesson/1",
+  "book_url": "http://localhost:3100/app/programs/97b788805c0129236adba48e/lesson/2",
+  "note": "Original free examples. Existing reading positions and completion records are preserved. No notifications or payments created."
+}

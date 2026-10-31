@@ -72,7 +72,10 @@ def _floor(rule: dict, latest: dict | None, now: datetime) -> datetime:
     yesterdays (REM-UC-008).
     """
     if latest:
-        return latest["due_at"]
+        last = sched.aware(latest["due_at"])
+        if (rule.get("schedule") or {}).get("type") == ReminderModel.SCHEDULE_RECURRING:
+            return max(last, now - timedelta(seconds=1))
+        return last
 
     sc = rule.get("schedule") or {}
     kind = sc.get("type")
@@ -87,7 +90,7 @@ def _floor(rule: dict, latest: dict | None, now: datetime) -> datetime:
         return anchor + timedelta(minutes=int(sc.get("offset_minutes") or 0)) - one_second
 
     # Recurring: her start date, or now for a rule with no explicit start.
-    return rule.get("starts_at") or now
+    return max(sched.aware(rule.get("starts_at")) or now, now - one_second)
 
 
 # ── creating and editing ────────────────────────────────────────────────────
@@ -236,7 +239,7 @@ async def edit(definition_id: str, changes: dict) -> bool:
         await _db()[OccurrenceModel.collection_name].update_many(
             {"definition_id": definition_id,
              "schedule_version": {"$lt": rule.get("version", 1)},
-             "state": OccurrenceModel.STATE_SCHEDULED},
+             "state": {"$in": [OccurrenceModel.STATE_SCHEDULED, OccurrenceModel.STATE_SNOOZED]}},
             {"$set": {"state": OccurrenceModel.STATE_CANCELLED,
                       "updated_at": datetime.now(timezone.utc)}},
         )
@@ -326,6 +329,13 @@ async def complete(occurrence_id: str, *, user_id: str, via: str = "inapp") -> b
         {"$set": {"state": OccurrenceModel.STATE_COMPLETED,
                   "completed_at": now, "completed_via": via, "updated_at": now}},
     )
+    if res.modified_count:
+        occurrence = await _db()[OccurrenceModel.collection_name].find_one({"_id": oid})
+        if occurrence:
+            await _db()[ReminderModel.collection_name].update_one(
+                {"_id": _oid(occurrence["definition_id"]), "schedule.type": {"$in": ["once", "event_relative"]},
+                 "state": ReminderModel.STATE_SCHEDULED, "version": occurrence.get("schedule_version", 1)},
+                {"$set": {"state": ReminderModel.STATE_COMPLETED, "updated_at": now}})
     return res.modified_count > 0
 
 
@@ -338,8 +348,7 @@ async def snooze(occurrence_id: str, *, user_id: str, minutes: int = 60) -> bool
     res = await _db()[OccurrenceModel.collection_name].update_one(
         {"_id": oid, "user_id": user_id,
          "state": {"$in": [OccurrenceModel.STATE_SCHEDULED,
-                           OccurrenceModel.STATE_DUE,
-                           OccurrenceModel.STATE_SNOOZED]}},
+                           OccurrenceModel.STATE_DUE]}},
         {"$set": {"state": OccurrenceModel.STATE_SNOOZED,
                   "due_at": now + timedelta(minutes=max(5, minutes)),
                   # Releasing the lease lets the tick pick it up again at the

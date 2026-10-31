@@ -480,6 +480,9 @@ class Settings(BaseSettings):
     # is false: the collections exist and the routes answer, but no reminder
     # is materialised and no intent is dispatched.
     ENGINES_ENABLED: bool = False
+    # Optional development loop. Production keeps the authenticated scheduler.
+    # This mode delivers in-app/browser push only, never email/SMS/WhatsApp.
+    ENGINES_LOCAL_WORKER: bool = False
     # Cloud Run scales to zero, so time comes from outside: Cloud Scheduler
     # calls the tick endpoint on a cadence. In production the caller is
     # authenticated by GCP OIDC; this shared secret is the local-development

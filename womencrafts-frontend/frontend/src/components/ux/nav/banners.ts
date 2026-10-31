@@ -92,6 +92,13 @@ const LINES: Record<string, string[]> = {
   ],
 };
 
+const MONEY_LINES: Record<string, string[]> = {
+  "/app/money": ["Every rupee recorded builds your independence."],
+  "/app/books": ["Your work deserves fair pay."],
+  "/app/books/proof": ["Your work. Your income. Your growing independence."],
+  "/app/payments": ["Clear records. Confident decisions."],
+};
+
 export function bannerFor(path: string): Banner | null {
   const clean = (path.split("?")[0].replace(/\/+$/, "")) || "/app";
   if (HAS_HERO.has(clean)) return null;
@@ -99,7 +106,7 @@ export function bannerFor(path: string): Banner | null {
   const node: NavNode | undefined = trail[trail.length - 1];
   if (!node || node.href !== clean) return null; // a detail page under a list
   const p = placeOf(node);
-  const lines = LINES[p.section] ?? LINES.home;
+  const lines = MONEY_LINES[clean] ?? LINES[p.section] ?? LINES.home;
   const pick = dailyIndex(lines.length + 1, node.id);
 
   // Its own photo, else its parent's — a photo of the same work. Not the
@@ -113,9 +120,9 @@ export function bannerFor(path: string): Banner | null {
   // No photo: a line in large type. Every few days it is a real quote instead.
   // Only the short ones: a banner is read at a glance, and on a phone a long
   // quote becomes a paragraph standing between her and the screen.
-  if (pick === lines.length) {
+  if (pick === lines.length && !MONEY_LINES[clean]) {
     const quote = quoteForPath(clean);
     return { kind: "quote", line: quote.text, by: quote.by, icon: p.icon };
   }
-  return { kind: "quote", line: lines[pick], icon: p.icon };
+  return { kind: "quote", line: lines[pick % lines.length], icon: p.icon };
 }

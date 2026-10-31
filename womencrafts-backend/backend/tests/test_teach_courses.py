@@ -354,7 +354,7 @@ async def test_free_preview_lessons_open_before_joining(api):
         {"title": "Welcome", "body": "What you will make.", "video_url": "https://youtu.be/teaser1", "preview": True},
         {"title": "Measuring", "body": "Paid content.", "video_url": "https://youtu.be/paid1"},
     ]
-    course = await _post(client, made, t, price_rupees=299, upi_id="teacher@okaxis", lessons=lessons)
+    course = await _post(client, made, t, lessons=lessons)
     detail = (await client.get(f"/me/programs/{course['id']}/detail", headers=l)).json()
     assert not detail["can_learn"]
     assert detail["curriculum"][0]["preview"] and detail["curriculum"][0]["video_url"] == "https://youtu.be/teaser1"

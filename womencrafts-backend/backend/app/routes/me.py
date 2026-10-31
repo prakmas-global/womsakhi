@@ -13,6 +13,8 @@ enforces that on the whole router.
 
 import asyncio
 import logging
+from app.core.reading import lesson_key, content_revision
+from app.core.account_upi import recipient_upi
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -759,11 +761,16 @@ class PaidClaim(PaymentReference):
 async def claim_paid(program_id: str, payload: PaidClaim, me: dict = Depends(require_active_member)):
     uid = str(me["_id"])
     now = datetime.now(timezone.utc)
+    program = await _programs().find_one({"_id": to_object_id(program_id)})
+    before = await _enrollments().find_one({"user_id":uid,"program_id":program_id,"status":EnrollmentModel.STATUS_PENDING})
+    previous = (before or {}).get("payment") or {}
+    address = previous.get("upi_id", (program or {}).get("upi_id", "")) if previous.get("status")==EnrollmentModel.PAY_CLAIMED else await recipient_upi(get_database(),(program or {}).get("owner_id", ""),(program or {}).get("upi_id", ""))
     doc = await _enrollments().find_one_and_update(
         {"user_id": uid, "program_id": program_id, "status": EnrollmentModel.STATUS_PENDING},
         {"$set": {
             "payment.status": EnrollmentModel.PAY_CLAIMED,
             "payment.reference": payload.reference.strip(),
+            "payment.upi_id": address,
             "payment.claimed_at": now,
             "updated_at": now,
         }},
@@ -771,7 +778,6 @@ async def claim_paid(program_id: str, payload: PaidClaim, me: dict = Depends(req
     )
     if not doc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "There is no payment waiting on this course.")
-    program = await _programs().find_one({"_id": to_object_id(program_id)})
     if program and program.get("owner_id"):
         amount = _rupees(int((doc.get("payment") or {}).get("amount_minor") or 0))
         await notify(
@@ -816,6 +822,10 @@ async def update_progress(
     existing = await _enrollments().find_one({"user_id": str(me["_id"]), "program_id": program_id})
     if not existing:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "You're not enrolled in this program")
+
+    program = await _programs().find_one({"_id": to_object_id(program_id)})
+    if not program or not ProgramModel.can_learn(program, existing):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "The course must be open to you before recording progress. Paid courses need owner-confirmed payment.")
 
     now = datetime.now(timezone.utc)
     updates: dict = {"progress": payload.progress, "last_activity_at": now, "updated_at": now}
@@ -1378,6 +1388,7 @@ def _curriculum_for(
     rather than showing her an empty screen — and we never invent lesson titles
     we don't have, only "Week n".
     """
+    allow_preview = not ProgramModel.is_paid(program)
     raw = program.get("curriculum") or []
     if raw:
         modules = [
@@ -1385,11 +1396,13 @@ def _curriculum_for(
                 "title": (m or {}).get("title", ""),
                 "detail": (m or {}).get("detail", ""),
                 "duration": (m or {}).get("duration", ""),
-                "preview": bool((m or {}).get("preview")),
+                "id": lesson_key(m or {}),
+                "content_type": (m or {}).get("content_type", "lesson"),
+                "preview": allow_preview and bool((m or {}).get("preview")),
                 # The lesson itself: once the course is open to her — or now,
                 # if the teacher made it a free preview.
-                **({"body": (m or {}).get("body", ""), "video_url": (m or {}).get("video_url", "")}
-                   if with_content or (m or {}).get("preview") else {}),
+                **({"body": (m or {}).get("body", ""), "video_url": (m or {}).get("video_url", ""), "revision": content_revision(m or {})}
+                   if with_content or (allow_preview and (m or {}).get("preview")) else {}),
             }
             for m in raw
         ]
@@ -1447,14 +1460,25 @@ async def program_detail(program_id: str, me: dict = Depends(require_active_memb
 
     e = enrollment or {}
     state = e.get("status", "")
-    learning = state in EnrollmentModel.LEARNING
+    learning = ProgramModel.can_learn(program, enrollment)
     is_owner = bool(program.get("owner_id")) and program.get("owner_id") == uid
     joined_at = e.get("created_at")
     attended = int(e.get("sessions_attended") or 0)
     lessons = e.get("completed_lessons")
     pending = state == EnrollmentModel.STATUS_PENDING
 
+    curriculum = _curriculum_for(program, _reached(int(e.get("progress") or 0), attended, _module_count(program)),
+        done=set(lessons) if isinstance(lessons, list) else None, with_content=learning or is_owner)
+    resume = 0
+    if learning:
+        for i, lesson in enumerate(curriculum):
+            saved = (e.get("reading_positions") or {}).get(lesson.get("id", ""), {})
+            if saved and saved.get("revision") == lesson.get("revision"):
+                lesson["reading_offset"] = min(saved.get("offset",0),len(lesson.get("body", "")))
+                if e.get("last_read_lesson") == lesson.get("id") and not lesson["done"]:
+                    resume = i+1
     return ProgramDetail(
+        resume_lesson=resume,
         id=str(program["_id"]),
         name=program.get("name", ""),
         category=program.get("category", ""),
@@ -1470,21 +1494,50 @@ async def program_detail(program_id: str, me: dict = Depends(require_active_memb
         sessions_attended=attended,
         status=state,
         joined_on=joined_at.strftime("%b %d, %Y") if isinstance(joined_at, datetime) else "",
-        curriculum=_curriculum_for(
-            program,
-            _reached(int(e.get("progress") or 0), attended, _module_count(program)),
-            done=set(lessons) if isinstance(lessons, list) else None,
-            with_content=learning or is_owner,
-        ),
+        curriculum=curriculum,
         certificate_code=(certificate or {}).get("code", ""),
         owner_kind=program.get("owner_kind") or "staff",
         teacher_name=program.get("teacher_name") or "WomSakhi team",
         price_minor=int(program.get("price_minor") or 0),
         is_owner=is_owner,
         payment_status=(e.get("payment") or {}).get("status", ""),
-        upi_id=program.get("upi_id", "") if pending else "",
+        upi_id=((e.get("payment") or {}).get("upi_id",program.get("upi_id", "")) if (e.get("payment") or {}).get("status")==EnrollmentModel.PAY_CLAIMED else await recipient_upi(get_database(),program.get("owner_id", ""),program.get("upi_id", ""))) if pending else "",
         can_learn=learning or is_owner,
     )
+
+
+class ReadingPositionIn(BaseModel):
+    offset: int = Field(ge=0, le=200000)
+    revision: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+@router.put("/programs/{program_id}/lessons/{n}/reading", summary="Remember where I stopped reading")
+async def save_reading_position(program_id: str, n: int, body: ReadingPositionIn, me: dict = Depends(require_active_member)):
+    uid = str(me["_id"])
+    program, enrollment = await asyncio.gather(
+        _programs().find_one({"_id": to_object_id(program_id)}),
+        _enrollments().find_one({"user_id": uid, "program_id": program_id}),
+    )
+    if not program:
+        raise HTTPException(404, "Course not found")
+    if not ProgramModel.can_learn(program, enrollment):
+        raise HTTPException(403, "Join the course before saving a reading place")
+    lessons = program.get("curriculum") or []
+    if not 1 <= n <= len(lessons):
+        raise HTTPException(404, "Lesson not found")
+    lesson = lessons[n-1]
+    if lesson.get("content_type") not in {"article", "book"}:
+        raise HTTPException(400, "This lesson is not a reading lesson")
+    if body.revision != content_revision(lesson):
+        raise HTTPException(409, "The teacher updated this text. Reopen it to save your place.")
+    if body.offset > len(lesson.get("body", "")):
+        raise HTTPException(422, "Reading position is outside this text")
+    key = lesson_key(lesson)
+    await _enrollments().update_one({"_id": enrollment["_id"], "user_id": uid}, {"$set": {
+        "reading_positions."+key: {"offset":body.offset,"revision":body.revision,"updated_at":datetime.now(timezone.utc)},
+        "last_read_lesson":key,
+    }})
+    return {"offset":body.offset,"message":"Reading place saved"}
 
 
 @router.post(
@@ -1506,7 +1559,7 @@ async def complete_lesson(program_id: str, n: int, me: dict = Depends(require_ac
     )
     if not program:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That programme doesn't exist")
-    if not enrollment or enrollment.get("status") not in EnrollmentModel.LEARNING:
+    if not ProgramModel.can_learn(program, enrollment):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Join the course first.")
     total = _module_count(program)
     if n < 1 or n > total:
@@ -1571,6 +1624,8 @@ async def claim_certificate(program_id: str, me: dict = Depends(require_active_m
         )
 
     program = await _programs().find_one({"_id": to_object_id(program_id)})
+    if program and not ProgramModel.payment_confirmed(program, enrollment):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "The course owner must confirm payment before issuing this certificate.")
     doc = CertificateModel.create_document(
         user_id=uid,
         member_id=me.get("member_id", ""),

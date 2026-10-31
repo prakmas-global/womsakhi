@@ -1,4 +1,5 @@
 "use client";
+import { AccountUpiEditor } from "@/components/ux/payments/AccountUpiEditor";
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -109,7 +110,7 @@ function problemsFor(f: MentorInput, paid: boolean): Record<string, string> {
   if (!f.languages.length) p.languages = "Choose at least one language.";
   if (paid) {
     if (f.price_rupees < 10) p.price = "A paid session costs at least ₹10.";
-    if (!UPI_ID.test(f.upi_id.trim())) p.upi = "Add the UPI ID learners should pay, like name@okaxis.";
+    if (!UPI_ID.test(f.upi_id.trim())) p.upi = "Save your account UPI below before offering paid sessions.";
   }
   return p;
 }
@@ -264,8 +265,7 @@ function MentorForm({ value, onChange, paid, onPaid, problems }: {
               <Err>{problems.price}</Err>
             </div>
             <div>
-              <Label need>Your UPI ID</Label>
-              <Text value={value.upi_id} onChange={set("upi_id")} label="UPI ID" max={120} placeholder="name@okaxis" />
+              <AccountUpiEditor onSaved={set("upi_id")}/>
               <Err>{problems.upi}</Err>
             </div>
           </div>

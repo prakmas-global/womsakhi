@@ -1,0 +1,132 @@
+/* Member UI foundations. Accent and status colours still follow her theme. */
+.ux, :is(.ux.dark, .dark .ux) {
+  --ux-canvas: #fcfaf7;
+  --ux-r-card: 20px;
+  --ux-shadow-card: 0 2px 8px -4px color-mix(in srgb, var(--ux-ink) 8%, transparent),
+    0 12px 28px -20px color-mix(in srgb, var(--ux-ink) 14%, transparent);
+  --ux-shadow-sm: 0 2px 6px -3px color-mix(in srgb, var(--ux-ink) 12%, transparent);
+  --ux-utility-h: 64px;
+}
+:is(.ux.dark, .dark .ux) { --ux-canvas: var(--ws-canvas); }
+.ux [data-member-shell] { height: 100dvh; }
+.ux .ux-card {
+  background: var(--ux-surface);
+  border-color: var(--ux-line);
+  box-shadow: var(--ux-shadow-card);
+}
+/* Reading a balance or filling a form should not move the whole card. */
+.ux .ux-card:hover, .ux .ux-card:active {
+  transform: none;
+  border-color: var(--ux-line);
+  box-shadow: var(--ux-shadow-card);
+}
+.ux .ux-section-banner { box-shadow: none !important; }
+.ux .ux-section-banner blockquote p { font-weight: 650; }
+
+/* The scroller ends ABOVE the utility controls, even halfway through a page.
+   Bottom padding alone only protects the very last row. Immersive flows keep
+   their own viewport and bottom actions. */
+.ux [data-member-shell]:not([data-immersive]) #ux-scroll {
+  margin-bottom: var(--ux-utility-h);
+  padding-bottom: 0;
+}
+.ux [data-member-shell]:not([data-immersive]) #ux-scroll > .ux-col {
+  padding-bottom: 24px;
+}
+.ux .ux-utility-ground {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--ux-utility-h);
+  background: var(--ux-canvas);
+  border-top: 1px solid var(--ux-line);
+  z-index: 29;
+}
+.ux [data-float="sakhi"] { bottom: 10px; inset-inline-end: 20px; }
+.ux .ux-sakhi-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 44px;
+  padding: 4px 14px 4px 5px;
+  border: 1px solid var(--ux-line-strong);
+  border-radius: 999px;
+  background: var(--ux-surface);
+  color: var(--ux-ink);
+  box-shadow: var(--ux-shadow-sm);
+  font-size: 13px;
+  font-weight: 650;
+}
+.ux .ux-sakhi-trigger img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+.ux .ux-safety-trigger {
+  bottom: calc(var(--tabbar-h) + 10px);
+  inset-inline-start: 16px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--ws-danger-tint);
+  color: var(--ws-danger-ink);
+  border: 1px solid color-mix(in srgb, var(--ws-danger-ink) 35%, transparent);
+  font-size: 13px;
+  font-weight: 700;
+}
+@media (min-width: 1024px) {
+  .ux [data-member-shell]:not([data-wide]) .ux-utility-ground { inset-inline-start: 253px; }
+}
+@media (max-width: 1023px) {
+  .ux .ux-safety-trigger { display: inline-flex; }
+  .ux [data-member-shell]:not([data-immersive]) #ux-scroll { margin-bottom: calc(var(--tabbar-h) + var(--ux-utility-h)); }
+  .ux .ux-utility-ground { bottom: var(--tabbar-h); }
+  .ux [data-float="sakhi"] { bottom: calc(var(--tabbar-h) + 10px); inset-inline-end: 16px; }
+}
+
+/* A shared financial workspace: a clear title, quiet navigation and one
+   obvious primary action. Headings stay outside coloured promotional art. */
+.ux .ux-money-header { margin-bottom: 24px; }
+.ux .ux-money-header h1 { font-size: clamp(25px, 2.3vw, 32px); line-height: 1.2; letter-spacing: -.035em; }
+.ux .ux-money-header > p:last-of-type { margin-top: 10px; font-size: 14px; line-height: 1.75; }
+.ux .ux-money-tabs { padding: 5px; gap: 4px; border: 1px solid var(--ux-line); border-radius: 17px; background: var(--ux-surface-2); }
+.ux .ux-money-tabs > button { border-color: transparent !important; background: transparent !important; color: var(--ux-muted) !important; font-weight: 600; }
+.ux .ux-money-tabs > button:is([aria-selected="true"], [aria-pressed="true"]) {
+  background: var(--ux-surface) !important;
+  color: var(--ux-brand) !important;
+  box-shadow: var(--ux-shadow-sm);
+}
+.ux .ux-finance-note { background: color-mix(in srgb, var(--ux-surface) 50%, transparent); box-shadow: none; border-style: dashed; }
+.ux .ux-finance-stats > :first-child { background: color-mix(in srgb, var(--ux-brand-tint) 45%, var(--ux-surface)); }
+.ux .ux-income-overview { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; }
+.ux .ux-income-total { position: relative; overflow: hidden; padding: 24px; background: linear-gradient(135deg, var(--ux-brand-tint), var(--ux-surface)); }
+.ux .ux-income-total > * { position: relative; }
+.ux .ux-income-total::before { content: ""; position: absolute; width: 180px; height: 180px; border: 28px solid color-mix(in srgb, var(--ux-brand) 6%, transparent); border-radius: 50%; inset-inline-end: -70px; bottom: -80px; }
+.ux .ux-income-value { margin-top: 16px; font-size: clamp(32px, 3.1vw, 46px); line-height: 1.15; letter-spacing: -.045em; font-weight: 750; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ux .ux-income-support { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ux .ux-income-support > section { display: flex; flex-direction: column; justify-content: center; }
+.ux .ux-income-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; background: var(--ux-surface-2); color: var(--ux-brand); }
+.ux .ux-income-owner { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
+.ux .ux-income-period { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.6; color: var(--ux-muted); }
+.ux .ux-income-table { padding: 0; overflow: hidden; }
+.ux .ux-income-table > header { padding: 20px; border-bottom: 1px solid var(--ux-line); }
+.ux .ux-income-table table { font-size: 13px; }
+.ux .ux-income-table thead { background: var(--ux-surface-2); color: var(--ux-muted); }
+.ux .ux-income-table :is(th, td) { padding: 15px 12px; }
+.ux .ux-income-table tr > :first-child { padding-inline-start: 20px; }
+.ux .ux-income-table tr > :last-child { padding-inline-end: 20px; }
+.ux .ux-income-table tbody tr:hover { background: color-mix(in srgb, var(--ux-brand-tint) 25%, var(--ux-surface)); }
+.ux .ux-income-table tbody td:first-of-type { font-weight: 650; }
+.ux .ux-income-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+@media (max-width: 639px) {
+  .ux .ux-income-overview { grid-template-columns: 1fr; gap: 12px; }
+  .ux .ux-income-total { padding: 22px; }
+  .ux .ux-income-table table { font-size: 12px; }
+  .ux .ux-income-table :is(th, td) { padding: 14px 8px; }
+  .ux .ux-income-table tr > :first-child { padding-inline-start: 14px; }
+  .ux .ux-income-table tr > :last-child { padding-inline-end: 14px; }
+  .ux .ux-income-actions > * { flex: 1 1 auto; }
+}
+@media (forced-colors: active) {
+  .ux .ux-money-tabs > button:is([aria-selected="true"], [aria-pressed="true"]) { outline: 2px solid Highlight; outline-offset: -2px; }
+  .ux :is(.ux-sakhi-trigger, .ux-safety-trigger) { border: 1px solid ButtonText; }
+}

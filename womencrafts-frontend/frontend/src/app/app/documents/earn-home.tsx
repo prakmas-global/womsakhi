@@ -33,6 +33,7 @@ export function EarnHero() {
        no inset — the words and the one action are what she came for. */
     // `data-page-hero`: this is the screen's banner, so the section banner
     // above it steps aside (components/ux/nav/banners.ts) — one, not two.
+    <>
     <section data-banner data-page-hero className="relative mb-6 overflow-hidden rounded-[20px] max-lg:overflow-visible max-lg:rounded-none! max-lg:border-0! max-lg:bg-none! lg:mb-5"
              style={{ background: "linear-gradient(105deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 52%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
@@ -52,10 +53,7 @@ export function EarnHero() {
         <p className="mt-3 max-w-[400px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
           {tr("earnhome.sellProductsOfferServicesTakeOrders")}
         </p>
-        <div className="mt-5 flex flex-wrap gap-2.5">
-          <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">{tr("earnhome.addAProductOrService")}</Btn>
-          <Btn href="/app/programs" variant="outline" icon="Play" className="max-lg:w-full">{tr("earnhome.watchHowItWorks")}</Btn>
-        </div>
+
       </div>
 
       {/* Her, at her own counter. Decorative — the words above carry the meaning. */}
@@ -74,6 +72,11 @@ export function EarnHero() {
         <figcaption className="mt-1.5 text-2xs" style={{ color: v("--ux-muted") }}>— WomSakhi</figcaption>
       </figure>
     </section>
+        <div className="mb-5 mt-3 flex flex-wrap gap-2.5">
+          <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">{tr("earnhome.addAProductOrService")}</Btn>
+          <Btn href="/app/programs" variant="outline" icon="Play" className="max-lg:w-full">{tr("earnhome.watchHowItWorks")}</Btn>
+        </div>
+    </>
   );
 }
 

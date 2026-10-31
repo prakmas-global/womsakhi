@@ -16,6 +16,7 @@ import { CourseQA } from "@/components/ux/learning/CourseQA";
 import { apiCompleteLesson } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 import { useT } from "@/i18n";
+import { ReadingRoom } from "@/components/ux/learning/ReadingRoom";
 
 /**
  * A YouTube link, as an embed that loads only when she presses play.
@@ -212,7 +213,7 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
           </div>
           {lesson.detail && <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{lesson.detail}</p>}
 
-          {paragraphs.length > 0 && (
+          {lesson.content_type && lesson.content_type !== "lesson" ? <ReadingRoom key={`${lesson.id??`${id}-${num}`}-${lesson.revision??""}`} courseId={id} lessonNumber={num} lesson={lesson} canSave={!owner&&!previewing}/> : paragraphs.length > 0 && (
             <div className="mt-4 space-y-3.5 text-smd leading-relaxed lg:text-sm" style={{ color: "var(--ux-ink-2)" }}>
               {paragraphs.map((p, i) => <p key={i} className="whitespace-pre-line">{p}</p>)}
             </div>

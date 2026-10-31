@@ -1,6 +1,7 @@
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from datetime import date
+from pydantic import BaseModel, Field, field_validator
 
 
 # --- events ------------------------------------------------------------------
@@ -88,6 +89,14 @@ class MentorshipRequestResponse(BaseModel):
 
 # --- opportunities -----------------------------------------------------------
 
+class BulkOrderDetails(BaseModel):
+    quantity: int = Field(ge=1, le=1_000_000)
+    unit: str = Field(min_length=1, max_length=30)
+    delivery_date: date
+    materials: str = Field(min_length=3, max_length=300)
+    payment_terms: str = Field(min_length=3, max_length=500)
+
+
 class OpportunityResponse(BaseModel):
     id: str
     title: str
@@ -95,6 +104,9 @@ class OpportunityResponse(BaseModel):
     kind: str
     desc: str
     location: str
+    city: str = ""
+    area: str = ""
+    order_details: Optional[BulkOrderDetails] = None
     mode: str
     pay: str
     #: The numbers inside `pay`, in paise, so the board can be filtered and

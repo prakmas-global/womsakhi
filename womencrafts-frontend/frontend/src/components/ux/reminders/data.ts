@@ -28,6 +28,18 @@ export interface ReminderPreset {
   suggest: string;
 }
 
+export type Repeat = "once" | "everyDay" | "someDays" | "interval";
+export interface DraftReminder {
+  preset: ReminderPreset | null;
+  repeat: Repeat;
+  time: string;
+  days: number[];
+  intervalMinutes?: number;
+  endTime?: string;
+}
+
+export const INTERVALS = [15, 30, 60, 120, 180, 240];
+
 export const PRESETS: ReminderPreset[] = [
   { key: "rem.preset.tablet",   icon: "Pill",          tint: "--ux-tint-green",  ink: "--ux-green-ink",  suggest: "20:00" },
   { key: "rem.preset.stretch",  icon: "Activity",      tint: "--ux-tint-blue",   ink: "--ux-blue-ink",   suggest: "07:00" },

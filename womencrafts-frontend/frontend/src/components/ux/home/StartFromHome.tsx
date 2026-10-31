@@ -49,11 +49,11 @@ export function StartFromHome() {
       <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Choose your goal">
         {CHOICES.map((item) => <button key={item.id} type="button" aria-pressed={item.id === goal} onClick={() => chooseGoal(item.id)}
           className="ux-press inline-flex min-h-11 items-center gap-2 rounded-full border px-3.5 text-xs font-bold"
-          style={{ background: item.id === goal ? "var(--ux-brand)" : "var(--ux-surface-2)", color: item.id === goal ? "var(--ux-on-brand)" : "var(--ux-ink-2)", borderColor: item.id === goal ? "var(--ux-brand)" : "var(--ux-line)" }}><I name={item.icon} className="h-4 w-4" />{item.label}</button>)}
+          style={{ background: item.id === goal ? "var(--ux-fill)" : "var(--ux-surface-2)", color: item.id === goal ? "var(--ux-on-brand)" : "var(--ux-ink-2)", borderColor: item.id === goal ? "var(--ux-brand)" : "var(--ux-line)" }}><I name={item.icon} className="h-4 w-4" />{item.label}</button>)}
       </div>
       <p aria-live="polite" className="mt-3 text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>{current.note}</p>
       <Link href={current.href} data-journey-next className="ux-press mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold"
-        style={{ background: "var(--ux-brand)", color: "var(--ux-on-brand)" }}>{current.action}<I name="ArrowRight" className="h-4 w-4" /></Link>
+        style={{ background: "var(--ux-fill)", color: "var(--ux-on-brand)" }}>{current.action}<I name="ArrowRight" className="h-4 w-4" /></Link>
       {journey && <details className="mt-3"><summary className="min-h-11 cursor-pointer py-3 text-xs font-semibold" style={{ color: "var(--ux-ink-2)" }}>See my three steps</summary><ol className="grid gap-2 sm:grid-cols-3" aria-label={`${journey.title} steps`}>
         {journey.steps.map((step, index) => <li key={step.id}>
           <Link href={step.href} className="ux-press flex h-full items-start gap-2.5 rounded-xl border p-3" style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface-2)" }}>

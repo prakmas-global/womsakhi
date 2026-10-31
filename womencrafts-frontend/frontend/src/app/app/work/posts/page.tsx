@@ -235,7 +235,7 @@ export default function MyJobPostsPage() {
   if (status === 403) {
     return (
       <HomeShell>
-        <ScreenHead title="My job posts" />
+        <ScreenHead title="My work & order posts" />
         <Card><p className="text-sm" style={{ color: "var(--ux-muted)" }}>
           Posting jobs opens once your account is verified.
         </p></Card>
@@ -270,16 +270,16 @@ export default function MyJobPostsPage() {
 
   return (
     <HomeShell>
-      <ScreenHead title="My job posts"
-                  sub={posts.data.length ? `${open} open · up to 5 at a time. Women whose skills match were told about each one.`
+      <ScreenHead title="My work & order posts"
+                  sub={posts.data.length ? `${open} open · up to 5 at a time. Manage your job and big-order applicants here.`
                     : "Post work, and the women whose skills match are told about it."}>
-        <Btn href="/app/work/post" variant="primary" icon="Plus">Post a job</Btn>
+        <div className="flex flex-wrap gap-2"><Btn href="/app/work/post" variant="primary" icon="Plus">Post a job</Btn><Btn href="/app/work/post?kind=Craft%20order" variant="outline" icon="Package">Post a big order</Btn></div>
       </ScreenHead>
 
       {posts.source === "error" && (
         <Card className="mb-[16px]">
           <div className="flex items-center gap-3">
-            <p className="flex-1 text-sm" style={{ color: "var(--ux-muted)" }}>Your job posts could not be loaded.</p>
+            <p className="flex-1 text-sm" style={{ color: "var(--ux-muted)" }}>Your posts could not be loaded.</p>
             <Btn size="sm" variant="outline" onClick={posts.refetch}>Try again</Btn>
           </div>
         </Card>

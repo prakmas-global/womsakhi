@@ -19,12 +19,12 @@ Start with the [module and feature guide](MODULES_AND_FEATURES.md) for product b
 
 | Area | Page files |
 | --- | ---: |
-| Member | 200 |
+| Member | 201 |
 | Staff | 69 |
 | Authentication, public and other | 20 |
-| Total | 289 |
+| Total | 290 |
 
-Registered router objects: **109**. HTTP operations on those routers: **1006**.
+Registered router objects: **109**. HTTP operations on those routers: **1008**.
 
 ## Member pages
 
@@ -116,6 +116,7 @@ Registered router objects: **109**. HTTP operations on those routers: **1006**.
 | `/app/health/pregnancy` | [womencrafts-frontend/frontend/src/app/app/health/pregnancy/page.tsx](<../womencrafts-frontend/frontend/src/app/app/health/pregnancy/page.tsx>) |  |
 | `/app/health/records` | [womencrafts-frontend/frontend/src/app/app/health/records/page.tsx](<../womencrafts-frontend/frontend/src/app/app/health/records/page.tsx>) |  |
 | `/app/health/reminders` | [womencrafts-frontend/frontend/src/app/app/health/reminders/page.tsx](<../womencrafts-frontend/frontend/src/app/app/health/reminders/page.tsx>) |  |
+| `/app/health/reminders/water` | [womencrafts-frontend/frontend/src/app/app/health/reminders/water/page.tsx](<../womencrafts-frontend/frontend/src/app/app/health/reminders/water/page.tsx>) | Water reminders |
 | `/app/health/sleep` | [womencrafts-frontend/frontend/src/app/app/health/sleep/page.tsx](<../womencrafts-frontend/frontend/src/app/app/health/sleep/page.tsx>) |  |
 | `/app/health/strength` | [womencrafts-frontend/frontend/src/app/app/health/strength/page.tsx](<../womencrafts-frontend/frontend/src/app/app/health/strength/page.tsx>) |  |
 | `/app/health/today` | [womencrafts-frontend/frontend/src/app/app/health/today/page.tsx](<../womencrafts-frontend/frontend/src/app/app/health/today/page.tsx>) |  |
@@ -378,7 +379,7 @@ Source: [main.py](../womencrafts-backend/backend/main.py). Inspect endpoint depe
 | `/api/v1/courses` | `course_qa_router` | 6 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/course_qa.py](<../womencrafts-backend/backend/app/routes/course_qa.py>) |
 | `/api/v1/dashboard` | `dashboard_router` | 10 | `dashboard` | [womencrafts-backend/backend/app/routes/dashboard.py](<../womencrafts-backend/backend/app/routes/dashboard.py>) |
 | `/api/v1/doctors` | `doctors_router` | 9 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/doctors.py](<../womencrafts-backend/backend/app/routes/doctors.py>) |
-| `/api/v1/engines` | `engines_router` | 33 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/engines.py](<../womencrafts-backend/backend/app/routes/engines.py>) |
+| `/api/v1/engines` | `engines_router` | 35 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/engines.py](<../womencrafts-backend/backend/app/routes/engines.py>) |
 | `/api/v1/exchange` | `exchange_router` | 7 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/exchange.py](<../womencrafts-backend/backend/app/routes/exchange.py>) |
 | `/api/v1/feedback` | `feedback_router` | 13 | `feedback` | [womencrafts-backend/backend/app/routes/feedback.py](<../womencrafts-backend/backend/app/routes/feedback.py>) |
 | `/api/v1/group-buy` | `group_buy_router` | 5 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/group_buy.py](<../womencrafts-backend/backend/app/routes/group_buy.py>) |
@@ -407,7 +408,7 @@ Source: [main.py](../womencrafts-backend/backend/main.py). Inspect endpoint depe
 | `/api/v1/me/khata` | `khata_router` | 26 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/khata.py](<../womencrafts-backend/backend/app/routes/khata.py>) |
 | `/api/v1/me/kitchen` | `kitchen_router` | 4 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/kitchen.py](<../womencrafts-backend/backend/app/routes/kitchen.py>) |
 | `/api/v1/me/money` | `money_router` | 7 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/money.py](<../womencrafts-backend/backend/app/routes/money.py>) |
-| `/api/v1/me/payout` | `payout_router` | 5 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/payout.py](<../womencrafts-backend/backend/app/routes/payout.py>) |
+| `/api/v1/me/payout` | `payout_router` | 7 | Active member; includes account-wide receiving UPI GET/PUT | [womencrafts-backend/backend/app/routes/payout.py](<../womencrafts-backend/backend/app/routes/payout.py>) |
 | `/api/v1/me/portfolio` | `portfolio_router` | 6 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/portfolio.py](<../womencrafts-backend/backend/app/routes/portfolio.py>) |
 | `/api/v1/me/school` | `school_router` | 7 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/school.py](<../womencrafts-backend/backend/app/routes/school.py>) |
 | `/api/v1/me/standing` | `standing_router` | 1 | Endpoint-specific; inspect source | [womencrafts-backend/backend/app/routes/standing.py](<../womencrafts-backend/backend/app/routes/standing.py>) |

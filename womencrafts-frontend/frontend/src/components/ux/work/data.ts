@@ -8,12 +8,15 @@
  * it and a "₹6 – 9 LPA" label cannot be sorted.
  */
 
+import type { BulkOrderDetails } from "@/lib/growth-api";
+
 const A = (n: string) => `/ux/art/${n}.webp`;
 
 export type WorkKind = "Job" | "Freelance" | "Order" | "Internship";
 export type WorkMode = "Remote" | "Hybrid" | "On-site";
 
 export type Job = {
+  orderDetails?: BulkOrderDetails | null;
   id: string;
   title: string;
   org: string;

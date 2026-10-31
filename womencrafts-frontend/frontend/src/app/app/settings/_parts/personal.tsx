@@ -36,7 +36,7 @@ export function PrimaryButton({ children, onClick, disabled, busy, icon }: {
   return (
     <button type="button" onClick={onClick} disabled={disabled || busy} aria-busy={busy || undefined}
             className={`${base} ux-btn-g`}
-            style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+            style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
       {busy ? <Icons.Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />
             : Ico ? <Ico className="h-4 w-4" aria-hidden /> : null}
       {children}

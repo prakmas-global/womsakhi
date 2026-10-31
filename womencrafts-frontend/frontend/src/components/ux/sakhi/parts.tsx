@@ -202,7 +202,7 @@ export function Composer({
           {(
             <button type="button" onClick={onSend} disabled={busy || (!value.trim() && !file)} aria-label="Send"
                     className="ux-press grid h-[38px] w-[38px] place-items-center rounded-[12px] disabled:opacity-40"
-                    style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                    style={{ background: "var(--ux-action-gradient)",
                              color: "var(--ux-on-brand)" }}>
               <Icons.Send className="h-[17px] w-[17px]" />
             </button>
@@ -399,7 +399,7 @@ export function DraftCard({
       <div className="flex flex-wrap gap-2 p-3.5">
         <button type="button" onClick={onApprove} disabled={busy}
                 className="ux-press flex min-h-[40px] items-center justify-center gap-2 rounded-[12px] px-4 text-xsm font-bold disabled:opacity-50"
-                style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
           <Icons.Check className="h-4 w-4" /> {tr("booksProof.sendIt")}
         </button>
         <button type="button" onClick={onChange} disabled={busy}
@@ -529,7 +529,7 @@ export function ModeSwitch({
             onClick={() => onPick(it.v)}
             className="ux-press flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
             style={active
-              ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+              ? { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }
               : { color: "var(--ux-muted)" }}
           >
             <Ico name={it.icon} className="h-[14px] w-[14px]" />

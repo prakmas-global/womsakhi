@@ -1,0 +1,14 @@
+{
+  "batch": "calendar-demo-v1",
+  "from": "2026-10-25",
+  "through": "2026-11-07",
+  "members": 3,
+  "activities_per_member": 18,
+  "inserted": {
+    "services": 1,
+    "events": 12,
+    "event_registrations": 36,
+    "bookings": 18
+  },
+  "note": "[DEMO] Calendar practice only. No real appointment, payment or live meeting."
+}

@@ -156,7 +156,7 @@ export function Welcome({
                        lg:mt-4 lg:text-[clamp(1.3125rem,2.8vw,1.875rem)]"
             style={{ color: "var(--ux-ink)" }}>
           {greeting}, {first || "friend"}.<br />
-          <span style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+          <span style={{ background: "var(--ux-action-gradient)",
                          WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>{tr("sakhi.whatDoYouNeedToday")}</span>
         </h2>
         <p className="mt-2 text-center text-[15px] leading-snug lg:text-sm" style={{ color: "var(--ux-muted)" }}>
@@ -275,7 +275,7 @@ export function Voice({
                   className="ux-press flex min-h-[44px] items-center gap-2 rounded-full px-5 text-xsm font-bold"
                   style={listening
                     ? { background: "var(--ux-tint-pink)", color: "var(--ux-pink-ink)", border: "1px solid var(--ux-pink)" }
-                    : { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                    : { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
             <Ico name={listening ? "MicOff" : "Mic"} className="h-4 w-4" />
             {listening ? "Stop listening" : "Speak"}
           </button>
@@ -321,7 +321,7 @@ export function Thread({
           return (
             <li key={i} className="flex justify-end">
               <div className="max-w-[80%] px-3.5 py-2.5 text-[15px] leading-[1.45] lg:max-w-[76%] lg:px-4 lg:py-3 lg:text-sm"
-                   style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                   style={{ background: "var(--ux-action-gradient)",
                             color: "var(--ux-on-brand)", borderRadius: bubbleRadius("out", true) }}>
                 <Says who="You" />
                 {b.file && (

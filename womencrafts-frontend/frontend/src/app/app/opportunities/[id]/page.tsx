@@ -277,7 +277,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
                 style={{ background: "linear-gradient(180deg, rgba(16,6,24,.15), rgba(16,6,24,0) 40%, rgba(16,6,24,.5))" }} />
           <span className="absolute start-4 top-4 rounded-full px-3 py-1 text-xs font-bold shadow-sm"
                 style={{ background: "rgba(255,255,255,.92)", color: "#2a1a24" }}>
-            {job.kind === "Order" ? "Order to make" : job.kind}
+            {job.kind === "Order" ? "Big order" : job.kind}
           </span>
           <span className="absolute end-4 top-4 rounded-full px-3 py-1 text-xs font-bold shadow-sm"
                 style={{ background: "rgba(24,10,34,.8)", color: "#fff" }}>{payLabel(job)}</span>
@@ -349,6 +349,11 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
         <Block icon="ClipboardList" title={tr("jobdetail.keyDetails")} tint="--ux-tint-blue" ink="--ux-blue-ink">
           <KeyDetails job={job} />
+          {job.orderDetails && <dl className="mt-4 grid gap-3 border-t pt-4 text-sm" style={{borderColor:v("--ux-line")}}>
+            <div><dt className="font-bold">Quantity & delivery</dt><dd>{job.orderDetails.quantity.toLocaleString("en-IN")} {job.orderDetails.unit} · by {new Date(`${job.orderDetails.delivery_date}T12:00:00`).toLocaleDateString("en-IN")}</dd></div>
+            <div><dt className="font-bold">Materials</dt><dd>{job.orderDetails.materials}</dd></div>
+            <div><dt className="font-bold">Payment terms</dt><dd>{job.orderDetails.payment_terms}</dd></div>
+          </dl>}
         </Block>
 
         <Block icon="UsersRound" title={tr("jobdetail.whoCanApply")} tint="--ux-tint-pink" ink="--ux-pink-ink">

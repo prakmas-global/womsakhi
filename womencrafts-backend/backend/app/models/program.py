@@ -153,7 +153,7 @@ class ProgramModel:
                 "detail": (m or {}).get("detail", ""),
                 "duration": (m or {}).get("duration", ""),
                 # A free preview lesson anyone can open before joining.
-                "preview": bool((m or {}).get("preview")),
+                "preview": not ProgramModel.is_paid(doc) and bool((m or {}).get("preview")),
             }
             for m in (doc.get("curriculum") or [])
         ]
@@ -161,3 +161,17 @@ class ProgramModel:
     @staticmethod
     def is_paid(doc: dict) -> bool:
         return int(doc.get("price_minor") or 0) > 0
+
+    @staticmethod
+    def payment_confirmed(doc: dict, enrollment: Optional[dict]) -> bool:
+        if not ProgramModel.is_paid(doc):
+            return True
+        payment = (enrollment or {}).get("payment") or {}
+        owner = doc.get("owner_id")
+        return bool(owner and payment.get("status") == "paid" and payment.get("confirmed_at")
+                    and payment.get("confirmed_by") == owner)
+
+    @staticmethod
+    def can_learn(doc: dict, enrollment: Optional[dict]) -> bool:
+        return bool(enrollment and enrollment.get("status") in {"active", "completed"}
+                    and ProgramModel.payment_confirmed(doc, enrollment))

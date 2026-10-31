@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ClockTimePicker } from "./ClockTimePicker";
 
 import { Btn } from "@/components/ux/kit";
 import { Text } from "@/components/ux/kit/form";
@@ -109,8 +110,6 @@ export function MealFlow({ open, onClose, onSave, hue = "green", initialType }: 
 
 /* ── sleep ───────────────────────────────────────────────────────────────── */
 
-const BEDS = ["21:30", "22:00", "22:30", "23:00", "23:30", "00:00", "00:30"];
-const WAKES = ["05:00", "05:30", "06:00", "06:30", "07:00", "07:30", "08:00"];
 const QUALITY = [
   { value: "Poor", label: "Poor", art: "Restless" }, { value: "Fair", label: "Fair", art: "Okay" },
   { value: "Good", label: "Good", art: "Good" }, { value: "Great", label: "Great", art: "Restful" },
@@ -124,17 +123,6 @@ const minsBetween = (bed: string, wake: string) => {
   const a = Number(bed.slice(0, 2)) * 60 + Number(bed.slice(3, 5)), b = Number(wake.slice(0, 2)) * 60 + Number(wake.slice(3, 5));
   return (b - a + 1440) % 1440;
 };
-
-function TimeChips({ value, onChange, options, hue, label }: { value: string; onChange: (v: string) => void; options: string[]; hue: Hue; label: string }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Chips label={label} hue={hue} options={options.map((t) => ({ value: t, label: fmtTime(t) }))} value={value} onChange={onChange} />
-      <input type="time" value={value} onChange={(e) => e.target.value && onChange(e.target.value)} aria-label={`${label}, exact time`}
-             className="min-h-[44px] w-fit rounded-[12px] border-[1.5px] px-3 text-sm font-bold"
-             style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }} />
-    </div>
-  );
-}
 
 export function SleepFlow({ open, onClose, onSave, hue = "violet", initial, date: fixedDate }: FlowProps<"sleep"> & {
   initial?: Partial<KindData["sleep"]>; date?: string;
@@ -158,11 +146,12 @@ export function SleepFlow({ open, onClose, onSave, hue = "violet", initial, date
       body: <>
         <Chips label="Which night" hue={hue} value={date} onChange={setDate}
                options={[{ value: today(), label: "Last night" }, { value: addDays(today(), -1), label: "The night before" }]} />
-        <TimeChips label="Bedtime" hue={hue} options={BEDS} value={bed} onChange={setBed} />
+        <ClockTimePicker label="Bedtime" value={bed} onChange={setBed} />
       </> },
     { id: "wake", title: "When did you wake up?", valid: !bad,
       body: <>
-        <TimeChips label="Wake-up time" hue={hue} options={WAKES} value={wake} onChange={setWake} />
+        <ClockTimePicker label="Wake-up time" value={wake} onChange={setWake} />
+        <p className="text-sm" style={{color:"var(--ux-muted)"}}>Wake-up date: {fmtDay(date)}. Bedtime is {bed > wake ? "the previous day" : "the same day"}.</p>
         <p className="rounded-[12px] px-3 py-2 text-sm font-bold"
            style={bad ? { background: "var(--ux-danger-tint)", color: "var(--ux-danger-ink)" } : { background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
           {bad ? "Sleep should be between 1 and 16 hours. Check both times." : `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m of sleep`}
@@ -196,6 +185,7 @@ export function WaterButtons({ totalMl, goalMl, onAdd }: {
           <Btn key={ml} variant="soft" icon="Plus" size="sm" loading={busy === ml} onClick={() => add(ml)}>{ml} ml</Btn>
         ))}
       </div>
+      <Btn variant="outline" icon="Bell" size="sm" href="/app/health/reminders/water">Water reminder every 30 min</Btn>
     </div>
   );
 }

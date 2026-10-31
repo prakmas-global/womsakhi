@@ -8,6 +8,8 @@ import { apiClient } from "./api";
  */
 
 export interface TeachLesson {
+  id?: string;
+  content_type?: "lesson" | "article" | "book";
   title: string;
   detail: string;
   duration: string;

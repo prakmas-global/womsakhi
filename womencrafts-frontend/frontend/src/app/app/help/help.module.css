@@ -115,3 +115,6 @@
   .article:after{background:linear-gradient(90deg,rgba(255,247,247,.93) 0 46%,rgba(255,247,247,.3) 74%,transparent)}
   :global(.dark) .article:after{background:linear-gradient(90deg,color-mix(in srgb,var(--ux-surface) 92%,transparent) 0 46%,color-mix(in srgb,var(--ux-surface) 30%,transparent) 74%,transparent)}
 }
+
+/* Search has its own row below the shared banner at every viewport size. */
+.page .search { position:relative; inset:auto; order:1; }

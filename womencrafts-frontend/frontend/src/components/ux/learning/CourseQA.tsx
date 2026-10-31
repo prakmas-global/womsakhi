@@ -26,7 +26,7 @@ const initials = (name: string) => name.split(/\s+/).map((w) => w[0]).slice(0, 2
 function Avatar({ name, teacher }: { name: string; teacher?: boolean }) {
   return (
     <span className="grid h-[32px] w-[32px] shrink-0 place-items-center rounded-full text-2xs font-bold"
-          style={teacher ? { background: "var(--ux-brand)", color: "var(--ux-on-brand)" } : { background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
+          style={teacher ? { background: "var(--ux-fill)", color: "var(--ux-on-brand)" } : { background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
       {initials(name) || "?"}
     </span>
   );

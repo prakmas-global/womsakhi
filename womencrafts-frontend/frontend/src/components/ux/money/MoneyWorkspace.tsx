@@ -16,7 +16,7 @@ export type MoneyView = (typeof TABS)[number]["id"];
 
 export function MoneyWorkspace({ tab }: { tab: MoneyView }) {
   return <HomeShell active="/app/money">
-    <header className="mb-5">
+    <header className="ux-money-header mb-5">
       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: v("--ux-brand") }}><I name="NotebookPen" className="h-4 w-4" /> Your personal money notebook</p>
       <h1 className="mt-2 text-2xl font-extrabold" style={{ color: v("--ux-ink") }}>My Money</h1>
       <p className="mt-1 max-w-[65ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>Record what you receive and spend. Keep upcoming bills separate until you pay them.</p>
@@ -37,7 +37,7 @@ function MoneyContent({ tab }: { tab: MoneyView }) {
         <Link href="/app/books" className="inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3" style={{ borderColor: v("--ux-line") }}><I name="Users" className="h-4 w-4" /> Customer dues</Link>
       </div><KhataControls />
     </div>
-    <div role="tablist" aria-label="My Money sections" className="mb-4 grid grid-cols-3 gap-2">
+    <div role="tablist" aria-label="My Money sections" className="ux-money-tabs mb-4 grid grid-cols-3 gap-2">
       {TABS.map((item, index) => <button key={item.id} type="button" role="tab" id={`${prefix}-${item.id}`} aria-controls={`${prefix}-panel`} aria-selected={tab === item.id} tabIndex={tab === item.id ? 0 : -1}
         onClick={() => go(item.id)} onKeyDown={(event) => {
           const next = event.key === "ArrowRight" ? (index + 1) % TABS.length : event.key === "ArrowLeft" ? (index + TABS.length - 1) % TABS.length : event.key === "Home" ? 0 : event.key === "End" ? TABS.length - 1 : -1;

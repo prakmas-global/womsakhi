@@ -139,7 +139,7 @@ export default function ReportPersonPage() {
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 <Link href="/app/messages"
                       className="ux-press inline-flex min-h-[46px] items-center gap-2 rounded-full px-5 text-[15px] font-bold lg:text-xsm"
-                      style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                      style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
                   Back to messages
                 </Link>
                 <Link href="/app/safety"
@@ -231,7 +231,7 @@ export default function ReportPersonPage() {
                 </Link>
                 <button type="submit" disabled={!ready} aria-busy={busy} data-report-submit
                         className="ux-press inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-bold disabled:cursor-not-allowed disabled:opacity-50 lg:text-xsm"
-                        style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                        style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
                   {busy ? <Icons.Loader2 className="h-4 w-4 animate-spin" /> : <Icons.Flag className="h-4 w-4" />}
                   {busy ? "Sending…" : "Send report"}
                 </button>

@@ -170,12 +170,12 @@ export function Select({ value, onChange, options, label, placeholder }: {
 }
 
 /** A switch that says what it does, not just on or off. */
-export function Toggle({ on, onChange, label, sub }: {
-  on: boolean; onChange: (b: boolean) => void; label: string; sub?: string;
+export function Toggle({ on, onChange, label, sub, disabled = false }: {
+  on: boolean; onChange: (b: boolean) => void; label: string; sub?: string; disabled?: boolean;
 }) {
   return (
-    <button type="button" role="switch" aria-checked={on} onClick={() => onChange(!on)}
-            className="ux-sq flex w-full items-start gap-3 text-start">
+    <button type="button" role="switch" aria-checked={on} disabled={disabled} onClick={() => { if (!disabled) onChange(!on); }}
+            className="ux-sq flex w-full items-start gap-3 text-start disabled:cursor-default disabled:opacity-60">
       <span className="mt-[2px] flex h-[24px] w-[42px] shrink-0 items-center rounded-full p-[3px] transition-colors"
             style={{ background: v(on ? "--ux-fill" : "--ux-line-strong") }}>
         <span className="h-[18px] w-[18px] rounded-full transition-transform"

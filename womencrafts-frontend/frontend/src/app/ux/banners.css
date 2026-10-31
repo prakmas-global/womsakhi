@@ -1,18 +1,22 @@
-/* One geometry for page banners. Explicit markers keep promotional cards,
-   alerts, profile covers and inner hero content out of this contract. */
+/* Shared geometry for module banners; Home preserves its original composition.
+   Markers exclude promotional cards, alerts, profile covers and inner content. */
 .ux {
-  --ux-banner-height: 360px;
+  --ux-banner-height: 256px;
   --ux-banner-radius: 20px;
-  --ux-banner-photo-height: 112px;
+  --ux-banner-photo-height: 56px;
 }
 
 @media (min-width: 1024px) {
   .ux {
-    --ux-banner-height: 320px;
-    --ux-banner-photo-height: 208px;
+    --ux-banner-height: 224px;
+    --ux-banner-photo-height: 144px;
   }
 
-  .ux #content [data-banner-copy] { padding-block: 24px; }
+  .ux #content [data-banner-copy] { padding-block: 14px; }
+  .ux #content [data-banner]:not([data-banner="home"]) h1 { font-size: clamp(27px, 2.4vw, 34px) !important; line-height: 1.12 !important; }
+  .ux #content [data-banner-copy] > p { margin-block: 0 8px; font-size: 14px; }
+  .ux #content [data-banner-copy] > small { margin-top: 6px; }
+  .ux #content [data-banner-copy] [class*="__heroActions"] { margin-top: 10px; gap: 12px; }
 }
 
 /* Decorations must not create a scroll area. The copy owns overflow when
@@ -42,18 +46,24 @@
   border-color: var(--ux-line);
 }
 
-.ux [data-banner="home"] {
+.ux [data-banner="home"],
+.ux #content [data-banner="home"] {
+  /* The artwork contains lettering: size its frame to the image rather than
+     letterboxing a wide picture inside a fixed-height promotional slot. */
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none;
   display: flex;
   flex-direction: column;
   background: var(--ux-brand-900);
 }
 
 .ux [data-banner="home"] > :first-child {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   min-height: 0;
   width: 100%;
   height: auto;
-  aspect-ratio: auto !important;
+  aspect-ratio: 1900 / 760 !important;
   object-fit: contain;
 }
 
@@ -70,21 +80,21 @@
   .ux #content [data-banner] [data-banner-copy] {
     flex: 1 1 0;
     min-height: 0;
-    padding: 12px 16px !important;
-    gap: 8px;
+    padding: 10px 16px !important;
+    gap: 4px;
   }
 
-  .ux #content [data-banner-copy] h1 {
+  .ux #content [data-banner]:not([data-banner="home"]) h1 {
     width: auto;
     max-width: none;
-    font-size: 28px !important;
+    font-size: 25px !important;
     line-height: 1.08;
-    margin: 0 0 6px;
+    margin: 0 0 4px;
   }
 
   .ux #content [data-banner-copy] > p {
     margin-top: 0;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     font-size: 13px;
     line-height: 1.4;
   }
@@ -104,5 +114,5 @@
     white-space: normal;
   }
 
-  .ux #content [data-banner-copy] > small { margin-top: 8px; }
+  .ux #content [data-banner-copy] > small { margin-top: 4px; }
 }

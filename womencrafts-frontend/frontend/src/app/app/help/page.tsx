@@ -60,10 +60,11 @@ export default function HelpPage(){
     <main className={styles.main}>
       <section data-banner data-page-hero className={styles.hero}>
         <Image src="/ux/help/help-hero-v2.webp" alt={tr("help.fiveWomenSupportingAndListeningTo")} fill priority sizes="(max-width: 900px) 100vw, 70vw" />
-        <div className={styles.heroCopy}><p>Help &amp; support</p><div className="mb-2"><PlaceMark size={44} /></div><h1>You&apos;re not alone,<br/><em>we&apos;re here for you</em></h1><span>{tr("help.getAnswersFindSupportTakeThe")}<br/>{tr("help.togetherWeCanHandleAnything")}</span>
-          <form className={styles.search} onSubmit={e=>e.preventDefault()}><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={tr("help.whatDoYouNeedHelpWith")} aria-label={tr("help.searchHelpTopics")}/><button type="submit">Search</button></form>
+        <div className={styles.heroCopy}><p>Help &amp; support</p><div className="mb-2"><PlaceMark size={44} /></div><h1>You&apos;re not alone</h1><span>{tr("help.getAnswersFindSupportTakeThe")}</span>
+
         </div><p className={styles.heroNote}>{tr("help.realConversations")}<br/>{tr("help.realSupport")}<br/>{tr("help.realChange")}<small>— WomSakhi</small></p>
       </section>
+          <form className={`${styles.search} mb-5`} onSubmit={e=>e.preventDefault()}><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={tr("help.whatDoYouNeedHelpWith")} aria-label={tr("help.searchHelpTopics")}/><button type="submit">Search</button></form>
 
       <section className={styles.topics}><header><div><h2>{tr("help.browseHelpTopics")}</h2><p>{tr("help.findGuidanceToolsAndSupportFor")}</p></div>{query?<button onClick={()=>setQuery("")}>{tr("help.clearSearch")}</button>:<Link href="/app/explore">{tr("calendar.viewAll")} <ArrowRight/></Link>}</header>
         {shown.length?<MediaGrid>{shown.map(([Icon,title,copy,href])=><MediaCard key={title} href={href} image={ART[href] ?? "/ux/art/circle-hands-together.webp"} alt="" ratio="16/10"

@@ -24,6 +24,8 @@ This guide describes features present in the current repository. It does not cer
 
 For every page file and registered backend router, see the [technical inventory](MODULE_TECHNICAL_INVENTORY.md). Older files such as `modules.md` and `backend-wiring.md` are historical snapshots; their screen counts and implementation-status statements should not be treated as the current inventory.
 
+The default application palette is grape wine (`#742a4f`), muted grape (`#6f35a5`), warm cream and soft rose, with plum surfaces in dark mode. Shared theme tokens cover member screens, staff screens and sign-in accents. Saved WomSakhi-default choices resolve to the current palette; separately chosen custom themes remain available. Banner and logo image files are unchanged. White-text action gradients preserve the chosen hue while darkening fills toward a 7:1 contrast target. Shared primary/secondary controls choose white or dark text from the final background colour, including hover and dark mode; decorative ribbons retain their original lighter colours.
+
 ## 1. Product overview and access
 
 WomSakhi combines learning, work, small-business tools, community and wellbeing for women. A member can begin with existing skills, choose activities that fit her time, and maintain her own records. Earning is one possible journey; participation does not require running a business.
@@ -51,10 +53,10 @@ Authentication supports code-based email sign-in and registration, session refre
 | Start from home | Section on Home | Three choices: Learn a skill, Sell something, Work from home; one prominent action resumes from saved records, with an expandable three-step guide |
 | Discovery | `/app/discover`, `/app/explore`, `/app/search` | Recommendations, grouped exploration and search across supported content |
 | Journey and goals | `/app/journey`, `/app/goals`, `/app/progress` | View progress and maintain goals; financial progress comes from records rather than arbitrary manual figures |
-| Calendar and bookings | `/app/schedule`, `/app/bookings`, `/app/bookings/[id]` | Review classes, events and booked sessions; inspect and cancel supported bookings |
+| Calendar and bookings | `/app/schedule`, `/app/bookings`, `/app/bookings/[id]` | Day, week, month and agenda views of booked sessions and joined events; category filters, booking details/cancellation, reminders tab and focus timer |
 | Saved items | `/app/saved` | Return to saved opportunities/content supported by each module |
 | Notifications | `/app/notifications` | Review notifications and mark them read |
-| Reminders | `/app/reminders` | Create and manage personal reminders through the reminder engine |
+| Reminders | `/app/reminders` | One-off, daily, selected-day and interval reminders; preview upcoming dates, edit, pause/resume, snooze, complete, skip or stop |
 | Ask Sakhi | `/app/sakhi` | Conversational assistance, subject to the configured AI service |
 
 **Main flow:** sign in → see Home → choose a goal or activity → open the relevant module → return to journey, applications, orders or bookings to track it.
@@ -67,7 +69,7 @@ The home aggregation API is `GET /api/v1/me/home`; `GET /api/v1/me/journeys` der
 
 | Module | Pages | Main features |
 | --- | --- | --- |
-| Courses | `/app/programs` and nested pages | Browse courses, inspect lessons and fees, enrol, open lessons, record completion and view progress |
+| Courses | `/app/programs` and nested pages | Browse courses, inspect lessons and fees, enrol, read article/book lessons with saved-page resume, record completion and view progress |
 | Mentors | `/app/mentors` and detail pages | Browse mentor profiles and request a session; requests remain subject to acceptance |
 | Skill exchange | `/app/library` and detail/thread pages | Offer a skill, find an exchange and communicate through an exchange thread |
 | Assessments | `/app/assess` | Read an assessment, submit answers and review supported skill outcomes |
@@ -78,6 +80,10 @@ The home aggregation API is `GET /api/v1/me/home`; `GET /api/v1/me/journeys` der
 | Service activation | `/app/services` | View and manage the member's selling, teaching and mentoring service presence |
 
 **Student flow:** Learn → course details → enrolment/payment step if applicable → lessons → recorded progress → certificate when requirements allow.
+
+**Article and book reading:** Teachers choose Lesson/video, Article or Book for each course lesson and paste its text. Articles support up to 50,000 characters in the editor, books up to 200,000; the backend caps total course text at 500,000. Paragraphs use empty lines; standalone chapter headings can start with `#`. These are authored text lessons, not PDF/EPUB uploads. The course exposes an Articles & books section with Read article/Read book links. Authors can use Preview reading pages after pasting text; page layout is generated automatically. Learners get a paginated reading surface, font-size controls, navigation above and below the page, and a reduced-motion-aware page-turn transition. Opening/turning a page saves its starting character offset to the member’s enrollment; the course shows Resume reading on desktop and mobile. Saving errors have a retry action. Reading does not mark a lesson complete.
+
+Bookmarks are private to each learner, follow stable lesson IDs when lessons are reordered, and reset when the text revision changes. Preview readers and teachers do not write learner bookmarks. Paid courses do not expose public lesson previews: text, articles, books, video URLs, bookmarks, lesson completion and course Q&A remain locked until payment has status paid, a confirmation time and confirmation by that course’s owner. Submitting a UPI reference is only a claim. Changing progress or enrollment status cannot bypass payment confirmation. Teachers can preview their own content. Reading position endpoint: `PUT /api/v1/me/programs/{id}/lessons/{n}/reading`.
 
 **Teacher flow:** My services → create a course → add course and lesson information → publish → manage learners. **Mentor flow:** create a mentoring profile → receive a request → accept or decline → coordinate the session → record its outcome.
 
@@ -92,13 +98,17 @@ Backend ownership includes `catalog`, `me`, `skills`, `exchange`, `teach`, `ment
 | Find work | `/app/opportunities`, detail pages | Browse jobs, orders and freelance opportunities; filter by supported work modes and switch between personalised, all and saved views |
 | Work profile | `/app/work/profile` | Maintain skills and work information and control discoverability |
 | Find talent | `/app/work/find` | Search women who opted into being discoverable and start a conversation |
-| Post work | `/app/work/post`, `/app/work/posts` | Create and maintain job posts, view applicants and manage supported application stages |
+| Post work | `/app/work/post`, `/app/work/posts` | Create jobs or big orders, maintain owned posts, view applicants and manage supported application stages |
 | Applications | `/app/applications`, `/app/intake` | Apply to suitable work, provide relevant information and follow application status |
 | Employer information | `/app/verified` | Review available employer/payment information before accepting work |
-| Larger orders | `/app/contracts`, `/app/contracts/together` | Explore larger opportunities and information about working or bidding together |
+| Larger orders | `/app/contracts`, `/app/contracts/together` | Browse bulk product requests by town/area, post quantities with delivery dates/materials/payment terms, apply and manage applicants through the shared Work system |
 | Work evidence | `/app/trust` and portfolio/work-history APIs | Present supported work history and records; evidence depends on recorded activity |
 
 **From-home flow:** Home → Work from home → browse opportunities → work board opens at `/app/opportunities?where=Remote&view=all` → review pay, time and skills → apply → track the application. URL filters are validated and applied to the first work-list request.
+
+**Big-order flow:** Big orders → Post a big order (`/app/work/post?kind=Craft%20order`) → choose skills and makers needed → enter town/area, product quantity/unit, delivery date, materials and payment terms → post → review responses in My work & order posts. Quantity means products to deliver; openings means makers needed. The board starts with the member’s work-profile town and optionally filters by area. Matching notifications for structured big orders are limited to skill-matching, opted-in work profiles in that town. This is place-name matching, not GPS-radius search. Older listings with only a display location can match whole town/area names there. Unknown locations do not appear in a local search.
+
+Jobs hire a person for a role or task; big orders request a batch of products. Both use the same owned posts and application stages. Applying does not automatically allocate pieces, accept a delivery, confirm earnings or transfer money; buyers and makers agree shares and terms before work begins. Shop → Big orders (`/app/shop/wholesale`) is a separate private enquiry/quotation notebook, not this public maker-request board.
 
 **Hiring flow:** post a job → applicants respond → review applicants → communicate → update the application stage → record completion where supported. A conversation includes consent-related actions such as sharing a number or indicating no interest.
 
@@ -154,6 +164,8 @@ These tools serve different purposes. A wallet ledger, a handwritten money recor
 
 **Business records:** customer dues remain in Business books. Legacy wallet records and locker moves are separate; promised customer payments and old credit amounts are not added to the personal notebook summary. Current UPI payment activity lives in My Payments.
 
+**Account-wide receiving UPI:** Settings → How you get paid (`/app/settings/payments`) stores one receiving UPI per member. The same editor appears in paid-course forms, mentoring and Collect payment; My Payments links to it. Saving in any of these places updates the account-wide setting. New/unsubmitted course and mentoring payment instructions resolve the recipient’s current account UPI. Submitted claims retain their destination snapshot; references, confirmations and completed payments are preserved. Existing module-specific IDs remain fallbacks until the owner sets an account UPI; Settings offers valid older IDs as explicit choices without guessing between them. A stale course/mentor form cannot overwrite the account default. This is direct UPI receiving information, not a gateway, transfer or wallet payout.
+
 **Current payment flow:** request a paid course or accepted mentoring session → pay its provider externally using the displayed UPI ID → submit the transaction reference from the UPI app → show Awaiting confirmation → recipient checks their account and confirms receipt. A submitted reference never marks itself paid. Free courses open without payment. My Payments brings these existing records together; it does not create wallet credit, a bank balance or a second transaction ledger. Gateway order creation, confirmation and webhook processing are disabled when `DIRECT_UPI_ONLY=true` (the release default). See [Direct UPI payments](DIRECT_UPI_PAYMENTS.md).
 
 **Withdrawal boundary:** bank payouts are deferred for this release. `POST /api/v1/me/payout/withdraw` returns HTTP 501 before account reads, idempotency replay or ledger writes. No credit is deducted and no transfer is initiated. Existing historical credit records and saved payout details remain unchanged.
@@ -193,13 +205,14 @@ Backend ownership includes `social`, `circle_chat`, `community`, `me_messages`, 
 | Fitness | `/app/health/fitness` | Activity-related tracking/content and access to workout guidance |
 | Workouts | `/app/health/workouts` | At-home movement content |
 | Nutrition & diet | `/app/health/nutrition` | Food/diet-related content and personal entries |
-| Sleep | `/app/health/sleep` | Sleep/rest-related entries and supporting content |
+| Sleep | `/app/health/sleep` | Sleep logs with an AM/PM clock, any-hour and exact-minute selection, overnight duration, wake-up date, history, bedtime routines and supporting content |
 | Mental wellness | `/app/health/mind`, `/app/health/today` | Mood/wellbeing check-ins and supportive activities |
 | Games & stress relief | `/app/health/games` | Breathing, bubbles, garden, numbers, pairs, puzzle and rangoli pages |
 | Fertility | `/app/health/fertility` | Cycle-related information and access to cycle tracking |
 | Cycle tracker | `/app/health/cycle` and nested pages | Setup, period/daily logs, symptoms, mood, reminders, personal patterns, guides, medicines, settings and report pages |
 | Pregnancy | `/app/health/pregnancy` | Pregnancy-related information and personal tracking surfaces |
 | Health records | `/app/health/records` | Personal record entries and private health-file upload/read/delete support |
+| Water reminders | `/app/health/reminders/water` | Manage drinking-water reminders in Health: intervals, daily hours, selected days, preview, edit, pause/resume and occurrence actions |
 | Appointments & reminders | `/app/health/reminders` | Record and manage supported health reminders/appointments |
 | Mentor connect | `/app/health/mentors` | Find relevant peer/mentor support |
 | Doctor consultation | `/app/health/doctors` | Browse doctors and slots, request a booking, view own consultations, cancel/reschedule and manage supported notes/sharing |

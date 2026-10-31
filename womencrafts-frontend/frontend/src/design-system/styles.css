@@ -104,23 +104,25 @@
 
 .btn-primary {
   background-color: var(--color-brand-600);
-  color: var(--ws-on-brand);
+  color: var(--color-brand-600-contrast, #ffffff);
   box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--color-brand-600) 55%, transparent);
 }
 
 /* Brand fills lighten in dark mode; their foreground must change with them. */
-.bg-brand-600.text-white { color: var(--ws-on-brand); }
+.bg-brand-600.text-white { color: var(--color-brand-600-contrast, #ffffff); }
 .btn-primary:hover {
   background-color: var(--color-brand-700);
+  color: var(--color-brand-700-contrast, #ffffff);
 }
 
 .btn-secondary {
   background-color: var(--color-violet-600);
-  color: #fff;
+  color: var(--color-violet-600-contrast, #ffffff);
   box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--color-violet-600) 50%, transparent);
 }
 .btn-secondary:hover {
   background-color: var(--color-violet-700);
+  color: var(--color-violet-700-contrast, #ffffff);
 }
 
 .btn-outline {

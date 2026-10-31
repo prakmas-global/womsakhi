@@ -404,6 +404,9 @@ class OpportunityModel:
             "kind": doc.get("kind", ""),
             "desc": doc.get("desc", ""),
             "location": doc.get("location", ""),
+            "city": doc.get("city", ""),
+            "area": doc.get("area", ""),
+            "order_details": doc.get("order_details"),
             "mode": doc.get("mode", ""),
             "pay": doc.get("pay", ""),
             # Read from the document, not re-parsed here: a document written

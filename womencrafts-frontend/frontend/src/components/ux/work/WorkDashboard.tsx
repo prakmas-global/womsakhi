@@ -5,7 +5,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { TransitionLink } from "@/components/ux/TransitionLink";
-import { I } from "@/components/ux/kit";
+import { I, v } from "@/components/ux/kit";
 import { artFor } from "@/components/ux/media/art";
 import { PlaceBadge } from "@/components/ux/nav/Place";
 import { allNodes, type NavNode } from "@/components/ux/nav-tree";
@@ -168,17 +168,19 @@ export function WorkDashboard() {
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("workDashboard.whatWorkAreYouLookingFor")} aria-label="Search work" />
               <button type="submit">Search</button>
             </form>
+          </div>
+        </section>
+        <div data-banner-details>
             {p && (
-              <TransitionLink href="/app/work/profile" className={styles.heroStatus}>
-                <I name={p.shown_for ? "Eye" : "EyeOff"} />
+              <TransitionLink href="/app/work/profile" className="inline-flex items-center gap-2 text-xs font-semibold" style={{ color: v("--ux-brand") }}>
+                <I name={p.shown_for ? "Eye" : "EyeOff"} className="h-4 w-4 shrink-0" />
                 {p.shown_for
                   ? `People hiring can find you for ${p.shown_for} ${p.shown_for === 1 ? "skill" : "skills"}`
                   : "People hiring cannot find you yet — switch on a skill"}
-                <I name="ChevronRight" />
+                <I name="ChevronRight" className="h-4 w-4 shrink-0" />
               </TransitionLink>
             )}
-          </div>
-        </section>
+        </div>
 
         {/* 2 · Right now */}
         <section className={styles.panel} aria-labelledby="work-now">

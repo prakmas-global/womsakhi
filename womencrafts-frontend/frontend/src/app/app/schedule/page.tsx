@@ -7,8 +7,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {HomeShell} from "@/components/ux/home/HomeShell";
 import {I} from "@/components/ux/kit";
 import s from "./schedule.module.css";
+import { CalendarMonth, localDate, localISO } from "./date-views";
 import { useResource } from "@/lib/use-resource";
-import { apiWeek, type Cat, type Week, type WeekItem } from "@/lib/week-api";
+import { apiWeek, type Cat, type Week } from "@/lib/week-api";
 import { apiMyBookings, type Booking } from "@/lib/member-api";
 import { apiListReminders, type Reminder } from "@/lib/engines-api";
 
@@ -54,67 +55,71 @@ const EMPTY_WEEK: Week = { start: "", days: [], items: [], count: 0, untimed: 0 
 export default function Schedule(){
   const tr = useT();
   const [view,setView]=useState("week");
+  const [anchor,setAnchor]=useState(()=>localISO());
+  const [selectedDate,setSelectedDate]=useState(()=>localISO());
   const [module,setModule]=useState<Module>("calendar");
   const [off,setOff]=useState<Cat[]>([]);
   const [add,setAdd]=useState(false);
-  /** Which week, as an offset from this one. 0 is the week containing today. */
-  const [weekOff,setWeekOff]=useState(0);
   const [focusFor,setFocusFor]=useState<number|null>(null);
-
-  const startISO = useMemo(()=>{
-    const d = new Date();
-    d.setDate(d.getDate() + weekOff * 7);
-    return d.toISOString().slice(0,10);
-  },[weekOff]);
+  const [focusEnds,setFocusEnds]=useState<number|null>(null);
+  const navigate = (direction:number) => {
+    const date=localDate(view==="day"?selectedDate:anchor);
+    if(view==="month") {date.setDate(1);date.setMonth(date.getMonth()+direction);}
+    else date.setDate(date.getDate()+direction*(view==="day"?1:7));
+    const iso=localISO(date);setAnchor(iso);setSelectedDate(iso);
+  };
+  const goToday = () => {const iso=localISO();setAnchor(iso);setSelectedDate(iso);};
 
   const week = useResource<Week>(
-    useCallback((sig)=>apiWeek(startISO,sig),[startISO]),
+    useCallback((sig)=>apiWeek(anchor,sig,view==="month"?"month":"week"),[anchor,view]),
     EMPTY_WEEK,
   );
   const bookings = useResource<Booking[]>(
-    useCallback(()=>apiMyBookings("upcoming").catch(()=>[]),[]),
+    useCallback(()=>apiMyBookings("upcoming"),[]),
     [],
   );
   const reminders = useResource<Reminder[]>(
-    useCallback(()=>apiListReminders().catch(()=>[]),[]),
+    useCallback(()=>apiListReminders(),[]),
     [],
   );
 
   const days = week.data.days;
   // The day she is looking at. Defaults to today when today is in this week,
   // and to the first day when it is not — never to a fixed index.
-  const todayIdx = Math.max(0, days.findIndex(d=>d.today));
-  const [picked,setPicked]=useState<number|null>(null);
-  const selected = picked ?? todayIdx;
+  const selected = Math.max(0, days.findIndex(day=>day.date===selectedDate));
+  const displayDays = view==="day" ? days.filter(day=>day.date===days[selected]?.date) : days;
 
   const shown=useMemo(()=>week.data.items.filter(e=>!off.includes(e.category)),[off,week.data.items]);
   const onSelected=shown.filter(e=>e.date===days[selected]?.date);
-  const timed=shown.filter(e=>e.hour!==null);
-  const untimed=shown.filter(e=>e.hour===null);
+  const currentItems=view==="day"?onSelected:shown;
+  const timed=currentItems.filter(e=>e.hour!==null&&e.hour>=6&&e.hour<22);
+  const untimed=currentItems.filter(e=>e.hour===null||e.hour<6||e.hour>=22);
   const toggle=(c:Cat)=>setOff(x=>x.includes(c)?x.filter(v=>v!==c):[...x,c]);
 
   const monthLabel = useMemo(()=>{
+    if(view==="day") return localDate(selectedDate).toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+    if(view==="month") return localDate(anchor).toLocaleDateString("en-IN",{month:"long",year:"numeric"});
     if(!days.length) return "";
-    const first=new Date(days[0].date), last=new Date(days[6].date);
+    const first=localDate(days[0].date), last=localDate(days[6].date);
     const f=first.toLocaleDateString("en-IN",{month:"long"});
     const l=last.toLocaleDateString("en-IN",{month:"long"});
     // A week can straddle two months, and saying only one of them is wrong.
     return f===l ? `${f} ${first.getFullYear()}` : `${f} – ${l} ${last.getFullYear()}`;
-  },[days]);
+  },[days,anchor,view,selectedDate]);
 
   const selectedLabel = days[selected]
-    ? new Date(days[selected].date).toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short"})
+    ? localDate(days[selected].date).toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short"})
     : "";
 
   const rail=<div className={s.rail}>
     <section className={s.mini}>
       <header><h2>{monthLabel}</h2><div>
-        <button aria-label={tr("schedule.previousMonth")} onClick={()=>{setWeekOff(w=>w-1);setPicked(null);}}><I name="ChevronLeft"/></button>
-        <button aria-label={tr("schedule.nextMonth")} onClick={()=>{setWeekOff(w=>w+1);setPicked(null);}}><I name="ChevronRight"/></button>
+        <button aria-label={`Previous ${view==="month"?"month":view==="day"?"day":"week"}`} onClick={()=>navigate(-1)}><I name="ChevronLeft"/></button>
+        <button aria-label={`Next ${view==="month"?"month":view==="day"?"day":"week"}`} onClick={()=>navigate(1)}><I name="ChevronRight"/></button>
       </div></header>
       <div className={s.miniWeek}>{["S","M","T","W","T","F","S"].map((x,i)=><b key={i}>{x}</b>)}</div>
-      <div className={s.miniDays}>{days.map((d,i)=>
-        <button className={d.today?s.today:""} key={d.date} onClick={()=>setPicked(i)}>{d.day}</button>)}</div>
+      <div className={s.miniDays}>{days.map((d)=>
+        <button className={d.today?s.today:""} key={d.date} onClick={()=>setSelectedDate(d.date)}>{d.day}</button>)}</div>
       <div className={s.todayList}>
         <header><h3>{selectedLabel}</h3><span>{onSelected.length} {onSelected.length===1?"activity":"activities"}</span></header>
         {onSelected.length===0
@@ -137,6 +142,8 @@ export default function Schedule(){
   return <HomeShell active="/app/schedule" rail={rail}><main className={s.page}>
     <section className={s.hero}><Image src="/ux/schedule/calendar-hero-v1.webp" alt={tr("schedule.womanEnjoyingACalmMomentWhile")} fill priority sizes="(max-width: 760px) 100vw, 75vw"/><div className={s.shade}/><div className={s.heroCopy}><p>← Home&nbsp; / &nbsp;<b>{tr("schedule.yourCalendar2")}</b></p><div className="mb-2"><PlaceMark size={44} /></div><h1>Your <em>Calendar</em></h1><span>{tr("schedule.planYourTimeStayConsistentAnd")}</span></div><p className={s.note}>A balanced<br/>{tr("schedule.youBuilds")}<br/>a brighter<br/>tomorrow ♥<small>— WomSakhi</small></p></section>
 
+    <p className={s.dataNote}>Your booked sessions and registered events fill this calendar. Reminders and focus tools have their own tabs. Add or change an activity in the module where it was created.</p>
+    {week.data.items.some(item=>item.title.startsWith("[DEMO]"))&&<p className={s.demoNote} role="note">[DEMO] Sample activities are shown for practice. They are not real appointments or payments.</p>}
     <nav className={s.nav}>{moduleTabs.map(([id,label,icon])=><button className={module===id?s.active:""} aria-pressed={module===id} onClick={()=>{setModule(id);if(id==="agenda")setView("list");if(id==="calendar"&&view==="list")setView("week")}} key={id}><I name={icon}/>{label}</button>)}
       <div className={s.add}><button onClick={()=>setAdd(!add)}><I name="Plus"/> {tr("schedule.addActivity")}</button>{add&&<div>{[["Book a mentor","/app/mentors"],["Join an event","/app/events"],["Start a course","/app/programs"]].map(x=><Link key={x[1]} href={x[1]}>{x[0]}<I name="ArrowRight"/></Link>)}</div>}</div>
     </nav>
@@ -144,23 +151,27 @@ export default function Schedule(){
     {(module==="calendar"||module==="agenda")&&<>
       <section className={s.controls}>
         <div>
-          <button onClick={()=>{setWeekOff(0);setPicked(null);}}>Today</button>
-          <button aria-label={tr("schedule.previousWeek")} onClick={()=>{setWeekOff(w=>w-1);setPicked(null);}}><I name="ChevronLeft"/></button>
-          <button aria-label={tr("schedule.nextWeek")} onClick={()=>{setWeekOff(w=>w+1);setPicked(null);}}><I name="ChevronRight"/></button>
+          <button onClick={goToday}>Today</button>
+          <button aria-label={`Previous ${view==="month"?"month":view==="day"?"day":"week"}`} onClick={()=>navigate(-1)}><I name="ChevronLeft"/></button>
+          <button aria-label={`Next ${view==="month"?"month":view==="day"?"day":"week"}`} onClick={()=>navigate(1)}><I name="ChevronRight"/></button>
           <h2>{monthLabel}</h2>
         </div>
         <div className={s.switch}>{["day","week","month","list"].map(x=><button aria-pressed={view===x} onClick={()=>{setView(x);setModule(x==="list"?"agenda":"calendar")}} key={x}>{x}</button>)}</div>
       </section>
 
-      <div className={s.filters}><button className={!off.length?s.on:""} onClick={()=>setOff([])}>All</button>{cats.map(c=><button data-cat={c[0]} aria-pressed={!off.includes(c[0])} onClick={()=>toggle(c[0])} key={c[0]}><I name={c[2]}/>{c[1]}</button>)}</div>
+      <div className={s.filters}><button className={!off.length?s.on:""} aria-pressed={!off.length} onClick={()=>setOff([])}>All</button>{cats.map(c=><button data-cat={c[0]} aria-pressed={!off.includes(c[0])} onClick={()=>toggle(c[0])} key={c[0]}><I name={c[2]}/>{c[1]}</button>)}</div>
 
-      {view==="week"||view==="day"?<>
-        <section className={s.week}>
+      {week.source==="loading"&&<p role="status" className={s.emptyBody}>Loading your calendar…</p>}
+      {week.source==="error"&&<p role="alert" className={s.emptyBody}>Your calendar could not load. <button type="button" onClick={()=>week.refetch()}>Try again</button></p>}
+      {view==="month" ? <><CalendarMonth anchor={anchor} items={shown} selected={selectedDate} onSelect={date=>{setSelectedDate(date);if(date.slice(0,7)!==anchor.slice(0,7))setAnchor(date);}}/>
+        <section className={s.list}><header><h2>{selectedLabel}</h2><span>{onSelected.length} activities</span></header>{!onSelected.length ? <p className={s.emptyBody}>Nothing on this day.</p> : onSelected.map(e=><Link href={e.href} key={e.id}><i data-cat={e.category}><I name={e.icon}/></i><span><b>{e.title}</b><small>{e.time || "No time set"}</small></span><I name="ChevronRight"/></Link>)}</section>
+      </> : view==="week"||view==="day"?<>
+        <section className={`${s.week} ${view==="day"?s.singleDay:""}`} aria-label={view==="day"?"Day calendar":"Week calendar"}>
           <div className={s.corner}/>
-          {days.map((d,i)=><button className={`${s.dayHead} ${selected===i?s.selected:""}`} onClick={()=>setPicked(i)} key={d.date}><span>{d.label}</span><b>{d.day}</b></button>)}
+          {displayDays.map((d)=><button className={`${s.dayHead} ${selectedDate===d.date?s.selected:""}`} onClick={()=>setSelectedDate(d.date)} key={d.date}><span>{d.label}</span><b>{d.day}</b></button>)}
           <div className={s.times}>{hours.map(x=><span key={x}>{x}</span>)}</div>
-          <div className={s.grid}>{days.map((d,di)=>
-            <div className={`${s.col} ${selected===di?s.selectedCol:""}`} key={d.date}>
+          <div className={s.grid}>{displayDays.map((d)=>
+            <div className={`${s.col} ${selectedDate===d.date?s.selectedCol:""}`} key={d.date}>
               {timed.filter(e=>e.date===d.date).map((e)=>
                 <Link href={e.href} className={s.event} data-cat={e.category}
                       style={{top:Math.max(0,((e.hour as number)-GRID_START)*ROW),height:Math.max(47,e.hours*ROW)}} key={e.id}>
@@ -172,12 +183,12 @@ export default function Schedule(){
         {/* Anything whose time could not be read is listed rather than drawn
             at a guessed hour — and never silently dropped. */}
         {untimed.length>0&&<section className={s.list}>
-          <header><h2>No time set</h2><span>{untimed.length}</span></header>
-          {untimed.map((e)=><Link href={e.href} key={e.id}><i data-cat={e.category}><I name={e.icon}/></i><span><b>{e.title}</b><small>{new Date(e.date).toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})}</small></span><I name="ChevronRight"/></Link>)}
+          <header><h2>Other times / no time set</h2><span>{untimed.length}</span></header>
+          {untimed.map((e)=><Link href={e.href} key={e.id}><i data-cat={e.category}><I name={e.icon}/></i><span><b>{e.title}</b><small>{localDate(e.date).toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})} · {e.time || "No time set"}</small></span><I name="ChevronRight"/></Link>)}
         </section>}
-        {week.source!=="loading"&&shown.length===0&&<section className={s.list}>
-          <header><h2>Nothing this week</h2><span>0</span></header>
-          <p className={s.emptyBody}>Sessions you book and events you join appear here. Nothing is put on your calendar that you did not agree to.</p>
+        {week.source==="live"&&currentItems.length===0&&<section className={s.list}>
+          <header><h2>{view==="day"?"Nothing on this day":"Nothing this week"}</h2><span>0</span></header>
+          <p className={s.emptyBody}>Sessions you book and events you join appear here. Check your category filters if an activity is missing.</p>
           <div className={s.emptyActions}>
             <Link href="/app/mentors">Book a mentor<I name="ArrowRight"/></Link>
             <Link href="/app/events">Join an event<I name="ArrowRight"/></Link>
@@ -188,7 +199,7 @@ export default function Schedule(){
         <header><h2>{view==="month"?monthLabel:"Your agenda"}</h2><span>{shown.length} planned {shown.length===1?"activity":"activities"}</span></header>
         {shown.length===0
           ? <p className={s.emptyBody}>Nothing on this week yet.</p>
-          : shown.map((e)=><Link href={e.href} key={e.id}><i data-cat={e.category}><I name={e.icon}/></i><span><b>{e.title}</b><small>{new Date(e.date).toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})} · {e.time}</small></span><I name="ChevronRight"/></Link>)}
+          : shown.map((e)=><Link href={e.href} key={e.id}><i data-cat={e.category}><I name={e.icon}/></i><span><b>{e.title}</b><small>{localDate(e.date).toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})} · {e.time}</small></span><I name="ChevronRight"/></Link>)}
       </section>}
     </>}
 
@@ -196,7 +207,7 @@ export default function Schedule(){
       <header><div><span><I name="BookOpenCheck"/></span><div><h2>My bookings</h2><p>Your confirmed sessions and upcoming reservations.</p></div></div>
         <Link className={s.panelBtn} href="/app/mentors"><I name="Plus"/> New booking</Link></header>
       <div className={s.moduleCards}>
-        {bookings.data.length===0
+        {bookings.source==="error" ? <p role="alert" className={s.emptyBody}>Bookings could not load. <button onClick={()=>bookings.refetch()}>Try again</button></p> : bookings.source==="loading" ? <p role="status">Loading bookings…</p> : bookings.data.length===0
           ? <p className={s.emptyBody}>You have no sessions booked. When you book one, it shows here and on your calendar.</p>
           : bookings.data.map((b)=>
             <article data-cat={b.with_whom?"mentoring":"learning"} key={b.id}>
@@ -213,16 +224,16 @@ export default function Schedule(){
       <header><div><span><I name="Bell"/></span><div><h2>Reminders</h2><p>Small prompts that keep important plans from slipping away.</p></div></div>
         <Link className={s.panelBtn} href="/app/reminders"><I name="Plus"/> Add reminder</Link></header>
       <div className={s.moduleCards}>
-        {reminders.data.length===0
+        {reminders.source==="error" ? <p role="alert" className={s.emptyBody}>Reminders could not load. <button onClick={()=>reminders.refetch()}>Try again</button></p> : reminders.source==="loading" ? <p role="status">Loading reminders…</p> : reminders.data.length===0
           ? <p className={s.emptyBody}>You have no reminders set.</p>
           : reminders.data.map((r)=>
             <article data-cat={r.category||"personal"} key={r.id}>
               <i><I name="Bell"/></i>
               {/* `title_key` is a catalogue key, not a sentence — the same
                   cast the nudge components use. */}
-              <div><h3>{tr(r.title_key as MessageKey)}</h3><p>{scheduleWords(r)}</p>
-                <span>{r.state==="active"?"Active":r.state}</span></div>
-              <Link href="/app/reminders">Edit reminder <I name="ArrowRight"/></Link>
+              <div><h3>{r.title_key === "reminders.healthDue" ? "Health reminder" : tr(r.title_key as MessageKey)}</h3><p>{scheduleWords(r)}</p>
+                <span>{r.state==="scheduled"?"Active":r.state}</span></div>
+              <Link href={r.title_key==="rem.preset.water"?"/app/health/reminders/water":r.title_key==="reminders.healthDue"?"/app/health/reminders":"/app/reminders"}>Manage reminder <I name="ArrowRight"/></Link>
             </article>)}
       </div>
     </section>}
@@ -235,12 +246,12 @@ export default function Schedule(){
             <i><I name={f[2]}/></i>
             <div><h3>{f[0]}</h3><p>{f[1]}</p>
               <span>{focusFor===f[4]?"Running":"Ready"}</span></div>
-            <button onClick={()=>setFocusFor(focusFor===f[4]?null:f[4])}>
+            <button onClick={()=>{if(focusFor===f[4]){setFocusFor(null);setFocusEnds(null);}else{setFocusFor(f[4]);setFocusEnds(Date.now()+f[4]*60_000);}}}>
               {focusFor===f[4]?"Stop":`Start ${f[4]} min`} <I name="ArrowRight"/>
             </button>
           </article>)}
       </div>
-      {focusFor!==null&&<FocusTimer key={focusFor} minutes={focusFor} onDone={()=>setFocusFor(null)}/>}
+      {focusFor!==null&&<FocusTimer key={focusEnds} endsAt={focusEnds!} onDone={()=>{setFocusFor(null);setFocusEnds(null);}}/>}
     </section>}
   </main></HomeShell>
 }
@@ -252,29 +263,15 @@ export default function Schedule(){
  * This is the smallest honest version: it counts down, it says how long is
  * left, and stopping it stops it.
  */
-function FocusTimer({minutes,onDone}:{minutes:number;onDone:()=>void}){
-  // Initialised from the prop and never reset by an effect: the caller passes
-  // `key={minutes}`, so picking a different block remounts this and the
-  // countdown starts again. Resetting in an effect painted the old number for
-  // a frame first.
-  const [left,setLeft]=useState(minutes*60);
-
+function FocusTimer({endsAt,onDone}:{endsAt:number;onDone:()=>void}){
+  const [left,setLeft]=useState(()=>Math.max(0,Math.ceil((endsAt-Date.now())/1000)));
   useEffect(()=>{
-    // `setInterval` inside an effect, so React clears it when she stops the
-    // timer, switches tab or leaves the screen. A `useMemo` cannot do this —
-    // it has no cleanup, so the interval would keep firing forever.
-    const id=setInterval(()=>{
-      setLeft((n)=>{
-        if(n<=1){ onDone(); return 0; }
-        return n-1;
-      });
-    },1000);
-    return ()=>clearInterval(id);
-  },[minutes,onDone]);
-
-  const mm=String(Math.floor(left/60)).padStart(2,"0");
-  const ss=String(left%60).padStart(2,"0");
-  return <p className={s.focusTimer} role="timer" aria-live="polite">{mm}:{ss} left</p>;
+    const tick=()=>{const remaining=Math.max(0,Math.ceil((endsAt-Date.now())/1000));setLeft(remaining);if(!remaining)onDone();};
+    const id=setInterval(tick,1000);document.addEventListener("visibilitychange",tick);
+    return()=>{clearInterval(id);document.removeEventListener("visibilitychange",tick);};
+  },[endsAt,onDone]);
+  const mm=String(Math.floor(left/60)).padStart(2,"0"),ss=String(left%60).padStart(2,"0");
+  return <p className={s.focusTimer} role="timer" aria-live="off">{mm}:{ss} left</p>;
 }
 
 /**
@@ -289,6 +286,7 @@ function scheduleWords(r: Reminder): string {
   if (!sch) return "";
   const at = sch.local_time ? ` at ${sch.local_time}` : "";
 
+  if (sch.interval_minutes) return `Every ${sch.interval_minutes} min · ${sch.local_time}–${sch.end_time || "21:00"}`;
   if (sch.type === "recurring") {
     const days = sch.days ?? [];
     if (days.length === 0 || days.length === 7) return `Every day${at}`;

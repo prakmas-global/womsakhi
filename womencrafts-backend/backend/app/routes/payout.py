@@ -7,6 +7,8 @@ Existing payout details remain owner-scoped and available for account upkeep.
 from __future__ import annotations
 
 from typing import Union
+from pydantic import BaseModel, Field
+from app.core.account_upi import account_upi, set_account_upi
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
@@ -26,6 +28,20 @@ router = APIRouter(prefix="/me/payout", tags=["Member · Money"])
 
 def _accounts():
     return get_database()[PayoutAccountModel.collection_name]
+
+
+class AccountUpiIn(BaseModel):
+    upi_id: str = Field(min_length=4,max_length=80)
+
+
+@router.get("/upi", summary="My account-wide receiving UPI")
+async def get_account_upi(me: dict = Depends(require_active_member)):
+    return await account_upi(get_database(),me)
+
+
+@router.put("/upi", summary="Update my receiving UPI throughout WomSakhi")
+async def update_account_upi(body: AccountUpiIn, me: dict = Depends(require_active_member)):
+    return await set_account_upi(get_database(),me,body.upi_id)
 
 
 @router.get("/accounts", response_model=list[PayoutAccountResponse], summary="How I get paid")
@@ -69,6 +85,8 @@ async def add_account(
             label=body.label or body.upi_id, upi_id=body.upi_id, primary=first,
         )
 
+    if isinstance(body, AddUpi):
+        await set_account_upi(get_database(),me,body.upi_id)
     result = await _accounts().insert_one(doc)
     doc["_id"] = result.inserted_id
     return PayoutAccountResponse(**PayoutAccountModel.to_response(doc))
@@ -81,6 +99,8 @@ async def make_primary(account_id: str, me: dict = Depends(require_active_member
     target = await _accounts().find_one({"_id": to_object_id(account_id), "user_id": uid})
     if not target:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That account is not yours")
+    if target.get("kind") == PayoutAccountModel.KIND_UPI:
+        await set_account_upi(get_database(),me,target.get("upi_id", ""))
     # Clear then set, in that order: a moment with no primary is recoverable,
     # a moment with two is a payout to the wrong account.
     await _accounts().update_many({"user_id": uid}, {"$set": {"primary": False}})

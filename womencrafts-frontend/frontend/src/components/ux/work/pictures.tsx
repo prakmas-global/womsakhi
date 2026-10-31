@@ -81,11 +81,11 @@ export function CategoryTiles({ cats, value, onPick, count, label = "Kinds of wo
                   style={{ background: "linear-gradient(180deg, rgba(16,6,24,0) 25%, rgba(16,6,24,.85))" }} />
             {n > 0 && (
               <span className="absolute end-2 top-2 inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-2xs font-extrabold"
-                    style={{ background: "var(--ux-brand)", color: "#fff" }}>{n}</span>
+                    style={{ background: "var(--ux-fill)", color: "#fff" }}>{n}</span>
             )}
             {on && !n && (
               <span className="ux-pop absolute end-2 top-2 grid h-6 w-6 place-items-center rounded-full"
-                    style={{ background: "var(--ux-brand)", color: "#fff" }}>
+                    style={{ background: "var(--ux-fill)", color: "#fff" }}>
                 <Icons.Check className="h-3.5 w-3.5" />
               </span>
             )}

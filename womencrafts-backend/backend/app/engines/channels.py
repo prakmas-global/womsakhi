@@ -25,6 +25,8 @@ the person she is hiding it from.
 
 from __future__ import annotations
 
+import asyncio
+
 import html
 import json
 from datetime import datetime, timezone
@@ -49,6 +51,15 @@ FALLBACK = {
     "safety": ("WomSakhi", "Open the app."),
 }
 
+PRESET_TITLES = {
+    "water": "Time to drink water", "stretch": "Time for a stretch",
+    "tablet": "Your personal reminder", "callBack": "Make your call",
+    "children": "Your children's reminder", "circle": "Your circle reminder",
+    "supplies": "Check your supplies", "order": "Check your order",
+    "clinic": "Your personal reminder", "fee": "Your fee reminder",
+    "study": "Time to learn", "deadline": "Check your deadline", "charge": "Charge your phone",
+}
+
 
 def _db():
     return get_database()
@@ -69,6 +80,9 @@ async def render(intent: dict) -> tuple[str, str]:
     key = intent.get("template_key", "")
     category = intent.get("category", "reminders")
     title, body = FALLBACK.get(category, FALLBACK["reminders"])
+    if key.startswith("rem.preset."):
+        title = PRESET_TITLES.get(key.removeprefix("rem.preset."), title)
+        body = "Take a moment for your water break." if key == "rem.preset.water" else "Open WomSakhi to view or manage this reminder."
 
     payload = intent.get("payload") or {}
 
@@ -138,7 +152,7 @@ async def _push(intent: dict) -> dict:
     title, body = await render(intent)
     payload = json.dumps({
         "title": title, "body": body,
-        "url": f"/app/notifications?i={intent.get('_id', '')}",
+        "url": "/app/health/reminders/water" if intent.get("template_key") == "rem.preset.water" else f"/app/notifications?i={intent.get('_id', '')}",
         "tag": intent.get("dedupe_key", ""),
         # Carried so a notification she taps on a locked phone can still be
         # answered. Without it the service worker has a message and no idea
@@ -155,7 +169,7 @@ async def _push(intent: dict) -> dict:
     sent = 0
     for sub in subs:
         try:
-            webpush(
+            await asyncio.to_thread(webpush,
                 subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
                 data=payload,
                 vapid_private_key=settings.VAPID_PRIVATE_KEY,
@@ -318,6 +332,9 @@ async def send(channel: str, intent: dict) -> dict:
     rule is the one place every path must go through.
     """
     adapter = _ADAPTERS.get(channel)
+    if settings.ENGINES_LOCAL_WORKER and not settings.is_production and channel not in ("inapp", "push"):
+        # Also protects retries of old queued work in a development database.
+        raise RuntimeError("external_channel_disabled_in_local_worker")
     if adapter is None:
         raise RuntimeError(f"unknown_channel:{channel}")
 

@@ -86,7 +86,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
   const byMember = (detail?.owner_kind ?? row?.owner_kind) === "member";
   const done = lessons.filter((l) => l.done).length;
   const nextIndex = lessons.findIndex((l) => !l.done);
-  const next = nextIndex >= 0 ? nextIndex + 1 : 1;
+  const next = detail?.resume_lesson || (nextIndex >= 0 ? nextIndex + 1 : 1);
   const pct = Math.round(detail?.progress ?? 0);
   // The first lesson the teacher opened as a free preview (1-based; 0 = none).
   const firstPreview = lessons.findIndex((l) => l.preview) + 1;
@@ -163,7 +163,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
     if (canLearn) {
       return (
         <Btn href={`/app/programs/${id}/lesson/${next}`} variant="primary" full iconEnd="ArrowRight">
-          {done > 0 ? `Continue lesson ${next}` : "Start the first lesson"}
+          {detail?.resume_lesson ? `Resume reading · lesson ${next}` : done > 0 ? `Continue lesson ${next}` : "Start the first lesson"}
         </Btn>
       );
     }
@@ -269,8 +269,18 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
             {learners > 0 && <span className="inline-flex items-center gap-1.5"><Icons.Users className="h-4 w-4" /> {learners} learning</span>}
           </p>
           {desc && <p className="mt-3.5 text-smd leading-relaxed lg:text-sm" style={{ color: "var(--ux-ink-2)" }}>{desc}</p>}
+          <div className="mt-4">{action}</div>
         </div>
       </Card>
+
+      {lessons.some(l=>l.content_type==="book"||l.content_type==="article")&&<Card className="mb-[16px]">
+        <SectionHead title="Articles & books" sub="Open a reading lesson for paper-style pages, page-turn controls and your saved reading place."/>
+        <div className="grid gap-3 sm:grid-cols-2">{lessons.map((l,i)=>l.content_type==="book"||l.content_type==="article"?<div key={l.id??i} className="rounded-xl border p-4" style={{borderColor:"var(--ux-line)",background:"var(--ux-surface-2)"}}>
+          <span className="text-xs font-bold uppercase" style={{color:"var(--ux-brand)"}}>{l.content_type}</span>
+          <p className="my-2 text-sm font-semibold">{l.title}</p>
+          <Btn href={`/app/programs/${id}/lesson/${i+1}`} variant="outline" icon="BookOpen">{canLearn||l.preview?`Read ${l.content_type}`:"Join to read"}</Btn>
+        </div>:null)}</div>
+      </Card>}
 
       {/* ── Paying the teacher ────────────────────────────────────────────── */}
       {state === "pending" && !isOwner && (
@@ -345,7 +355,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                        sub={canLearn ? `${lessons.length} lessons · ${done} done` : `${lessons.length} lessons · open when you join`} />
           <ul className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
             {lessons.map((l, i) => {
-              const current = canLearn && !isOwner && i === nextIndex;
+              const current = canLearn && !isOwner && i === next-1;
               const inner = (
                 <>
                   <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full"

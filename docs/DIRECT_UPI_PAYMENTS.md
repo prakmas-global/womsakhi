@@ -35,3 +35,13 @@ This release’s consolidated activity covers the existing course and mentoring 
 Backend tests cover blank references, pending-versus-confirmed states, recipient ownership, private record filtering, exact amounts, confirmation audit metadata, no wallet/notebook writes, retry protection on recipient confirmation, blocked gateway routes, and the deferred payout boundary. Existing course and mentoring lifecycle tests exercise their original fulfilment behavior.
 
 `checks/direct-upi-payments.mjs` uses fresh synthetic fixtures on an isolated API and production frontend. It submits test references through the course and mentor forms, signs in as the recipient to confirm them, and checks redirects, hidden amounts, phone light/dark layouts, blocked gateway confirmation and explicit failed-read messages. It does not initiate a real UPI payment or establish that a bank received money.
+
+### Paid course access
+
+Course information and the lesson outline remain visible for browsing. Paid lesson bodies, article/book text and video links open only after the course owner confirms receipt. Public lesson previews are disabled on paid courses, including older stored preview flags. Free courses can still offer preview lessons. The server verifies the payment status, confirmation timestamp and confirming owner, together with an active/completed enrollment. Learner progress updates, completion, reading-position writes, course Q&A, staff enrollment activation and new certificate creation cannot bypass this check. Teachers retain access to their own content without enrolling.
+
+### Account-wide receiving UPI
+
+Members manage their receiving ID in Settings → How you get paid, or through the same editor in course, mentoring and collection screens. `GET/PUT /api/v1/me/payout/upi` is owner-scoped; updates store `payment_upi_id` on the authenticated user. No user ID is accepted to choose another account. Paid offerings require a saved account UPI (older clients can initialize it with their first explicitly supplied valid ID). Later stale module fields cannot replace that default.
+
+Course and mentoring instructions awaiting a reference resolve the current account ID. On reference submission, the receiving ID is snapshotted under the payment. Before a global update, older submitted claims without snapshots retain their module’s existing ID. Completed payment fields, reference numbers and owner confirmations are not rewritten. Existing bank details and the disabled bank-withdrawal flow are unchanged.

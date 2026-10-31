@@ -151,7 +151,7 @@ export default function ProductTour({ mode, initialStep = 1 }: { mode: "member" 
                   <button key={title} type="button" aria-pressed={selected} onClick={() => setActiveFeature(index)}
                     className="ux-tour-step ux-press relative mb-2 flex min-h-[66px] w-full items-center gap-3 rounded-[16px] border p-2.5 text-start transition last:mb-0"
                     style={{ borderColor: selected ? "var(--ux-brand)" : "transparent", background: selected ? "var(--ux-surface)" : "transparent", boxShadow: selected ? "0 10px 28px -20px var(--ux-brand)" : "none" }}>
-                    <div className="ux-tour-step-icon relative z-[1] shrink-0"><IconTile icon={icon} tint={selected ? "--ux-brand-tint" : "--ux-surface"} ink="--ux-brand" size={40} radius={12} /><span className="absolute -end-1 -top-1 grid h-[18px] w-[18px] place-items-center rounded-full text-[9px] font-bold text-white" style={{ background: "var(--ux-brand)" }}>{index + 1}</span></div>
+                    <div className="ux-tour-step-icon relative z-[1] shrink-0"><IconTile icon={icon} tint={selected ? "--ux-brand-tint" : "--ux-surface"} ink="--ux-brand" size={40} radius={12} /><span className="absolute -end-1 -top-1 grid h-[18px] w-[18px] place-items-center rounded-full text-[9px] font-bold text-white" style={{ background: "var(--ux-fill)" }}>{index + 1}</span></div>
                     <div className="min-w-0"><p className="ux-tour-step-title text-sm font-bold" style={{ color: "var(--ux-ink)" }}>{title}</p><p className="ux-tour-step-note mt-0.5 text-xs leading-snug" style={{ color: "var(--ux-muted)" }}>{note}</p></div>
                   </button>
                 );
@@ -169,7 +169,7 @@ export default function ProductTour({ mode, initialStep = 1 }: { mode: "member" 
         </div>
       </section>
       <nav aria-label="Tour sections" className="ux-tour-nav -mx-2 mt-3 flex snap-x gap-1 overflow-x-auto px-2 pb-1">
-        {SLIDES.map((item, index) => <button key={item.eyebrow} type="button" aria-label={`Open ${item.eyebrow}`} aria-current={step === index + 1 ? "step" : undefined} onClick={() => goTo(index + 1)} className="ux-press flex h-[44px] shrink-0 snap-center items-center gap-2 rounded-full px-3 text-xs font-semibold" style={{ background: step === index + 1 ? "var(--ux-brand)" : "var(--ux-surface)", color: step === index + 1 ? "white" : "var(--ux-muted)", border: "1px solid var(--ux-line)" }}><span className="h-2 w-2 rounded-full" style={{ background: step === index + 1 ? "white" : "var(--ux-track)" }} />{item.eyebrow}</button>)}
+        {SLIDES.map((item, index) => <button key={item.eyebrow} type="button" aria-label={`Open ${item.eyebrow}`} aria-current={step === index + 1 ? "step" : undefined} onClick={() => goTo(index + 1)} className="ux-press flex h-[44px] shrink-0 snap-center items-center gap-2 rounded-full px-3 text-xs font-semibold" style={{ background: step === index + 1 ? "var(--ux-fill)" : "var(--ux-surface)", color: step === index + 1 ? "white" : "var(--ux-muted)", border: "1px solid var(--ux-line)" }}><span className="h-2 w-2 rounded-full" style={{ background: step === index + 1 ? "white" : "var(--ux-track)" }} />{item.eyebrow}</button>)}
       </nav>
       </OnboardFrame>
     </>

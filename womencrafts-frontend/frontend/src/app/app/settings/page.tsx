@@ -27,6 +27,8 @@ const GROUPS = [
     items: [
       { href: "/app/settings/account", label: "Your details", note: "Name, photo, phone and address",
         icon: "User", tint: "--ux-tint-violet", ink: "--ux-violet" },
+      { href: "/app/settings/payments", label: "How you get paid", note: "One receiving UPI ID for your whole account",
+        icon: "Wallet", tint: "--ux-tint-green", ink: "--ux-green" },
       { href: "/app/profile", label: "Your public profile", note: "What employers and buyers see",
         icon: "IdCard", tint: "--ux-tint-blue", ink: "--ux-blue" },
       { href: "/app/documents", label: "Documents", note: "Aadhaar, PAN, bank and registrations",

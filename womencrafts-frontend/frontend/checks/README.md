@@ -42,8 +42,12 @@ node checks/direct-upi-payments.mjs # fresh synthetic paid course/session; payer
 Checks refuse to start without the configured audit code. With the matching
 development API settings above, fixed-code sign-in sends no OTP emails.
 Persistence checks create test records, so use the local audit
-database. `npm run check:fast` remains browser-free. For a separate journey
-ledger, set `CHECK_JOURNEY_REPORT` to an output path.
+database. The test API must include `http://localhost:3111` in
+`ALLOWED_ORIGINS`; otherwise its browser-origin protection correctly rejects
+preview and save requests. Build the isolated frontend with
+`INTERNAL_API_URL=http://127.0.0.1:8031/api/v1` (rewrites are baked in at build time).
+`npm run check:fast` remains browser-free. For a separate journey ledger, set
+`CHECK_JOURNEY_REPORT` to an output path.
 
 ## Why they measure with a canvas
 
@@ -156,3 +160,18 @@ For startup, dependency failure, protected metrics and recovery procedures, see 
 `direct-upi-payments.mjs` requires `CHECK_UPI_FIXTURES` pointing to JSON with `course_id`, `enrollment_id` and `session_id`, each freshly seeded and awaiting payment in a throwaway database. The payer uses `CHECK_MEMBER_EMAIL`; recipient defaults to `teacher.audit@example.com` and can be set with `CHECK_RECIPIENT_EMAIL`. It submits synthetic references and simulates recipient confirmation without opening a UPI app. The old `platform-credits.mjs` filename is a compatibility runner for this check.
 
 `checks/business-income-summary.mjs` is a read-only development check against an existing active member’s received-payment data. It mints a short-lived local token without sending an OTP, intercepts share/print locally, and validates matching preview/share/print totals, removal of purpose/verification claims, mobile layouts and error/empty states. It refuses production configuration.
+
+## Water logging regression
+
+`node checks/water-functional.mjs` requires the isolated frontend on 3111, API
+on 8031, and a synthetic `CHECK_MEMBER_EMAIL` with no water records. With the
+matching fixed-code login configured, it saves 250 ml and 500 ml, checks reload
+persistence and the daily summary, adds 150 ml from Wellness, follows the water
+reminder links in both directions, undoes the last entry, and checks mobile and
+desktop overflow. It removes only the water records it created and restores the
+onboarding setting. Run alongside `checks/reminders-functional.mjs` to verify
+the 30-minute schedule, edit/pause/resume, in-app delivery, snooze and stop.
+
+The reader regression accepts `CHECK_READER_IDENTITY` (an isolated fixture JSON
+file) and `CHECK_READER_API_ORIGIN` (for example `http://127.0.0.1:8031`). It resets
+to page one before testing saved-page reload, so repeated runs use the same fixture.

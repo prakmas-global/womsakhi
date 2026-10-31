@@ -153,6 +153,8 @@ class ReminderIn(BaseModel):
     category: str = "reminders"
     at: datetime | None = None
     local_time: str = ""
+    interval_minutes: Annotated[int, Field(strict=True, ge=0, le=720)] = 0
+    end_time: str = ""
     days: list[Annotated[int, Field(strict=True, ge=0, le=6)]] = Field(default_factory=list)
     offset_minutes: int = 0
     anchor_at: datetime | None = None
@@ -185,6 +187,15 @@ class ReminderIn(BaseModel):
             raise ValueError("Choose a time in HH:MM format")
         if self.schedule_type == "event_relative" and self.anchor_at is None:
             raise ValueError("An event reminder needs the event date and time")
+        if self.interval_minutes:
+            if self.schedule_type != "recurring" or self.interval_minutes < 15:
+                raise ValueError("Repeat intervals must be between 15 and 720 minutes on a repeating reminder")
+            if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", self.end_time):
+                raise ValueError("Choose an end time in HH:MM format")
+            if self.end_time <= self.local_time:
+                raise ValueError("The end time must be later than the start time on the same day")
+        elif self.end_time:
+            raise ValueError("An end time needs a repeat interval")
         due = self.at if self.schedule_type == "once" else None
         if self.schedule_type == "event_relative":
             try:
@@ -196,13 +207,44 @@ class ReminderIn(BaseModel):
         return self
 
 
+@router.post("/reminders/preview", summary="Preview a reminder without saving it")
+async def preview_reminder(body: ReminderIn, me: dict = Depends(get_current_user)):
+    from app.engines.schedule import materialise
+    now = datetime.now(timezone.utc)
+    schedule = {"type": body.schedule_type, **body.model_dump(include={
+        "at", "local_time", "days", "interval_minutes", "end_time", "offset_minutes", "anchor_at"})}
+    dates = materialise(schedule=schedule, tz_name=body.tz, after=now,
+                        horizon=now + timedelta(days=120), ends_at=body.ends_at, limit=5)
+    return {"next": dates, "tz": body.tz}
+
+
 @router.get("/reminders", summary="Her reminders")
 async def list_reminders(me: dict = Depends(get_current_user)):
     db = get_database()
     rows = await db[ReminderModel.collection_name].find(
         {"user_id": str(me["_id"]), "state": {"$ne": ReminderModel.STATE_CANCELLED}},
     ).sort("created_at", -1).to_list(length=200)
-    return {"reminders": [ReminderModel.to_response(r) for r in rows]}
+    # Only current, recently delivered occurrences can be answered here.
+    # One grouped query avoids a separate database request for every card.
+    due = await db[OccurrenceModel.collection_name].aggregate([
+        {"$match": {"user_id": str(me["_id"]), "state": OccurrenceModel.STATE_DUE,
+                    "lease_owner": "", "due_at": {"$gte": datetime.now(timezone.utc) - timedelta(hours=1)}}},
+        {"$sort": {"due_at": -1}},
+        {"$group": {"_id": "$definition_id", "occurrence": {"$first": "$$ROOT"}}},
+    ]).to_list(length=200)
+    by_definition = {r["_id"]: r["occurrence"] for r in due}
+    result = []
+    for row in rows:
+        response = ReminderModel.to_response(row)
+        occurrence = by_definition.get(str(row["_id"]))
+        interval = (row.get("schedule") or {}).get("interval_minutes", 0)
+        if occurrence and interval and aware(occurrence["due_at"]) + timedelta(minutes=interval) <= datetime.now(timezone.utc):
+            occurrence = None
+        response["due_occurrence"] = (OccurrenceModel.to_response(occurrence)
+            if occurrence and row.get("state") == ReminderModel.STATE_SCHEDULED
+            and occurrence.get("schedule_version") == row.get("version", 1) else None)
+        result.append(response)
+    return {"reminders": result}
 
 
 @router.post("/reminders", status_code=status.HTTP_201_CREATED,
@@ -238,6 +280,7 @@ async def create_reminder(body: ReminderIn, me: dict = Depends(get_current_user)
         # for the travel engine and cannot be claimed from the public API.
         klass=ReminderModel.CLASS_USER,
         at=body.at, local_time=body.local_time, days=body.days,
+        interval_minutes=body.interval_minutes, end_time=body.end_time,
         offset_minutes=body.offset_minutes, anchor_at=body.anchor_at,
         ends_at=body.ends_at, payload=body.payload)
     return ReminderModel.to_response(doc)
@@ -253,7 +296,7 @@ async def next_times(definition_id: str, me: dict = Depends(get_current_user)):
     db = get_database()
     rows = await db[OccurrenceModel.collection_name].find(
         {"definition_id": definition_id, "user_id": str(me["_id"]),
-         "state": OccurrenceModel.STATE_SCHEDULED},
+         "state": {"$in": [OccurrenceModel.STATE_SCHEDULED, OccurrenceModel.STATE_SNOOZED]}},
     ).sort("due_at", 1).to_list(length=5)
     out = [OccurrenceModel.to_response(r) for r in rows]
 
@@ -318,7 +361,7 @@ async def edit_reminder(definition_id: str, changes: dict,
         clean[key] = values[key]
     if "schedule" in clean:
         clean["schedule"] = {"type": validated.schedule_type, **{
-            k: values[k] for k in ("at", "local_time", "days", "offset_minutes", "anchor_at")}}
+            k: values[k] for k in ("at", "local_time", "days", "interval_minutes", "end_time", "offset_minutes", "anchor_at")}}
     ok = await rem.edit(definition_id, clean)
     return {"updated": ok}
 
@@ -328,12 +371,31 @@ async def stop_reminder(definition_id: str, me: dict = Depends(get_current_user)
     return {"stopped": await rem.stop_series(definition_id, user_id=str(me["_id"]))}
 
 
+class ReminderStateIn(BaseModel):
+    state: Literal["paused", "scheduled"]
+
+
+@router.post("/reminders/{definition_id}/state", summary="Pause or resume a personal repeating reminder")
+async def change_reminder_state(definition_id: str, body: ReminderStateIn,
+                                me: dict = Depends(get_current_user)):
+    owned = await get_database()[ReminderModel.collection_name].find_one(
+        {"_id": rem._oid(definition_id), "user_id": str(me["_id"]), "klass": ReminderModel.CLASS_USER})
+    if not owned:
+        raise HTTPException(404, "No such personal reminder")
+    if owned.get("state") not in ("scheduled", "paused") or (owned.get("schedule") or {}).get("type") != "recurring":
+        raise HTTPException(409, "Only active repeating reminders can be paused or resumed")
+    if owned["state"] == body.state:
+        return {"updated": True}
+    return {"updated": await rem.edit(definition_id, {
+        "state": body.state, "starts_at": datetime.now(timezone.utc)})}
+
+
 # ── her answers ─────────────────────────────────────────────────────────────
 
 class ActionIn(BaseModel):
     action: str
     via: str = "inapp"
-    minutes: int = 60
+    minutes: Annotated[int, Field(strict=True, ge=5, le=1440)] = 60
 
 
 @router.post("/occurrences/{occurrence_id}/action",
@@ -347,11 +409,12 @@ async def act(occurrence_id: str, body: ActionIn,
     travels in a push payload and must not be enough on its own to complete
     somebody else's reminder.
     """
-    if body.action not in ReceiptModel.ACTIONS:
+    action = "later" if body.action == "snooze" else body.action
+    if action not in ReceiptModel.ACTIONS:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Unknown action")
     ok = await notify_engine.record_action(
         occurrence_id=occurrence_id, user_id=str(me["_id"]),
-        action=body.action, via=body.via, detail={"minutes": body.minutes})
+        action=action, via=body.via, detail={"minutes": body.minutes})
     return {"ok": ok}
 
 
@@ -472,12 +535,13 @@ async def channels(me: dict = Depends(get_current_user)):
     `inapp` is always true — it needs no provider and costs nothing, which is
     why it is also the one channel the policy layer treats as a floor.
     """
+    local_only = settings.ENGINES_LOCAL_WORKER and not settings.is_production
     return {
         "inapp": True,
         "push": bool(settings.VAPID_PRIVATE_KEY and settings.VAPID_PUBLIC_KEY),
-        "email": bool(settings.SMTP_HOST),
-        "sms": bool(settings.SMS_PROVIDER),
-        "whatsapp": bool(settings.WHATSAPP_PROVIDER),
+        "email": bool(settings.SMTP_HOST) and not local_only,
+        "sms": bool(settings.SMS_PROVIDER) and not local_only,
+        "whatsapp": bool(settings.WHATSAPP_PROVIDER) and not local_only,
         # Feature 80. Nothing is wired behind it yet, and saying so here keeps
         # the claim in one place rather than in a comment on a screen.
         "voice": False,

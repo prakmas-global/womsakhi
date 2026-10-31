@@ -52,8 +52,8 @@ export const viewport: Viewport = {
      is the most common accessibility failure on mobile web, and this app is
      built for women who may well need to pinch a form field larger. */
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbf9fd" },  /* --ws-canvas */
-    { media: "(prefers-color-scheme: dark)", color: "#110c1d" },   /* --ws-canvas, dark */
+    { media: "(prefers-color-scheme: light)", color: "#fcf8f7" },  /* --ws-canvas */
+    { media: "(prefers-color-scheme: dark)", color: "#160f16" },   /* --ws-canvas, dark */
   ],
 };
 

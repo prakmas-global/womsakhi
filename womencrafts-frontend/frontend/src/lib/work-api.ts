@@ -1,4 +1,5 @@
 import { apiClient } from "./api";
+import type { BulkOrderDetails } from "./growth-api";
 
 /**
  * Work by skill — backend: routes/work_talent.py.
@@ -148,6 +149,9 @@ export interface JobInput {
   kind: string;
   mode: string;
   location: string;
+  city?: string;
+  area?: string;
+  order_details?: BulkOrderDetails | null;
   pay: string;
   openings: number;
   /** YYYY-MM-DD or "". */
@@ -158,6 +162,7 @@ export interface JobInput {
 
 /** A job post as Find work returns it (`/growth/opportunities` shape). */
 export interface MyJobPost {
+  city?: string; area?: string; order_details?: BulkOrderDetails | null;
   id: string; title: string; org: string; kind: string; desc: string; location: string; mode: string;
   pay: string; skills: string[]; category: string; category_name: string; skill_keys: string[];
   openings: number; deadline: string; deadline_label: string; experience: string;

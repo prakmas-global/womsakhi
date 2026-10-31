@@ -1,7 +1,7 @@
 /*
   NOTE (Oct 2026): the colour VALUES now come from design-system/brand.css —
-  the logo's magenta and violet, one font. The notes below record the older
-  Berry kit these names were first built for; the names and roles still hold.
+  grape wine and muted violet, one font. The notes below describe the original
+  Berry kit restored by this palette; the names and roles still hold.
 
   The redesigned member experience — its own palette.
   Every value sampled from the supplied screens rather than guessed.
@@ -104,7 +104,7 @@
      before, which is how the button on it came to be 4.31:1 — below AA, in the
      sidebar, on every screen. The button is white because no violet clears 4.5:1
      for white text while still separating from the slab it sits on. */
-  --ux-on-brand-2: var(--ws-magenta-100);        /* 5.98:1 on brand-900 */
+  --ux-on-brand-2: #f9edf3;        /* bright secondary copy on deep brand panels */
   --ux-on-brand-track: rgba(0, 0, 0, 0.20);
   --ux-on-brand-fill: var(--ws-magenta-300);     /* 5.13:1 — a graphic, needs 3:1 */
   --ux-on-brand-btn: #ffffff;      /* 10.35:1 against the slab */
@@ -121,6 +121,9 @@
      against white, so every primary button's right-hand gradient stop was
      failing AA and nothing caught it: a gradient has no single background
      colour, so the contrast pass skips it entirely. */
+  --ux-action-start: var(--color-action-start, var(--ws-violet-600));
+  --ux-action-end: var(--color-action-end, var(--ws-magenta-600));
+  --ux-action-gradient: linear-gradient(96deg, var(--ux-action-start), var(--ux-action-end));
   --ux-fill:   var(--ws-magenta-600);       /* 8.57:1 with white */
   --ux-fill-2: var(--ws-magenta-700);       /* 6.27:1 with white */
 
@@ -514,7 +517,7 @@
   --ux-ink-on-brand: var(--ws-on-brand); /* 8.6:1 — both brand fills go light in this theme */
   --ux-brand-700: #ff9cc8;
   --ux-brand-900: #3a1030;
-  --ux-on-brand-2: #ffc2dd;        /* 8.61:1 on the darker slab */
+  --ux-on-brand-2: #f9edf3;        /* bright secondary copy on deep brand panels */
   --ux-on-brand-track: rgba(0, 0, 0, 0.28);
   --ux-on-brand-fill: #ff7ab6;     /* 7.38:1 */
   --ux-on-brand-btn: #ffffff;      /* 14.90:1 */
@@ -1607,8 +1610,9 @@
  *                         column; pinned from the width the grid splits at
  *
  * Below those widths the columns stack and scroll as one page, as before.
- * The 4px of padding (taken back by the negative margin) keeps card shadows
- * from being clipped by the column's own scroll box.
+ * The 4px of padding keeps card shadows inside the column's scroll box.
+ * Only the vertical margin is taken back: negative horizontal margins push
+ * the last column beyond the page and create horizontal overflow.
  */
 .ux-sticky-col, .ux-split-lg > :last-child, .ux-split-xl > :last-child { align-self: start; }
 @media (min-width: 1024px) {
@@ -1616,7 +1620,7 @@
     position: sticky; top: calc(var(--ux-topbar-h, 72px) + 18px);
     max-height: calc(100dvh - var(--ux-topbar-h, 72px) - 36px);
     overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
-    padding: 4px; margin: -4px;
+    padding: 4px; margin: -4px 0;
   }
 }
 @media (min-width: 1280px) {
@@ -1624,7 +1628,7 @@
     position: sticky; top: calc(var(--ux-topbar-h, 72px) + 18px);
     max-height: calc(100dvh - var(--ux-topbar-h, 72px) - 36px);
     overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
-    padding: 4px; margin: -4px;
+    padding: 4px; margin: -4px 0;
   }
 }
 .ux-sticky-col::-webkit-scrollbar, .ux-split-lg > :last-child::-webkit-scrollbar, .ux-split-xl > :last-child::-webkit-scrollbar { width: 6px; }
@@ -1847,7 +1851,7 @@
 .ux-tile-ic { transition: transform var(--ux-t-slow) var(--ux-ease-spring); }
 
 .ux-btn-g { transition: filter var(--ux-t) var(--ux-ease), transform var(--ux-t) var(--ux-ease); }
-.ux-btn-g:hover { filter: brightness(1.09); transform: translateY(-1px); }
+.ux-btn-g:hover { filter: brightness(1.04); transform: translateY(-1px); }
 
 /* A row in a panel or the rail: the ground lifts, nothing moves. */
 .ux-row { border-radius: 10px; transition: background-color var(--ux-t) var(--ux-ease); }

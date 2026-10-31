@@ -47,3 +47,16 @@
 .focusTimer{margin:0;padding:0 16px 18px;color:var(--ux-brand);font:750 28px/1 var(--dashboard-font-display);font-variant-numeric:tabular-nums}
 
 @media(max-width:760px){.moduleCards article>a{width:100%;justify-content:center}.modulePanel>header>.panelBtn{width:100%;justify-content:center}}
+/* Real month/day views use the same source records as the week and agenda. */
+.monthGrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));overflow:hidden;border:1px solid var(--ux-line);border-radius:16px;background:var(--ux-surface)}
+.monthDayName{padding:12px 4px;text-align:center;font-size:12px;font-weight:650;color:var(--ux-muted);background:var(--ux-surface-2)}
+.monthCell{min-width:0;min-height:120px;padding:8px;border-top:1px solid var(--ux-line);border-inline-end:1px solid var(--ux-line)}
+.monthCell:nth-child(7n){border-inline-end:0}.monthCell[data-selected]{background:var(--ux-brand-tint)}
+.monthCell>button:first-child{display:grid;place-items:center;min-width:36px;min-height:36px;border:0;border-radius:50%;background:transparent;color:var(--ux-ink);font-weight:650}
+.monthCell>button[data-today]{background:var(--ux-fill);color:var(--ux-on-brand)}
+.outsideMonth{opacity:.6}.monthEvents{display:grid;gap:4px;margin-top:4px}.monthEvents a{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:6px;padding:5px;font-size:11px;background:var(--t);color:var(--i)}
+.monthDots{display:none}.moreEvents{border:0;background:transparent;color:var(--ux-brand);font-size:11px;min-height:28px}
+.dataNote,.demoNote{margin:12px 0;font-size:13px;line-height:1.65;color:var(--ux-muted)}
+.demoNote{padding:12px 14px;border:1px dashed var(--ux-line-strong);border-radius:12px;background:var(--ux-surface-2)}
+.week.singleDay{grid-template-columns:52px minmax(0,1fr)}.singleDay .grid{grid-template-columns:minmax(0,1fr)}
+@media(max-width:600px){.monthCell{min-height:66px;padding:4px}.monthEvents{display:none}.monthDots{display:flex;justify-content:center;gap:3px;margin-top:4px}.monthDots span{width:5px;height:5px;border-radius:50%;background:var(--i,var(--ux-brand))}.monthCell>button:first-child{margin:auto;min-width:32px;min-height:32px}.moreEvents{display:none}.monthDayName{font-size:11px}}

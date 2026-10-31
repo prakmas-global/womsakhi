@@ -72,6 +72,7 @@ export default function RemindersPage() {
                  art="/ux/health/ill/hero-reminders.webp" tabs={TABS}
                  actions={<>
                    <Btn icon="Plus" onClick={() => setSheet({})}>Add reminder</Btn>
+                   <Btn variant="outline" icon="Droplet" href="/app/health/reminders/water">Water every 30 min</Btn>
                    <Btn variant="outline" icon="Stethoscope" href="/app/health/doctors">Book a consultation</Btn>
                  </>}>
       {(tab) => (

@@ -89,3 +89,22 @@ Authentication, real emergency contacts, active SOS, provider credentials, walle
 - Showcase checks validate insert-only behavior, idempotence, preserved identities/notes, payment separation, development-only execution and member API reads.
 - Read-only checks against the running development API passed for all three members plus staff appointments, calendar, content, feedback and reports (95 checks, plus Find Talent reads).
 - Referenced images exist in the frontend’s bundled assets.
+
+## Member calendar examples
+
+Open `/app/schedule` after signing in as an active member. The calendar reads that member’s bookings and registered events from `/api/v1/me/week`; it does not automatically show every published event or every enrolled course. Cancelled bookings, registrations and events are excluded. Category filters and day, week, month and agenda views organize those records. Reminders have a separate tab; water reminders open Health. The focus timer keeps running when switching calendar tabs, but resets on page reload.
+
+The calendar-specific dataset adds **18 labelled activities per active member** over the current Sunday-first week and the next week: learning/mentoring bookings and business, wellness, community, finance and workshop events. `[DEMO]` entries are practice records with no live appointment, payment or meeting. The initial insert covered three members, 25 October–7 November 2026; see [CALENDAR_DEMO_REPORT.json](CALENDAR_DEMO_REPORT.json).
+
+To add calendar examples for another week, run `venv/bin/python scripts/seed_calendar_demo.py` from the backend directory. This refuses production, selects active Member accounts, and uses date-based stable IDs and insert-only writes so reruns preserve existing records. It creates no reminder jobs, notifications or external deliveries.
+
+## Article and book reader samples
+
+The free course **[DEMO] Small Steps, Strong Beginnings** is enrolled for the three active development members. Open `/app/programs/97b788805c0129236adba48e` or find it under Courses.
+
+- Article: **[DEMO] An hour that belongs to you** — lesson 1.
+- Book: **[DEMO] The Blue Notebook** — lesson 2, an original eight-chapter fictional story.
+
+Turn to another page, wait for **Place saved to your account**, leave the reader, and reopen the course using **Resume reading**. Each member keeps a separate bookmark. Font controls, previous/next and page selection work with both samples. Neither lesson starts completed.
+
+Run `venv/bin/python scripts/seed_reading_demo.py` from the backend to add missing samples or enroll newly added active members. This refuses production and uses insert-only records, preserving edited sample text, bookmarks and completion. It creates no payments or notifications. See [READING_DEMO_REPORT.json](READING_DEMO_REPORT.json).

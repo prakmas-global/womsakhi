@@ -226,7 +226,7 @@ export function TodayTab({ store, s }: { store: Store; s: Settings }) {
           <>
             <FormLauncher id="nt-log" art={nowMeal} hue="green" steps={MEAL_STEPS} title="Log a meal"
                           sub={`${MEAL_STEPS} quick steps · tap a dish, type only if you want`} onStart={() => setLogging({ editing: null, mealType: nowMeal, at: 0 })} />
-            <WaterPanel store={store} s={s} />
+            <div id="nt-water" className="scroll-mt-24"><WaterPanel store={store} s={s} /></div>
             <DietGuide diet={s.settings.diet} />
           </>
         }
@@ -338,6 +338,7 @@ function WaterPanel({ store, s }: { store: Store; s: Settings }) {
           <Btn size="sm" variant="ghost" icon="Undo2" onClick={() => store.remove(todays[0].id, "Removed the last glass")}>Undo</Btn>
         )}
       </div>
+      <Btn size="sm" variant="outline" icon="Bell" href="/app/health/reminders/water">Water reminder every 30 min</Btn>
       {water.length > 0 && (
         <BarChart hue="blue" unit=" ml" goal={goalMl}
                   data={days.map((d) => ({ label: d.label, value: water.filter((w) => w.date === d.day).reduce((a, w) => a + w.data.ml, 0) }))} />

@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { SectionPictures } from "@/components/ux/nav/Hub";
 import { useCallback, useMemo, useState } from "react";
@@ -88,9 +87,9 @@ export function EarnDashboard() {
             <h1>{tr("earnDashboard.yourSkills")}<br />Real <em>Opportunities.</em></h1>
             <p>{tr("earnDashboard.turnWhatYouLoveIntoIncome")}</p>
             <div className={styles.heroActions}><TransitionLink href="/app/documents/new" className={styles.primary}>{tr("earnDashboard.startEarning")} <I name="ArrowRight" /></TransitionLink><TransitionLink href="/app/services" className={styles.secondary}><I name="CirclePlay" /> {tr("earnDashboard.exploreWaysToEarn")}</TransitionLink></div>
-            <small>{productCount + serviceCount} of your listings are active</small>
           </div>
         </section>
+        <p data-banner-details className="text-xs">{productCount + serviceCount} of your listings are active</p>
 
         {/* Everything in this section as pictures in its colour — the map a
             woman who cannot read the rail finds her way by. */}

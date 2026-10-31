@@ -173,7 +173,7 @@ export default function HelpdeskPage() {
                           </span>
                           <div className="max-w-[82%] px-3.5 py-2.5 text-[15px] leading-[1.45] lg:max-w-[70%] lg:text-sm"
                                style={mine
-                                 ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)",
+                                 ? { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)",
                                      borderRadius: bubbleRadius("out", first) }
                                  : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink)",
                                      borderRadius: bubbleRadius("in", first) }}>

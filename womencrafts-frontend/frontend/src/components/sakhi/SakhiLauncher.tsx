@@ -35,46 +35,17 @@ export default function SakhiLauncher() {
 
   return (
     <>
-      {/* Sits above the bottom tab bar on a phone, clear of the safe area. */}
-      {/* Bottom-right is crowded: the phone tab bar sits there, and in
-          development so does Next's own dev-tools badge, which is drawn on top
-          and swallows the tap. She sits above both. */}
-      {/*
-        Clear of the bottom bar, not on top of it.
-
-        `bottom-24` was measured against a screen with nothing at the bottom.
-        With the phone navigation mounted there is 56px of bar plus the home
-        indicator, and this sat over the last row of content — measured: it
-        covered the "All work" link on the home screen and clipped "Message" to
-        "Mess" on the shop.
-      */}
-      {/*
-        One position per layout, all in classes. It used to be `md:bottom-20`
-        plus an inline `bottom: 72px`, and the inline style always won — so
-        the class was dead and on a laptop, where there is no tab bar to clear,
-        the button hovered 72px up the window over the last row of content.
-
-        Below `lg` the phone tab bar is mounted, so she sits 72px up, clear of
-        it. From `lg` there is no tab bar and she docks into the corner, 24px
-        in; the shell reserves 96px under the right-hand column for her, and
-        fixed-height boards get the same room as scroll clearance.
-      */}
+      {/* The shell reserves a utility strip, so this never covers a record or action. */}
       <div
         data-float="sakhi"
-        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] end-4 z-40 md:end-6 lg:bottom-6"
+        className="fixed z-40"
       >
         {open ? null : (
           <button
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Ask Sakhi"
-            // 52px on a phone, 64px from `md`. A 64px disc is a sixth of a
-            // 390px screen and it floats over the content column, so it landed
-            // on real links — the "All work" action on the home screen, the
-            // "Message" button on an order. Smaller does not fix overlap in
-            // principle, but it is the difference between covering a word and
-            // covering a control.
-            className="group relative grid h-[52px] w-[52px] place-items-center rounded-full bg-surface shadow-lg shadow-[color:var(--wc-shadow-overlay)] ring-2 ring-brand-200 transition hover:scale-105 active:scale-95 md:h-16 md:w-16"
+            className="ux-sakhi-trigger ux-press"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -83,10 +54,10 @@ export default function SakhiLauncher() {
               /* 1240x1269 and 1.8MB before, drawn at 46px. Now 160px / 47KB. */
               alt=""
               draggable={false}
-              className="h-[46px] w-[46px] rounded-full object-cover md:h-14 md:w-14"
+              className="rounded-full object-cover"
               style={{ objectPosition: "50% 22%" }}
             />
-            <span className="absolute -top-0.5 -end-0.5 h-3.5 w-3.5 rounded-full bg-status-ok-solid ring-2 ring-[color:var(--surface)]" />
+            <span>Ask Sakhi</span>
           </button>
         )}
       </div>

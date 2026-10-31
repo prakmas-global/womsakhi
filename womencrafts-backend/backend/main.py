@@ -2,6 +2,8 @@ from app.core.operations import OperationalMetricsMiddleware
 from app.routes.operations import router as operations_router
 from app.routes.journeys import router as journeys_router
 import os
+import asyncio
+from contextlib import suppress
 import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -224,8 +226,16 @@ async def lifespan(app: FastAPI):
 
     threading.Thread(target=_warm, name="warm-matching", daemon=True).start()
 
-    yield
-    await close_db()
+    from app.engines.local_worker import start as start_reminder_worker
+    reminder_worker = start_reminder_worker()
+    try:
+        yield
+    finally:
+        if reminder_worker:
+            reminder_worker.cancel()
+            with suppress(asyncio.CancelledError):
+                await reminder_worker
+        await close_db()
 
 
 # ── Interactive API docs: a developer's machine only ────────────────────────

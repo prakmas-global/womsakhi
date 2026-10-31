@@ -1,4 +1,4 @@
-/** Home uses the shared banner geometry and preserves its complete artwork. */
+/** Home follows the complete artwork’s proportions without empty bands. */
 import puppeteer from "puppeteer-core";
 import { CHROME, APP, seededMemberToken } from "./_shared.mjs";
 
@@ -22,7 +22,8 @@ const m = await p.evaluate(() => {
   return {
     there: !!im,
     decoded: !!im && im.naturalWidth > 0,
-    bannerHeight: im?.closest("[data-banner]")?.getBoundingClientRect().height,
+    imageRatio: im ? im.clientWidth / im.clientHeight : 0,
+    gap: im ? im.closest("[data-banner]").clientHeight - im.clientHeight - im.nextElementSibling.offsetHeight : Infinity,
     fit: im ? getComputedStyle(im).objectFit : "",
     natural: im ? +(im.naturalWidth / im.naturalHeight).toFixed(2) : 0,
     alt: im?.getAttribute("alt") ?? "",
@@ -35,8 +36,8 @@ const m = await p.evaluate(() => {
 });
 
 say(m.there && m.decoded, "the banner is on the home page and decoded");
-say(m.bannerHeight === 320 && m.fit === "contain",
-    `desktop: shared 320px banner preserves the complete artwork (${m.bannerHeight}px, ${m.fit})`);
+say(Math.abs(m.imageRatio - m.natural) < .03 && Math.abs(m.gap) <= 2 && m.fit === "contain",
+    "desktop: complete artwork fills its frame without empty bands");
 say(m.alt.length > 40 && /Independent Women/.test(m.alt),
     "it has a real description — its words are baked in, so it is not decoration");
 say(m.eager, "it is not lazy-loaded; it is the first thing on the first screen");
@@ -51,11 +52,12 @@ const phone = await p.evaluate(() => {
   const r = im.getBoundingClientRect();
   return { sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
            w: Math.round(r.width), h: Math.round(r.height),
-           bannerHeight: im.closest("[data-banner]")?.getBoundingClientRect().height,
+           natural: im.naturalWidth / im.naturalHeight,
+           gap: im.closest("[data-banner]").clientHeight - im.clientHeight - im.nextElementSibling.offsetHeight,
            fit: getComputedStyle(im).objectFit };
 });
 say(phone.sideways === 0, `390px: nothing runs off the side (${phone.sideways}px)`);
-say(phone.bannerHeight === 360 && phone.fit === "contain", `390px: shared 360px banner preserves the complete artwork (${phone.bannerHeight}px)`);
+say(Math.abs(phone.w / phone.h - phone.natural) < .03 && Math.abs(phone.gap) <= 2 && phone.fit === "contain", "390px: complete artwork fills its frame without empty bands");
 
 console.log(bad ? `\n FAIL  ${bad} of 9` : "\n PASS  the banner is whole, described, and hers underneath");
 await b.close();

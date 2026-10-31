@@ -94,6 +94,8 @@ class ReminderModel:
         at: datetime | None = None,
         local_time: str = "",                 # "07:30", her wall clock
         days: list[int] | None = None,        # 0=Mon … 6=Sun; empty = daily
+        interval_minutes: int = 0,            # 0 = once per selected day
+        end_time: str = "",                   # last allowed local time
         offset_minutes: int = 0,              # negative = before the anchor
         anchor_at: datetime | None = None,
         drift: str = DRIFT_LOCAL,
@@ -124,6 +126,8 @@ class ReminderModel:
                 "at": at,
                 "local_time": local_time,
                 "days": list(days or []),
+                "interval_minutes": interval_minutes,
+                "end_time": end_time,
                 "offset_minutes": int(offset_minutes),
                 "anchor_at": anchor_at,
             },
@@ -162,6 +166,8 @@ class ReminderModel:
                 "at": s.get("at"),
                 "local_time": s.get("local_time", ""),
                 "days": s.get("days") or [],
+                "interval_minutes": s.get("interval_minutes", 0),
+                "end_time": s.get("end_time", ""),
                 "offset_minutes": s.get("offset_minutes", 0),
             },
             "tz": doc.get("tz", "UTC"),

@@ -105,6 +105,7 @@ class ReferralResponse(BaseModel):
 
 
 class ProgramDetail(BaseModel):
+    resume_lesson: int = 0
     """One programme, plus where she has got to in it."""
     id: str
     name: str

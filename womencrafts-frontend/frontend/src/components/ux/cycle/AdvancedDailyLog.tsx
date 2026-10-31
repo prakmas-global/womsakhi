@@ -195,7 +195,7 @@ export default function AdvancedDailyLog() {
           Tell us where you are in your cycle first, then your daily health log will be ready.
         </p>
         <Link href="/app/health/cycle/start" className="ux-press mt-5 inline-flex min-h-12 items-center gap-2 rounded-[12px] px-5 text-sm font-semibold"
-              style={{ background: "var(--ux-brand)", color: "var(--ux-on-brand)" }}>
+              style={{ background: "var(--ux-fill)", color: "var(--ux-on-brand)" }}>
           Set up Cycle <Icons.ArrowRight className="h-4 w-4" aria-hidden />
         </Link>
       </div>

@@ -78,7 +78,7 @@ export default function YouDashboard() {
   return <HomeShell columns><div className={styles.page} data-dashboard="you">
     <section data-banner data-page-hero className={styles.hero}>
       <Image src="/ux/you/you-hero-v2.webp" alt={tr("you.aWomanLookingHopefullyAcrossASunrise")} fill priority sizes="(max-width: 760px) 100vw, 80vw" />
-      <div className={styles.heroShade}/><div className={styles.heroCopy}><h1>{tr("you.hiName", { name: firstName })}<br/><em>{tr("you.youMakeTheWorldBrighter")}</em></h1><p>Manage your profile, preferences and everything about your WomSakhi journey — all in one place.</p><blockquote>{tr("you.empoweredWomenEmpowerAKinderWorld")}<cite>— WomSakhi</cite></blockquote></div>
+      <div className={styles.heroShade}/><div className={styles.heroCopy}><h1>{tr("you.hiName", { name: firstName })}<br/><em>{tr("you.youMakeTheWorldBrighter")}</em></h1><p>Manage your profile, preferences and everything about your WomSakhi journey — all in one place.</p></div>
       <div className={styles.heroWords}>Learn<br/>Earn<br/>Connect<br/>Grow<br/>Together <Heart/></div>
       <Link href="/app/journey" className={styles.heroCard}><Sparkles/><b>A brighter<br/>you</b><span>A kinder<br/>world</span><i><ChevronRight/></i></Link>
     </section>

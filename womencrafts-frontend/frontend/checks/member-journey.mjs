@@ -121,7 +121,7 @@ for (const viewport of viewports) {
           return box.width > 0 && box.height > 0;
         };
         return ![...document.querySelectorAll(
-          '.wc-skeleton,[class*="animate-pulse"],[class*="animate-spin"]'
+          '.wc-skeleton,.ux-skeleton,[class*="animate-pulse"],[class*="animate-spin"]'
         )].some(visible);
       }, { timeout: 5000 }).catch(() => {});
       await new Promise((done) => setTimeout(done, 120));
@@ -154,7 +154,7 @@ for (const viewport of viewports) {
             if (el.getAttribute("aria-label") || el.getAttribute("placeholder") || el.getAttribute("aria-labelledby")) return false;
             return !el.closest("label") && !(el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`));
           }).length;
-        const loading = [...document.querySelectorAll('.wc-skeleton,[class*="animate-pulse"],[class*="animate-spin"]')]
+        const loading = [...document.querySelectorAll('.wc-skeleton,.ux-skeleton,[class*="animate-pulse"],[class*="animate-spin"]')]
           .filter(visible).length;
         return {
           pathname: location.pathname,

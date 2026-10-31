@@ -85,6 +85,7 @@ const fitOf = (o: Opportunity): OpportunityMatch | undefined =>
 export function toJob(o: Opportunity): Job {
   const [low, high] = parsePay(o.pay);
   return {
+    orderDetails: o.order_details,
     id: o.id,
     title: o.title,
     org: o.org,

@@ -1,4 +1,9 @@
 import type { ThemeChoice } from "./types";
+import type { Scale } from "./palette";
+
+// Exact default UI colours: generated seed scales otherwise lighten the wine.
+export const DEFAULT_PRIMARY_SCALE: Scale = {50:"#f9f0f3",100:"#f3dad7",200:"#e8b7c6",300:"#d49caf",400:"#bb7892",500:"#a55168",600:"#742a4f",700:"#62223f",800:"#521e38",900:"#351424"};
+export const DEFAULT_SECONDARY_SCALE: Scale = {50:"#f7f1fb",100:"#eee2f4",200:"#dbc5e6",300:"#c3a0d4",400:"#a375b8",500:"#89559e",600:"#6f35a5",700:"#5d2d8b",800:"#4b246f",900:"#34194d"};
 
 /**
  * Curated palettes.
@@ -14,19 +19,10 @@ import type { ThemeChoice } from "./types";
 export const PRESETS: (ThemeChoice & { name: string; description: string })[] = [
   {
     id: "womsakhi",
-    name: "WomSakhi",
-    description: "Our own — the logo's magenta and violet",
-    /*
-      The logo's two colours (design-system/brand.css). Primary is the logo
-      magenta one step deeper — #f00078 carries white text at only 4.22:1,
-      #c80066 at 5.76:1. Secondary is the logo violet exactly (7.10:1).
-
-      `normaliseTheme` (apply.ts) maps every saved "womsakhi" choice to these
-      values, so an account that picked this preset before the rebrand follows
-      the brand instead of keeping the old berry it stored then.
-    */
-    primary: "#c80066",
-    secondary: "#4830f0",
+    name: "WomSakhi · Grape wine",
+    description: "Grape wine, soft rose and warm cream",
+    primary: "#742a4f",
+    secondary: "#6f35a5",
   },
   {
     id: "indigo",
@@ -84,8 +80,8 @@ export const DEFAULT_THEME: ThemeChoice = {
   // The same pair as the `womsakhi` preset above, and it has to stay that way:
   // this is the value used before a stored choice is read, so a mismatch shows
   // as the brand changing colour one frame after the app opens.
-  primary: "#c80066",
-  secondary: "#4830f0",
+  primary: "#742a4f",
+  secondary: "#6f35a5",
 };
 
 export function presetById(id: string) {

@@ -134,13 +134,13 @@ function FrameInner({ active, hue, icon, eyebrow, title, sub, actions, art, tabs
           </div>
           <p className="mt-1.5 max-w-[60ch] text-[15px] leading-relaxed"
              style={{ color: night ? "var(--ux-deep-ink-3)" : "var(--ux-muted)" }}>{sub}</p>
-          {actions && <div className="mt-4 flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
         {art && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={art} alt="" className="hidden h-[150px] w-[240px] rounded-[18px] object-cover md:block" />
         )}
       </section>
+      {actions && <div className="mb-4 flex flex-wrap items-center gap-2">{actions}</div>}
 
       {tabs.length > 1 && (
         <div role="tablist" aria-label={`${title} sections`} data-health-tabs

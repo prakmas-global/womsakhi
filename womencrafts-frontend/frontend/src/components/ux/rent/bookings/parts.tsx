@@ -67,7 +67,7 @@ export function StepTrack({ b }: { b: Booking }) {
                             style={{ background: i <= at ? v("--ux-brand") : v("--ux-line") }} />}
             <span className="relative z-[1] grid h-9 w-9 place-items-center rounded-full"
                   style={here ? { background: "var(--ux-pic-ground)", color: "#fff", boxShadow: "0 0 0 4px var(--ux-brand-tint)" }
-                    : done ? { background: v("--ux-brand"), color: "#fff" } : { background: v("--ux-surface-2"), color: v("--ux-faint") }}>
+                    : done ? { background: v("--ux-fill"), color: "#fff" } : { background: v("--ux-surface-2"), color: v("--ux-faint") }}>
               {done ? <Icons.Check className="h-4 w-4" /> : <I name={look.icon} className="h-4 w-4" />}
             </span>
             <span className="mt-1.5 px-0.5 text-[11px] font-semibold leading-tight"

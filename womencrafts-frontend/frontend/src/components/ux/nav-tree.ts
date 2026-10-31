@@ -128,7 +128,7 @@ export const SECTIONS: Section[] = [
         { id: "work-profile", label: "My work profile", icon: "IdCard", href: "/app/work/profile", note: "Your skills, and who can find you", },
         { id: "work-find", label: "Find people to hire", icon: "UserSearch", href: "/app/work/find", note: "By skill — only women who opted in", },
         { id: "work-post", label: "Post a job", icon: "Plus", href: "/app/work/post", note: "Find the right women for your work", },
-        { id: "work-posts", label: "My job posts", icon: "ClipboardList", href: "/app/work/posts", note: "Who applied, and what you decided", },
+        { id: "work-posts", label: "My posts & applicants", icon: "ClipboardList", href: "/app/work/posts", note: "Who applied, and what you decided", },
         { id: "verified", label: "Did they pay her?", k: "ch.verified", icon: "BadgeCheck", href: "/app/verified", note: "Before you take the work", },
         { id: "applications", label: "My applications", k: "ch.applications", icon: "ClipboardList", href: "/app/applications", note: "Where each one stands",
           children: [
@@ -298,7 +298,9 @@ export const SECTIONS: Section[] = [
         },
         { id: "pregnancy", label: "Pregnancy", icon: "Baby", href: "/app/health/pregnancy", note: "Week by week", },
         { id: "health-records", label: "Health Records", icon: "FileHeart", href: "/app/health/records", note: "Safe in one place", unlisted: true, },
-        { id: "health-reminders", label: "Appointments & Reminders", icon: "CalendarClock", href: "/app/health/reminders", note: "Never miss one", },
+        { id: "health-reminders", label: "Appointments & Reminders", icon: "CalendarClock", href: "/app/health/reminders", note: "Never miss one", children: [
+          { id: "health-water-reminders", label: "Water reminders", icon: "Droplet", href: "/app/health/reminders/water", note: "Water breaks that fit your day" },
+        ] },
         { id: "health-mentors", label: "Mentor Connect", icon: "Users", href: "/app/health/mentors", note: "Women who've been there", },
         { id: "health-doctors", label: "Doctor Consultation", icon: "Stethoscope", href: "/app/health/doctors", note: "Talk to a doctor", },
       ],
@@ -343,7 +345,7 @@ export const SECTIONS: Section[] = [
             { id: "settings-delivery", label: "How messages reach you", k: "ch.settings-delivery", icon: "Send", href: "/app/settings/delivery", note: "Which ways, and how often", },
             { id: "settings-appearance", label: "How it looks", k: "ch.settings-appearance", icon: "Palette", href: "/app/settings/appearance", note: "Light, dark, bigger text", },
             { id: "settings-voice", label: "Reading aloud", k: "ch.settings-voice", icon: "Volume2", href: "/app/settings/voice", note: "Speed and voice", },
-            { id: "settings-payments", label: "How you get paid", k: "ch.settings-payments", icon: "Wallet", href: "/app/settings/payments", note: "Bank and UPI", },
+            { id: "settings-payments", label: "How you get paid", k: "ch.settings-payments", icon: "Wallet", href: "/app/settings/payments", note: "One UPI for your whole account", },
             { id: "settings-security", label: "Keeping it safe", k: "ch.settings-security", icon: "Lock", href: "/app/settings/security", note: "PIN and sign-in", },
             { id: "settings-offline", label: "When there is no signal", k: "ch.settings-offline", icon: "WifiOff", href: "/app/settings/offline", note: "What still works", },
           ],

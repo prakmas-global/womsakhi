@@ -65,3 +65,7 @@
 .tags { flex-wrap:nowrap; overflow:hidden; }
 .tags span { white-space:nowrap; }
 .jobBody>a { margin-top:auto; }
+
+/* Keep activity rows inside their panel when shared link styles use inline-flex.
+   The middle column can then truncate long opportunity titles correctly. */
+.dashboard .upcoming > a { display:flex; width:100%; }

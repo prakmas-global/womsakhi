@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { AccountUpiEditor } from "@/components/ux/payments/AccountUpiEditor";
+import { ReadingRoom } from "@/components/ux/learning/ReadingRoom";
 
 import * as Icons from "@/components/ux/icons";
 import { Btn, Card, SectionHead } from "@/components/ux/kit";
@@ -56,10 +58,11 @@ export function problemsFor(c: CourseInput, paid: boolean): Record<string, strin
   if (paid) {
     if (!c.price_rupees || c.price_rupees < 10) p.price = "A paid course costs at least ₹10.";
     else if (c.price_rupees > 50000) p.price = "Keep the price under ₹50,000.";
-    if (!UPI_ID.test(c.upi_id.trim())) p.upi = "Add the UPI ID learners should pay, like name@okaxis.";
+    if (!UPI_ID.test(c.upi_id.trim())) p.upi = "Save your account UPI below before publishing a paid course.";
   }
   c.lessons.forEach((l, i) => {
     if (l.title.trim().length < 2) p[`lesson-${i}`] = "Give this lesson a title.";
+    else if (l.content_type && l.content_type !== "lesson" && !l.body.trim()) p[`lesson-${i}`] = "Add the article or book text.";
     else if (l.video_url && !/^https:\/\//i.test(l.video_url.trim())) p[`lesson-${i}`] = "Video links start with https://";
   });
   return p;
@@ -85,8 +88,8 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
   const categoryOptions = value.category && !cats.includes(value.category) ? [value.category, ...cats] : cats;
   const set = <K extends keyof CourseInput>(k: K) => (v: CourseInput[K]) => onChange({ ...value, [k]: v });
   const [open, setOpen] = useState(0);
+  const [readingPreview,setReadingPreview]=useState<number|null>(null);
   const lessons = value.lessons;
-  const previews = lessons.filter((l) => l.preview).length;
   const setLesson = (i: number, patch: Partial<TeachLesson>) =>
     onChange({ ...value, lessons: lessons.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
   const move = (i: number, by: -1 | 1) => {
@@ -166,8 +169,7 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
               <Err>{problems.price}</Err>
             </div>
             <div>
-              <Label need>Your UPI ID</Label>
-              <Text value={value.upi_id} onChange={set("upi_id")} label="Your UPI ID" max={120} placeholder="name@okaxis" />
+              <AccountUpiEditor onSaved={set("upi_id")}/>
               <Err>{problems.upi}</Err>
             </div>
             <p className="flex items-start gap-2 text-xs leading-relaxed lg:col-span-2" style={{ color: "var(--ux-muted)" }}>
@@ -184,10 +186,9 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
         <p className="-mt-1 mb-3 flex items-start gap-2 rounded-[12px] p-3 text-xs leading-relaxed"
            style={{ background: "var(--ux-tint-green)", color: "var(--ux-ink-2)" }}>
           <Icons.Eye className="mt-[1px] h-4 w-4 shrink-0" style={{ color: "var(--ux-green-ink)" }} />
-          <span>
-            <b style={{ color: "var(--ux-ink)" }}>Give a free glimpse.</b> Turn on <b>Free preview</b> for up to {MAX_PREVIEWS} lessons —
-            anyone can watch them before joining, like a teaser. A short welcome video works best.
-          </span>
+          {paid ? <span><b>Payment confirmation required.</b> Every lesson, article, book and video stays locked for learners until you confirm receiving their payment. You can still preview your own content.</span> : <span>
+            <b style={{ color: "var(--ux-ink)" }}>All lessons are free.</b> Learners can join and start at once. A separate free preview is not needed.
+          </span>}
         </p>
         <ol className="space-y-2.5">
           {lessons.map((l, i) => {
@@ -204,10 +205,6 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
                     <span className="min-w-0 flex-1 truncate text-xsm font-semibold" style={{ color: l.title ? "var(--ux-ink)" : "var(--ux-faint)" }}>
                       {l.title || "Untitled lesson"}
                     </span>
-                    {l.preview && (
-                      <span className="shrink-0 rounded-full px-2 py-0.5 text-2xs font-semibold"
-                            style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>Free preview</span>
-                    )}
                     {(l.body || l.video_url) && !isOpen && (
                       <span className="shrink-0 text-2xs" style={{ color: "var(--ux-muted)" }}>
                         {[l.body && "Text", l.video_url && "Video"].filter(Boolean).join(" · ")}
@@ -245,13 +242,20 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
                       </div>
                     </div>
                     <div>
+                      <Label>Lesson format</Label>
+                      <div className="flex flex-wrap gap-2" role="group" aria-label={`Lesson ${i+1} format`}>
+                        {([['lesson','Lesson / video'],['article','Article'],['book','Book']] as const).map(([key,name])=><button key={key} type="button" aria-pressed={(l.content_type??'lesson')===key} onClick={()=>setLesson(i,{content_type:key})} className="min-h-[44px] rounded-xl border px-4 text-sm font-bold" style={{borderColor:'var(--ux-line-strong)',background:(l.content_type??'lesson')===key?'var(--ux-brand-tint)':'var(--ux-surface)',color:'var(--ux-ink)'}}>{name}</button>)}
+                      </div>
+                      {l.content_type&&l.content_type!=='lesson'&&<p className="mt-2 text-xs" style={{color:'var(--ux-muted)'}}>Write or paste your {l.content_type} below. We split the text into pages automatically. Use Preview reading pages to see the result. Learners can resume their saved page. Separate paragraphs with empty lines; start a chapter heading with #.</p>}
+                    </div>
+                    <div>
                       <Label hint="optional — YouTube works best">Video link</Label>
                       <Text value={l.video_url} onChange={(s) => setLesson(i, { video_url: s.trim() })} label="Video link" max={300}
                             placeholder="Paste the https://youtu.be/… link" />
                     </div>
                     {/* With a video, words are extra — folded away until she wants them. */}
                     <More label={l.video_url ? "Add words to go with the video (optional)" : "Write the lesson"}
-                          open={!l.video_url || !!(l.body || l.detail)}>
+                          open={(!!l.content_type&&l.content_type!=="lesson") || !l.video_url || !!(l.body || l.detail)}>
                       <div className="space-y-3.5">
                         <div>
                           <Label hint="optional">One line about it</Label>
@@ -259,23 +263,25 @@ export function CourseEditor({ value, onChange, paid, onPaid, problems }: {
                                 placeholder="Bust, waist, shoulder and length" />
                         </div>
                         <div>
-                          <Label>The lesson</Label>
-                          <Area value={l.body} onChange={(s) => setLesson(i, { body: s })} max={8000} rows={6} label="Lesson text"
+                          <Label>{l.content_type==="book"?"Book text":l.content_type==="article"?"Article text":"The lesson"}</Label>
+                          <Area value={l.body} onChange={(s) => setLesson(i, { body: s })} max={l.content_type === "book" ? 200000 : l.content_type === "article" ? 50000 : 8000} rows={l.content_type&&l.content_type!=="lesson"?12:6} label="Lesson text"
                                 placeholder="Explain it the way you would to a friend. Leave an empty line between paragraphs." />
                         </div>
                       </div>
                     </More>
-                    <div className="rounded-[12px] border p-3" style={{ borderColor: l.preview ? "var(--ux-green-ink)" : "var(--ux-line)" }}>
-                      <Toggle
-                        on={l.preview}
-                        onChange={(on) => { if (!on || previews < MAX_PREVIEWS) setLesson(i, { preview: on }); }}
+                    {l.content_type&&l.content_type!=="lesson"&&<div>
+                      <button type="button" disabled={!l.body.trim()} aria-expanded={readingPreview===i} onClick={()=>setReadingPreview(readingPreview===i?null:i)} className="min-h-[44px] rounded-xl border px-4 text-sm font-semibold disabled:opacity-40" style={{background:"var(--ux-brand-tint)",color:"var(--ux-brand)",borderColor:"var(--ux-line-strong)"}}>{readingPreview===i?"Hide reading preview":"Preview reading pages"}</button>
+                      {!l.body.trim()&&<p className="mt-2 text-xs" style={{color:"var(--ux-muted)"}}>Add text above to preview the pages.</p>}
+                      {readingPreview===i&&!!l.body.trim()&&<ReadingRoom key={`${i}-${l.content_type}`} courseId="author-preview" lessonNumber={i+1} lesson={{...l,done:false}} canSave={false}/>}
+                    </div>}
+                    <div className="rounded-[12px] border p-3" style={{ borderColor: "var(--ux-line)" }}>
+                      {paid ? <p className="text-xs" style={{color:"var(--ux-muted)"}}>Learner access opens after you confirm payment. Public previews are unavailable for paid courses.</p> : <Toggle
+                        on={false}
+                        disabled
+                        onChange={() => {}}
                         label="Free preview"
-                        sub={l.preview
-                          ? "Anyone can watch this lesson before joining."
-                          : previews >= MAX_PREVIEWS
-                            ? `You already have ${MAX_PREVIEWS} free previews. Turn one off to use this lesson instead.`
-                            : "Let anyone watch this lesson before joining — a teaser for your course."}
-                      />
+                        sub="Not needed for a free course. Learners can access every lesson after joining."
+                      />}
                     </div>
                     <Err>{bad}</Err>
                   </div>

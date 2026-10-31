@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 import re
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Optional
 
 from bson import ObjectId
@@ -33,6 +34,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 
 from app.core import masters
+from app.core.work_location import clean_place, place_query
+from app.schemas.growth import BulkOrderDetails
 from app.core import skill_master, skills as taxonomy, work_done
 from app.core.audit import record
 from app.core.deps import get_current_user
@@ -734,7 +737,9 @@ async def notify_matching_women(job: dict, exclude: str = "") -> int:
     if not keys:
         return 0
     profiles = await _db()[PROFILES_COL].find(
-        {"skills.key": {"$in": keys}, "user_id": {"$ne": exclude}}, {"user_id": 1}).to_list(500)
+        {"skills.key": {"$in": keys}, "user_id": {"$ne": exclude},
+         **(place_query("city", job["city"], legacy=False) if job.get("kind") == "Craft order" and job.get("city") else {})},
+        {"user_id": 1}).to_list(500)
     if not profiles:
         return 0
     consent = {p["user_id"] async for p in _db()[PROFILES].find(
@@ -761,6 +766,9 @@ class JobIn(BaseModel):
     kind: str = Field(default="Job", max_length=20)
     mode: str = Field(default="On-site", max_length=20)
     location: str = Field(default="", max_length=80)
+    city: str = Field(default="", max_length=80)
+    area: str = Field(default="", max_length=80)
+    order_details: Optional[BulkOrderDetails] = None
     pay: str = Field(default="", max_length=80)
     openings: int = Field(default=1, ge=1, le=500)
     deadline: str = Field(default="", max_length=10)
@@ -794,10 +802,23 @@ async def _job_fields(body: JobIn, current: Optional[dict] = None) -> dict:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick at least one skill from the list.")
     if body.deadline and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", body.deadline):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Pick the last date from the calendar.")
+    city, area = clean_place(body.city), clean_place(body.area)
+    details = body.order_details.model_dump(mode="json") if body.order_details and kind == "Craft order" else None
+    if kind == "Craft order":
+        if not city or not details:
+            raise HTTPException(422, "Add the town, quantity, delivery date, materials and payment terms for this big order.")
+        if not details["unit"].strip() or len(details["materials"].strip()) < 3 or len(details["payment_terms"].strip()) < 3:
+            raise HTTPException(422, "Describe the units, materials and payment terms.")
+        if not current and details["delivery_date"] < _now().astimezone(ZoneInfo("Asia/Kolkata")).date().isoformat():
+            raise HTTPException(422, "Choose a delivery date from today onwards.")
+        if body.deadline and body.deadline > details["delivery_date"]:
+            raise HTTPException(422, "Applications must close on or before the delivery date.")
     return {"title": " ".join(body.title.split()), "category": category, "skill_keys": keys, "skills": names,
             "kind": kind,
             "mode": body.mode if body.mode in _JOB_MODES else "On-site",
-            "location": body.location.strip(), "pay": body.pay.strip(), "openings": body.openings,
+            "location": ", ".join(filter(None, [area, city])) if city else body.location.strip(),
+            "city": city, "area": area, "order_details": details,
+            "pay": body.pay.strip(), "openings": body.openings,
             "deadline": body.deadline, "desc": body.desc.strip(), "experience": body.experience.strip()}
 
 
@@ -822,6 +843,7 @@ async def post_job(body: JobIn, me: dict = Depends(require_active_member)):
         contact_note="Apply here. She will message you in WomSakhi.",
         category=f["category"], skill_keys=f["skill_keys"], owner_kind="member", owner_id=uid,
     )
+    doc.update({key: f[key] for key in ("city", "area", "order_details")})
     doc["_id"] = (await _db()["opportunities"].insert_one(doc)).inserted_id
     await notify_matching_women(doc, exclude=uid)
     return _job_row(doc, 0, await category_names())

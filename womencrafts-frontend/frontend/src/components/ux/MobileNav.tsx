@@ -53,46 +53,23 @@ function Icon({ name, className }: { name: string; className?: string }) {
  * a bad day, so it is not behind a menu. That is the reading of §65 that
  * actually protects her, rather than the one that satisfies a tab count.
  *
- * `.ux-dock-bottom` is what keeps it above the tab bar: `mobile.css` sets that
- * class to `bottom: var(--tabbar-h)`, which already includes the home
- * indicator. It used to carry a hand-written `calc(56px + env(...))` that had
- * to be kept in step with a bar height defined somewhere else, and was already
- * two pixels out.
+ * The shared utility strip reserves space above the tab bar, including the
+ * home indicator. The link opens safety choices without dialling a number.
  */
 export function SafetyPin() {
   const tr = useT();
   const pathname = usePathname();
   if (pathname.startsWith("/app/safety")) return null;
 
-  /*
-    A red SOS, not a white pill.
-
-    The pill said "Get help now" in 11px type with a 16px shield — fine for a
-    woman who reads, invisible to one who does not, and grey enough to be
-    mistaken for any other chip. This is the one control that has to be found
-    in a panic, by anyone: a big red circle with SOS on it is understood in
-    every language the app speaks, and by those who read none of them.
-
-    It opens Get help (112, the helplines, her trusted people as big picture
-    buttons); it never dials on its own, because a shared phone in a pocket
-    must not call the police by accident.
-  */
+  // Opens the existing safety screen; it never makes a call automatically.
   return (
     <Link
       href="/app/safety"
       aria-label={`SOS — ${tr("ch.safety.label")}`}
-      className="ux-press ux-dock-bottom fixed bottom-0 left-3 z-[var(--ux-z-sticky)] mb-3 grid h-[62px] w-[62px] place-items-center rounded-full lg:hidden"
-      style={{
-        background: "radial-gradient(circle at 35% 30%, #ff5a5a 0%, #e01e1e 55%, #b30f0f 100%)",
-        boxShadow: "0 0 0 3px var(--ux-surface), 0 10px 24px -6px rgba(200,20,20,.55)",
-        color: "#fff",
-      }}
+      className="ux-press ux-safety-trigger fixed z-[var(--ux-z-sticky)] lg:hidden"
     >
-      <span aria-hidden className="ux-sos-ring absolute inset-0 rounded-full" />
-      <span className="relative flex flex-col items-center leading-none">
-        <Icon name="ShieldAlert" className="h-[20px] w-[20px]" />
-        <span className="mt-[3px] text-[13px] font-extrabold tracking-[0.06em]">SOS</span>
-      </span>
+      <Icon name="ShieldAlert" className="h-5 w-5" />
+      <span>SOS · Get help</span>
     </Link>
   );
 }

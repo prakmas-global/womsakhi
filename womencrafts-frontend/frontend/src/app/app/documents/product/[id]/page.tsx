@@ -339,7 +339,7 @@ export default function ProductEditor({ params }: { params: Promise<{ id: string
                   <img loading="lazy" decoding="async" src={url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
                   {i === 0 && (
                     <span className="absolute start-1.5 top-1.5 rounded-full px-2 py-0.5 text-2xs font-bold"
-                          style={{ background: "var(--ux-brand)", color: "var(--ux-on-brand)" }}>First</span>
+                          style={{ background: "var(--ux-fill)", color: "var(--ux-on-brand)" }}>First</span>
                   )}
                   <div className="absolute inset-x-1.5 bottom-1.5 flex justify-between gap-1">
                     {i > 0 ? (

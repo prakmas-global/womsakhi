@@ -10,6 +10,7 @@ the token, and no endpoint accepts a member id from the client.
 """
 
 import asyncio
+from typing import Annotated
 
 from datetime import date, datetime, timedelta, timezone
 
@@ -19,6 +20,8 @@ from pydantic import BaseModel, Field
 from app.schemas.payment import PaymentReference
 
 from app.core import mongosafe
+from app.core.account_upi import recipient_upi
+from app.core.work_location import clean_place, place_query
 from app.core.rbac import require_active_member, require_member_account
 from app.core.serializers import to_object_id
 from app.core import cache
@@ -349,7 +352,9 @@ async def my_mentor_requests(me: dict = Depends(require_member_account)):
     if ids:
         upi = {str(m["_id"]): m.get("upi_id", "") for m in await _mentors().find(
             {"_id": {"$in": [to_object_id(i) for i in ids]}}, {"upi_id": 1}).to_list(None)}
-    return [_learner_view(d, upi.get(d.get("mentor_id", ""), "")) for d in docs]
+    owners={d.get("owner_id") for d in docs if ObjectId.is_valid(d.get("owner_id") or "")}
+    defaults={str(u["_id"]):u["payment_upi_id"] async for u in get_database().users.find({"_id":{"$in":[ObjectId(uid) for uid in owners]},"payment_upi_id":{"$exists":True}},{"payment_upi_id":1})}
+    return [_learner_view(d, upi.get(d.get("mentor_id", ""), "") if (d.get("payment") or {}).get("status")=="claimed" else defaults.get(d.get("owner_id"),upi.get(d.get("mentor_id", ""), ""))) for d in docs]
 
 
 def _learner_view(doc: dict, upi_id: str = "") -> dict:
@@ -363,7 +368,7 @@ def _learner_view(doc: dict, upi_id: str = "") -> dict:
     pay = (doc.get("payment") or {}).get("status", "")
     paid_or_free = not int(doc.get("price_minor") or 0) or pay == "paid"
     out["meeting"] = doc.get("meeting", "") if accepted and paid_or_free else ""
-    out["upi_id"] = upi_id if doc.get("status") == MentorshipRequestModel.STATUS_ACCEPTED and pay in ("awaiting", "claimed") else ""
+    out["upi_id"] = ((doc.get("payment") or {}).get("upi_id",upi_id) if pay=="claimed" else upi_id) if doc.get("status") == MentorshipRequestModel.STATUS_ACCEPTED and pay in ("awaiting", "claimed") else ""
     return out
 
 
@@ -375,10 +380,13 @@ class SessionPaid(PaymentReference):
              summary="I've paid my mentor for the session")
 async def mentor_session_paid(request_id: str, body: SessionPaid, me: dict = Depends(require_active_member)):
     now = datetime.now(timezone.utc)
+    prior=await _requests().find_one({"_id":to_object_id(request_id),"user_id":str(me["_id"])})
+    mentor=await _mentors().find_one({"_id":to_object_id(prior["mentor_id"])}) if prior else None
+    address=await recipient_upi(get_database(),(prior or {}).get("owner_id", ""),(mentor or {}).get("upi_id", ""))
     doc = await _requests().find_one_and_update(
         {"_id": to_object_id(request_id), "user_id": str(me["_id"]),
          "status": MentorshipRequestModel.STATUS_ACCEPTED, "payment.status": "awaiting"},
-        {"$set": {"payment.status": "claimed", "payment.reference": body.reference.strip(),
+        {"$set": {"payment.status": "claimed", "payment.reference": body.reference.strip(), "payment.upi_id":address,
                   "payment.claimed_at": now, "updated_at": now}},
         return_document=True,
     )
@@ -389,8 +397,7 @@ async def mentor_session_paid(request_id: str, body: SessionPaid, me: dict = Dep
         f"{me.get('full_name') or 'A member'} says she paid for your session",
         "Check your UPI app, then confirm it under Mentoring.", "money", "/app/mentoring",
     )
-    mentor = await _mentors().find_one({"_id": to_object_id(doc["mentor_id"])}, {"upi_id": 1})
-    return _learner_view(doc, (mentor or {}).get("upi_id", ""))
+    return _learner_view(doc,address)
 
 
 @router.post(
@@ -447,6 +454,8 @@ async def list_opportunities(
     q: str = Query("", max_length=80),
     kind: str = Query("", max_length=30),
     mode: str = Query("", max_length=20),
+    city: Annotated[str, Query(max_length=80)] = "",
+    area: Annotated[str, Query(max_length=80)] = "",
     saved: bool = Query(False, description="Only the ones I saved"),
     pay_min_minor: int = Query(
         0, ge=0,
@@ -507,6 +516,11 @@ async def list_opportunities(
     live = {"$or": [{"deadline": {"$in": ["", None]}}, {"deadline": {"$exists": False}},
                     {"deadline": {"$gte": _today()}}]}
     query.setdefault("$and", []).append(live)
+    if clean_place(area) and not clean_place(city):
+        raise HTTPException(422, "Choose a town or city before filtering by area.")
+    for field, value in (("city", city), ("area", area)):
+        if clean_place(value):
+            query["$and"].append(place_query(field, value))
     if q.strip():
         # Search reaches everything she can read on the card.
         query["$and"].append(mongosafe.any_of(q, ["title", "org", "skills", "location", "desc"]))

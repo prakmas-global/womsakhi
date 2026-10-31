@@ -115,7 +115,7 @@ export const OrderCard = memo(function OrderCard({ o, onAdvance, busy }: {
         {o.next_state && (
           <button type="button" onClick={() => onAdvance(o)} disabled={busy}
                   className="ux-press flex min-h-[38px] shrink-0 items-center rounded-[12px] px-4 text-xs font-bold disabled:opacity-60 max-lg:min-h-[44px] max-lg:w-full max-lg:justify-center max-lg:text-[15px]"
-                  style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                  style={{ background: "var(--ux-action-gradient)",
                            color: "var(--ux-on-brand)" }}>
             {busy ? "…" : LABEL[o.state] ?? `Mark ${o.next_state.toLowerCase()}`}
           </button>
@@ -397,7 +397,7 @@ export const Storefront = memo(function Storefront(
                 </p>
               </div>
               <span className="ms-auto self-center shrink-0 rounded-[8px] px-3 py-2 text-2xs font-extrabold"
-                    style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                    style={{ background: "var(--ux-action-gradient)",
                              color: "var(--ux-on-brand)" }}>
                 {l.kind === "service" ? "Book" : "Buy"}
               </span>
