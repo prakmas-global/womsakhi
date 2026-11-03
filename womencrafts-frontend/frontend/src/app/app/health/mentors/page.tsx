@@ -23,6 +23,7 @@ import { apiMentorReviews, apiMyReviewedSessions, apiReviewSession, type MentorR
 import { useResource } from "@/lib/use-resource";
 import { WatchListen } from "@/components/ux/health/WatchListen";
 import { FormLauncher, PicChoice, Review, StepSheet, useFlow, type FlowStep } from "@/components/ux/health/StepFlow";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Mentor Connect — guidance from women who have been there.
@@ -102,7 +103,7 @@ export default function MentorConnect() {
 
   return (
     <HealthFrame active="/app/health/mentors" hue="orange" icon="Users" eyebrow="Mentor Connect"
-                 title="Mentor Connect" art="/ux/health/ill/mentor.webp"
+                 title="Mentor Connect" art={illSrc("mentor")}
                  sub="Guidance from women who've been there: health, career, money, family and growth."
                  tabs={TABS}
                  actions={<>

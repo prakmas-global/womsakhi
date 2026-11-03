@@ -6,6 +6,7 @@ import { HealthFrame, useEntries, useHealthSettings } from "@/components/ux/heal
 import { GoalsTab, InsightsTab, PlanTab, RecipesTab, TodayTab } from "@/components/ux/health/nutrition/NutritionTabs";
 import { addDays, today } from "@/lib/health-api";
 import { WatchListen } from "@/components/ux/health/WatchListen";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Nutrition & Diet — after the approved Health & Wellness design.
@@ -35,7 +36,7 @@ export default function NutritionPage() {
   return (
     <HealthFrame active="/app/health/nutrition" hue="green" icon="Apple" eyebrow="Eat better, feel better"
                  title="Nutrition & Diet" sub="Eat better, feel better every day. Log meals and water in a tap, plan the week, and cook simple Indian recipes."
-                 art="/ux/health/ill/hero-nutrition.webp" tabs={TABS}
+                 art={illSrc("hero-nutrition")} tabs={TABS}
                  actions={<>
                    <Btn size="sm" icon="Plus" href="/app/health/nutrition#nt-log">Log a meal</Btn>
                    <Btn size="sm" variant="outline" icon="CalendarDays" href="/app/health/nutrition?tab=plan">Plan my week</Btn>

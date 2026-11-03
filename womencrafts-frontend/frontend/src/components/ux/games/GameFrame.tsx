@@ -23,10 +23,12 @@ import { FeelSheet } from "./FeelSheet";
  * break helped. Rounds under five seconds (an accidental tap on "I'm done")
  * are not saved. "Play again" starts a new round.
  */
-export function GameFrame({ title, sub, children, feel, setFeel, again, tools, game, result }: {
+export function GameFrame({ title, sub, children, feel, setFeel, again, tools, game, result, back }: {
   title: string;
   sub: string;
   children: React.ReactNode;
+  /** Where "back" goes, when not to the games list (a game with its own front page). */
+  back?: { to: string; label: string };
   feel: boolean;
   setFeel: (v: boolean) => void;
   again?: () => void;
@@ -62,7 +64,7 @@ export function GameFrame({ title, sub, children, feel, setFeel, again, tools, g
 
   return (
     <HomeShell active="/app/health/games">
-      <Back to="/app/health/games" label="Games" className="mb-3" />
+      <Back to={back?.to ?? "/app/health/games"} label={back?.label ?? "Games"} className="mb-3" />
       <ScreenHead title={title} sub={sub}>
         <div className="flex flex-wrap items-center gap-2">
           {tools}

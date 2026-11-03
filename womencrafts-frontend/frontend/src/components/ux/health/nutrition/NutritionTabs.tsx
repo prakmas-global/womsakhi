@@ -10,6 +10,7 @@ import {
 } from "@/components/ux/health/kit";
 import { artOf } from "@/components/ux/health/art";
 import { Dial, FormLauncher, PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
+import { WaterDrops } from "@/components/ux/health/QuickForms";
 import { addDays, fmtDay, nowHHMM, today, type Entry, type HealthKind, type HealthSettings, type KindData, type MealType } from "@/lib/health-api";
 import { DIETS, DIET_GUIDE, DIET_TILES, FOODS, GOAL_ART, MEAL_ICON, MEAL_TYPES, RECIPES, mealByTime, recipeArt, recipeFor, type Recipe } from "./data";
 import { Field, FlowNote } from "./parts";
@@ -328,16 +329,10 @@ function WaterPanel({ store, s }: { store: Store; s: Settings }) {
           </span>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {[150, 250, 500].map((n) => (
-          <Btn key={n} size="sm" variant={n === 250 ? "primary" : "outline"} icon="Plus" onClick={() => store.add("water", { ml: n }, t, `+${n} ml of water`)}>
-            {n} ml
-          </Btn>
-        ))}
-        {todays.length > 0 && (
-          <Btn size="sm" variant="ghost" icon="Undo2" onClick={() => store.remove(todays[0].id, "Removed the last glass")}>Undo</Btn>
-        )}
-      </div>
+      <WaterDrops onAdd={(n) => void store.add("water", { ml: n }, t, `+${n >= 1000 ? `${n / 1000} L` : `${n} ml`} of water`)} />
+      {todays.length > 0 && (
+        <Btn size="sm" variant="ghost" icon="Undo2" className="self-start" onClick={() => store.remove(todays[0].id, "Removed the last one")}>Undo</Btn>
+      )}
       {water.length > 0 && (
         <BarChart hue="blue" unit=" ml" goal={goalMl}
                   data={days.map((d) => ({ label: d.label, value: water.filter((w) => w.date === d.day).reduce((a, w) => a + w.data.ml, 0) }))} />

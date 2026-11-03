@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 
-import { Btn } from "@/components/ux/kit";
 import { Text } from "@/components/ux/kit/form";
 import { addDays, fmtDay, today, type KindData, type MealType } from "@/lib/health-api";
 import { ACTIVITIES, INTENSITIES } from "./fitness-data";
-import { Chips, type Hue } from "./kit";
+import { artOf } from "./art";
+import { Chips, HUE, type Hue } from "./kit";
 import { Dial, PicChoice, Review, StepSheet, type FlowStep } from "./StepFlow";
 
 /**
@@ -180,7 +180,36 @@ export function SleepFlow({ open, onClose, onSave, hue = "violet", initial, date
 
 /* ── water: one tap, no flow ─────────────────────────────────────────────── */
 
-/** One-tap water: three glass sizes, and the day's total against her goal. */
+/** The water amounts she can add in one tap: half a litre and a litre. */
+export const WATER_STEPS = [
+  { ml: 500, label: "½ L", sub: "About 2 glasses" },
+  { ml: 1000, label: "1 L", sub: "A full bottle" },
+] as const;
+
+/** Two big water drops, ½ L and 1 L — one tap each; the 1 L drop is drawn bigger. */
+export function WaterDrops({ onAdd, busy = 0 }: { onAdd: (ml: number) => void; busy?: number }) {
+  const h = HUE.blue;
+  return (
+    <div className="grid max-w-[420px] grid-cols-2 gap-3" role="group" aria-label="Add water" data-water-drops>
+      {WATER_STEPS.map((w) => (
+        <button key={w.ml} type="button" onClick={() => onAdd(w.ml)} disabled={!!busy} aria-label={`Add ${w.label} of water`}
+                className="ux-press flex min-h-[76px] items-center gap-3 rounded-[16px] border-[1.5px] px-3.5 py-3 text-start transition-opacity disabled:opacity-60"
+                style={{ borderColor: h.tint, background: h.tint, color: "var(--ux-ink)" }}>
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: "var(--ux-surface)" }} aria-hidden>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={artOf("Water")} alt="" className={w.ml >= 1000 ? "h-10 w-10" : "h-7 w-7"} />
+          </span>
+          <span className="min-w-0">
+            <b className="block text-lg leading-tight tabular-nums" style={{ color: h.ink }}>+ {w.label}</b>
+            <span className="text-xs" style={{ color: "var(--ux-muted)" }}>{busy === w.ml ? "Adding…" : w.sub}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** One-tap water: the two drops, and the day's total against her goal. */
 export function WaterButtons({ totalMl, goalMl, onAdd }: {
   totalMl: number; goalMl: number; onAdd: (ml: number) => Promise<unknown>;
 }) {
@@ -191,11 +220,7 @@ export function WaterButtons({ totalMl, goalMl, onAdd }: {
       <p className="text-sm" style={{ color: "var(--ux-ink-2)" }}>
         <b className="tabular-nums" style={{ color: "var(--ux-ink)" }}>{(totalMl / 1000).toFixed(2).replace(/0$/, "")} L</b> of {(goalMl / 1000).toFixed(1)} L today
       </p>
-      <div className="flex flex-wrap gap-2">
-        {[150, 250, 500].map((ml) => (
-          <Btn key={ml} variant="soft" icon="Plus" size="sm" loading={busy === ml} onClick={() => add(ml)}>{ml} ml</Btn>
-        ))}
-      </div>
+      <WaterDrops onAdd={add} busy={busy} />
     </div>
   );
 }

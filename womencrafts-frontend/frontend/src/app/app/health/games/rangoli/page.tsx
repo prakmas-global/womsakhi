@@ -1,186 +1,206 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
+import { HomeShell } from "@/components/ux/home/HomeShell";
+import { Back, Btn } from "@/components/ux/kit";
+import { ScreenHead } from "@/components/ux/learning/native";
 import * as Icons from "@/components/ux/icons";
-import { Btn, Card } from "@/components/ux/kit";
-import { GameFrame } from "@/components/ux/games/GameFrame";
-import s from "@/components/ux/games/games.module.css";
+import { RangoliArt, countOf } from "@/components/ux/games/RangoliArt";
+import { DESIGNS, designOf, levelOf, seedAt, type Design } from "@/components/ux/games/rangoli-designs";
+import {
+  listMade, listSaved, loadFills, recent, removeSaved, type Fills, type SavedRangoli,
+} from "@/components/ux/games/rangoli-store";
 
 /**
- * Colour the rangoli — tap a petal, it fills with the colour she picked.
+ * Rangoli designs — choose one to colour.
  *
- * The pattern is drawn in code: rings of petals with eight-fold symmetry, the
- * shape of a doorstep rangoli. 58 pieces, each one tap. Her colouring is kept
- * on this phone so she can come back to it, and "Save picture" turns it into
- * a PNG she can keep or share.
+ * A library of 100: the hand-made designs, then the app's own designs drawn
+ * from fixed seeds (components/ux/games/rangoli-designs.ts) — the same ones on
+ * every phone — shown twelve at a time. Designs she has started sit on top,
+ * and the ones she kept with "Save design" are under My rangolis.
+ * Everything is drawn here, in the app; nothing is fetched from anywhere.
+ * Opening a design goes to /app/health/games/rangoli/<id>.
  */
-const PALETTE = [
-  { name: "Marigold", hex: "#F6A21E" },
-  { name: "Vermillion", hex: "#E2453C" },
-  { name: "Rani pink", hex: "#D6246E" },
-  { name: "Turmeric", hex: "#F2CF3A" },
-  { name: "Peacock", hex: "#0E7C86" },
-  { name: "Turquoise", hex: "#2BB3A3" },
-  { name: "Leaf", hex: "#59A845" },
-  { name: "Indigo", hex: "#3D4DB7" },
-];
-const BLANK = "#ffffff";
-const LINE = "#d9c5cf";
-const KEY = "womsakhi.rangoli.v1";
 
-type Seg = { id: string; d?: string; circle?: { cx: number; cy: number; r: number }; rot?: number };
+const BASE = "/app/health/games/rangoli";
+const PAGE = 12;
+const LEVELS = ["All", "Easy", "Calm", "Detailed"] as const;
+type Level = (typeof LEVELS)[number];
+/** How far she had scrolled the list and which level she picked, kept for "Back to designs". */
+const VIEW = "womsakhi.rangoli.view";
 
-/** A petal pointing right, from radius r1 to r2, w wide; rotated into place. */
-function petal(r1: number, r2: number, w: number) {
-  const a = r1 + (r2 - r1) * 0.3, b = r1 + (r2 - r1) * 0.82;
-  return `M ${r1} 0 C ${a} ${w}, ${b} ${w * 0.9}, ${r2} 0 C ${b} ${-w * 0.9}, ${a} ${-w}, ${r1} 0 Z`;
+const genId = (i: number) => `g${seedAt(i).toString(36)}`;
+/** The whole library: 100 designs in all, the hand-made ones first. */
+const LIBRARY_SIZE = 100;
+const APP_DESIGNS: Design[] = Array.from({ length: LIBRARY_SIZE - DESIGNS.length }, (_, i) => designOf(genId(i))!);
+const when = (at: number) => new Date(at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+
+function Card({ d, fills, href, foot, onRemove }: {
+  d: Design; fills: Fills; href: string; foot?: string; onRemove?: () => void;
+}) {
+  const n = countOf(d, fills), total = d.segs.length;
+  return (
+    <article className="ux-card ux-hov relative flex flex-col gap-1.5 overflow-hidden p-2" data-rangoli-card={d.id}>
+      <Link href={href} className="absolute inset-0 z-[1] rounded-[inherit]" aria-label={`Colour ${d.name}: ${levelOf(d)}, ${total} pieces${n ? `, ${n} coloured` : ""}`} />
+      <RangoliArt design={d} fills={fills} className="block aspect-square w-full rounded-[12px]" />
+      <b className="truncate px-1 text-[13.5px] leading-tight" style={{ color: "var(--ux-ink)" }}>{d.name}</b>
+      <span className="truncate px-1 text-[11.5px] leading-tight tabular-nums" style={{ color: "var(--ux-muted)" }}>
+        {foot ?? `${levelOf(d)} · ${n ? `${n}/${total} coloured` : `${total} pieces`}`}
+      </span>
+      <span className="mx-1 mb-1 block h-[5px] overflow-hidden rounded-full" style={{ background: n ? "var(--ux-tint-pink)" : "transparent" }} aria-hidden>
+        <i className="block h-full rounded-full" style={{ width: `${(n / total) * 100}%`, background: "var(--ux-brand)" }} />
+      </span>
+      {onRemove && (
+        <button type="button" onClick={onRemove} aria-label={`Remove ${d.name} from My rangolis`}
+                className="ux-press absolute end-3 top-3 z-[2] grid h-8 w-8 place-items-center rounded-full"
+                style={{ background: "rgba(255,255,255,.92)", color: "var(--ux-muted)", boxShadow: "var(--ux-shadow-sm)" }}>
+          <Icons.Trash2 className="h-4 w-4" />
+        </button>
+      )}
+    </article>
+  );
 }
 
-/** Drawn back to front: the band, the big outer petals, then inward. */
-const SEGMENTS: Seg[] = (() => {
-  const out: Seg[] = [{ id: "band", circle: { cx: 0, cy: 0, r: 160 } }];
-  for (let k = 0; k < 8; k++) out.push({ id: `d${k}`, d: petal(125, 192, 40), rot: k * 45 + 22.5 });
-  for (let k = 0; k < 8; k++) out.push({ id: `b${k}`, d: petal(48, 124, 30), rot: k * 45 + 22.5 });
-  for (let k = 0; k < 16; k++) out.push({ id: `c${k}`, d: petal(118, 152, 13), rot: k * 22.5 });
-  for (let k = 0; k < 8; k++) out.push({ id: `a${k}`, d: petal(22, 88, 26), rot: k * 45 });
-  for (let k = 0; k < 16; k++) {
-    const t = ((k * 22.5 + 11.25) * Math.PI) / 180;
-    out.push({ id: `e${k}`, circle: { cx: Math.round(Math.cos(t) * 172 * 10) / 10, cy: Math.round(Math.sin(t) * 172 * 10) / 10, r: 7 } });
-  }
-  out.push({ id: "core", circle: { cx: 0, cy: 0, r: 22 } });
-  return out;
-})();
-
-/** The drawing as SVG text — the same shapes as on screen, for saving. */
-function markup(fills: Record<string, string>) {
-  const parts = SEGMENTS.map((g) => {
-    const fill = fills[g.id] ?? BLANK;
-    return g.circle
-      ? `<circle cx="${g.circle.cx}" cy="${g.circle.cy}" r="${g.circle.r}" fill="${fill}" stroke="${LINE}" stroke-width="1.5"/>`
-      : `<path d="${g.d}" transform="rotate(${g.rot ?? 0})" fill="${fill}" stroke="${LINE}" stroke-width="1.5"/>`;
-  }).join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-210 -210 420 420" width="1000" height="1000"><rect x="-210" y="-210" width="420" height="420" fill="#fffaf3"/>${parts}</svg>`;
+function Grid({ children }: { children: React.ReactNode }) {
+  return <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>{children}</div>;
 }
 
-export default function RangoliPage() {
-  const [colour, setColour] = useState(PALETTE[0].hex);
-  const [fills, setFills] = useState<Record<string, string>>({});
-  const [history, setHistory] = useState<Record<string, string>[]>([]);
-  const [feel, setFeel] = useState(false);
-  const [saved, setSaved] = useState("");
+function Head({ id, title, sub, action }: { id: string; title: string; sub?: string; action?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+      <div className="min-w-0">
+        <h2 id={id} className="text-[17px] font-extrabold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
+        {sub && <p className="text-xs" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
 
-  // Her drawing from last time, read after the first paint (browser only).
+export default function RangoliDesigns() {
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
+  const [started, setStarted] = useState<{ id: string; fills: Fills }[]>([]);
+  const [progress, setProgress] = useState<Record<string, Fills>>({});
+  const [saved, setSaved] = useState<SavedRangoli[]>([]);
+  const [made, setMade] = useState<string[]>([]);
+  const [shown, setShown] = useState(PAGE);
+  const [level, setLevel] = useState<Level>("All");
+
+  // Everything she keeps is in this browser: read it after the first paint.
   useEffect(() => {
     const t = window.setTimeout(() => {
+      // Links from before designs had their own page: ?design=<id> opens that design.
+      const old = new URLSearchParams(window.location.search).get("design");
+      if (old && designOf(old)) { router.replace(`${BASE}/${old}`); return; }
+      const r = recent().filter((x) => designOf(x.id)).sort((a, b) => b.at - a.at);
+      const fills = Object.fromEntries(r.map((x) => [x.id, loadFills(x.id)]));
+      setStarted(r.map((x) => ({ id: x.id, fills: fills[x.id] })));
+      setProgress(fills);
+      setSaved(listSaved().filter((x) => designOf(x.id)));
+      setMade(listMade().filter((id) => designOf(id)));
       try {
-        const raw = localStorage.getItem(KEY);
-        if (raw) setFills(JSON.parse(raw) as Record<string, string>);
-      } catch { /* no storage — start fresh */ }
+        const v = JSON.parse(sessionStorage.getItem(VIEW) || "{}") as { shown?: number; level?: Level };
+        if (v.shown) setShown(Math.min(APP_DESIGNS.length, v.shown));
+        if (v.level && LEVELS.includes(v.level)) setLevel(v.level);
+      } catch { /* fine */ }
+      setReady(true);
     }, 0);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [router]);
 
-  const keep = (next: Record<string, string>) => {
-    setHistory((h) => [...h.slice(-40), fills]);
-    setFills(next);
-    setSaved("");
-    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* fine */ }
+  const remember = (next: { shown?: number; level?: Level }) => {
+    try { sessionStorage.setItem(VIEW, JSON.stringify({ shown, level, ...next })); } catch { /* fine */ }
+  };
+  const more = () => { setShown(shown + PAGE); remember({ shown: shown + PAGE }); };
+  const pickLevel = (l: Level) => { setLevel(l); remember({ level: l }); };
+  const remove = (sid: string) => {
+    removeSaved(sid);
+    setSaved((x) => x.filter((s) => s.sid !== sid));
   };
 
-  const paint = (id: string) => {
-    if (fills[id] === colour) return;
-    keep({ ...fills, [id]: colour });
-  };
-  const undo = () => {
-    const prev = history[history.length - 1];
-    if (!prev) return;
-    setHistory((h) => h.slice(0, -1));
-    setFills(prev);
-    try { localStorage.setItem(KEY, JSON.stringify(prev)); } catch { /* fine */ }
-  };
-  const clear = () => { if (Object.keys(fills).length) keep({}); };
-
-  const save = () => {
-    const blob = new Blob([markup(fills)], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 1000; canvas.height = 1000;
-      const g = canvas.getContext("2d");
-      if (!g) { URL.revokeObjectURL(url); return; }
-      g.drawImage(img, 0, 0, 1000, 1000);
-      URL.revokeObjectURL(url);
-      canvas.toBlob((png) => {
-        if (!png) return;
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(png);
-        a.download = "my-rangoli.png";
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        setSaved("Saved to your phone as my-rangoli.png");
-      }, "image/png");
-    };
-    img.src = url;
-  };
-
-  const filled = SEGMENTS.filter((g) => fills[g.id] && fills[g.id] !== BLANK).length;
+  const fits = (d: Design) => level === "All" || levelOf(d) === level;
+  // The app's designs at the level she picked; `shown` of them on the page.
+  const matching = useMemo(() => APP_DESIGNS.filter((d) => level === "All" || levelOf(d) === level), [level]);
+  const app = matching.slice(0, shown);
+  const left = matching.length - app.length;
+  const featured = DESIGNS.filter(fits);
+  const mine = made.map((id) => designOf(id)!).filter((d) => d && fits(d));
 
   return (
-    <GameFrame title="Colour the rangoli" sub="Pick a colour, then tap the petals. There is no wrong way."
-               game="rangoli" result={() => ({ score: Object.keys(fills).length, scoreLabel: `${Object.keys(fills).length} petals coloured` })}
-               feel={feel} setFeel={setFeel} again={() => { setHistory([]); keep({}); }}>
-      <div className="grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
-        <section className={`${s.stage} p-3 sm:p-5`}>
-          <svg viewBox="-210 -210 420 420" className={s.paper} role="img" aria-label="A rangoli to colour">
-            <rect x="-210" y="-210" width="420" height="420" rx="24" fill="#fffaf3" />
-            {SEGMENTS.map((g) => {
-              const common = {
-                className: s.seg, fill: fills[g.id] ?? BLANK, stroke: LINE, strokeWidth: 1.5,
-                onClick: () => paint(g.id),
-              };
-              return g.circle
-                ? <circle key={g.id} cx={g.circle.cx} cy={g.circle.cy} r={g.circle.r} {...common} />
-                : <path key={g.id} d={g.d} transform={`rotate(${g.rot ?? 0})`} {...common} />;
-            })}
-          </svg>
-          <p className="mt-2 text-center text-xs tabular-nums" style={{ color: "var(--ux-muted)" }}>
-            {filled} of {SEGMENTS.length} pieces coloured
-          </p>
+    <HomeShell active="/app/health/games">
+      <Back to="/app/health/games" label="Games & Stress Relief" className="mb-3" />
+      <ScreenHead title="Rangoli designs"
+                  sub={`${LIBRARY_SIZE} designs to choose from, all drawn right here in the app. Pick one and start colouring.`} />
+
+      <div className="flex flex-col gap-8" data-rangoli-gallery>
+        {ready && started.length > 0 && (
+          <section aria-labelledby="rg-continue">
+            <Head id="rg-continue" title="Continue colouring" sub="Your colouring is kept on this phone, just as you left it." />
+            <Grid>
+              {started.slice(0, 8).map(({ id, fills }) => {
+                const d = designOf(id)!;
+                return <Card key={id} d={d} fills={fills} href={`${BASE}/${id}`} />;
+              })}
+            </Grid>
+          </section>
+        )}
+
+        <div role="group" aria-label="Show designs that are" className="flex flex-wrap items-center gap-2">
+          <span className="me-1 text-sm font-bold" style={{ color: "var(--ux-ink-2)" }}>Show</span>
+          {LEVELS.map((l) => (
+            <button key={l} type="button" aria-pressed={level === l} onClick={() => pickLevel(l)}
+                    className="ux-press min-h-[38px] rounded-full border-[1.5px] px-3.5 text-[13px] font-bold"
+                    style={level === l ? { borderColor: "var(--ux-brand)", background: "var(--ux-tint-pink)", color: "var(--ux-ink)" }
+                                       : { borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
+              {l === "All" ? "All designs" : l}
+            </button>
+          ))}
+          <span className="ms-auto text-xs" style={{ color: "var(--ux-muted)" }}>Easy: up to 30 pieces · Calm: up to 60 · Detailed: more</span>
+        </div>
+
+        <section aria-labelledby="rg-featured">
+          <Head id="rg-featured" title="Favourite designs" sub="Classic patterns, from a simple bloom to a pulli kolam." />
+          {featured.length ? (
+            <Grid>{featured.map((d) => <Card key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
+          ) : <p className="text-sm" style={{ color: "var(--ux-muted)" }}>No {level.toLowerCase()} designs here. Try another level.</p>}
         </section>
 
-        <Card>
-          <p className="text-xsm font-bold" style={{ color: "var(--ux-ink)" }}>Colours</p>
-          <div className="mt-3 grid grid-cols-4 gap-2.5">
-            {PALETTE.map((p) => {
-              const on = colour === p.hex;
-              return (
-                <button key={p.hex} type="button" onClick={() => setColour(p.hex)} aria-pressed={on} aria-label={p.name}
-                        title={p.name}
-                        className="ux-press grid aspect-square place-items-center rounded-[14px]"
-                        style={{ background: p.hex, boxShadow: on ? "0 0 0 3px var(--ux-surface), 0 0 0 6px var(--ux-brand)" : "inset 0 0 0 1px rgba(0,0,0,.08)" }}>
-                  {on && <Icons.Check className="h-5 w-5 text-white drop-shadow" />}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-2 text-xs" style={{ color: "var(--ux-muted)" }}>
-            {PALETTE.find((p) => p.hex === colour)?.name}
-          </p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <Btn variant="outline" icon="Undo2" onClick={undo} disabled={!history.length}>Undo</Btn>
-            <Btn variant="ghost" icon="RefreshCw" onClick={clear} disabled={!filled}>Clear</Btn>
-          </div>
-          <div className="mt-2">
-            <Btn variant="primary" icon="Download" full onClick={save} disabled={!filled}>Save picture</Btn>
-          </div>
-          {saved && <p className="mt-2 text-xs" style={{ color: "var(--ux-green-ink)" }}>{saved}</p>}
-          <p className="mt-4 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-            Your colouring stays on this phone, so you can come back and finish it later.
-          </p>
-        </Card>
+        {mine.length > 0 && (
+          <section aria-labelledby="rg-mine">
+            <Head id="rg-mine" title="Designs you made" sub="New designs you made earlier — still here to colour." />
+            <Grid>{mine.map((d) => <Card key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
+          </section>
+        )}
+
+        <section aria-labelledby="rg-app">
+          <Head id="rg-app" title="More designs to colour"
+                sub={`${matching.length} ${level === "All" ? "" : `${level.toLowerCase()} `}designs drawn by the app, each one different.`} />
+          <Grid>{app.map((d) => <Card key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
+          {!app.length && <p className="text-sm" style={{ color: "var(--ux-muted)" }}>None of these is {level.toLowerCase()} — pick another level.</p>}
+          {left > 0 && (
+            <div className="mt-4 flex justify-center">
+              <Btn variant="outline" icon="Plus" onClick={more}>Show {Math.min(PAGE, left)} more · {left} left</Btn>
+            </div>
+          )}
+        </section>
+
+        {ready && saved.length > 0 && (
+          <section aria-labelledby="rg-saved">
+            <Head id="rg-saved" title="My rangolis" sub="Designs you kept with “Save design”. Open one to carry on from it." />
+            <Grid>
+              {saved.map((sv) => {
+                const d = designOf(sv.id)!;
+                return <Card key={sv.sid} d={d} fills={sv.fills} href={`${BASE}/${sv.id}?saved=${sv.sid}`}
+                             foot={`Saved ${when(sv.at)} · ${countOf(d, sv.fills)}/${d.segs.length}`} onRemove={() => remove(sv.sid)} />;
+              })}
+            </Grid>
+          </section>
+        )}
       </div>
-    </GameFrame>
+    </HomeShell>
   );
 }

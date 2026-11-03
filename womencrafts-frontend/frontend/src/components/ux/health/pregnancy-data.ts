@@ -24,9 +24,15 @@ export interface PregInfo {
   overdue: boolean;
 }
 
-export function pregInfo(p: { basis: "lmp" | "due"; date: string } | null | undefined): PregInfo | null {
+/**
+ * Weeks and the due date, the standard way: 280 days (40 weeks) from the first
+ * day of the last period (Naegele's rule). When a scan or her doctor confirmed
+ * a due date (`edd`), that date wins and the weeks are counted back from it —
+ * a clinician's dating always overrides the calculation.
+ */
+export function pregInfo(p: { basis: "lmp" | "due"; date: string; edd?: string } | null | undefined): PregInfo | null {
   if (!p?.date) return null;
-  const lmp = p.basis === "due" ? addDays(p.date, -280) : p.date;
+  const lmp = p.edd ? addDays(p.edd, -280) : p.basis === "due" ? addDays(p.date, -280) : p.date;
   const due = addDays(lmp, 280);
   const ga = Math.max(0, daysBetween(today(), lmp));
   const week = Math.floor(ga / 7);
@@ -38,25 +44,107 @@ export function pregInfo(p: { basis: "lmp" | "due"; date: string } | null | unde
   };
 }
 
-/* ── baby, week by week (the design's list) ──────────────────────────── */
+/* ── baby, week by week ───────────────────────────────────────────────── */
 
-export const BABY: [number, string, string][] = [
-  [4, "a poppy seed", "The pregnancy is just beginning. Many women don't know yet."],
-  [8, "a raspberry", "Tiny arms, legs and facial features are forming."],
-  [12, "a lime", "Most major organs have formed. The first trimester ends soon."],
-  [16, "an avocado", "Baby can make small movements you may not feel yet."],
-  [20, "a banana", "You're about halfway. Many women start to feel movements."],
-  [24, "an ear of corn", "Baby is growing steadily and gaining weight."],
-  [28, "a brinjal", "The third trimester begins. Eyes can open and close."],
-  [32, "a squash", "Baby is putting on fat and getting stronger."],
-  [36, "a papaya", "Baby is getting ready for birth and may move lower."],
-  [40, "a small watermelon", "Your estimated due date. Many babies arrive a little before or after."],
+export interface BabyWeek {
+  week: number;
+  /** What baby is about the size of, with its article ("a mango"). */
+  size: string;
+  /** Approximate length in cm: crown to rump until week 19, head to heel from week 20. */
+  cm: number;
+  /** Approximate weight in grams. */
+  g: number;
+  dev: string;
+}
+
+/**
+ * Every week from 4 to 40. Sizes and weights are rounded averages from common
+ * growth charts; every baby is different and the screen says so.
+ */
+export const GROWTH: BabyWeek[] = [
+  { week: 4, size: "a poppy seed", cm: 0.1, g: 0, dev: "The tiny embryo has settled in the womb. Many women don't know yet." },
+  { week: 5, size: "a sesame seed", cm: 0.2, g: 0, dev: "The heart and the spine are starting to form." },
+  { week: 6, size: "a lentil", cm: 0.6, g: 0, dev: "A tiny heartbeat may be seen on a scan." },
+  { week: 7, size: "a blueberry", cm: 1.3, g: 0, dev: "Little buds that will become arms and legs appear. The brain grows fast." },
+  { week: 8, size: "a kidney bean", cm: 1.6, g: 1, dev: "Fingers and toes begin to form. Baby moves, but too little to feel." },
+  { week: 9, size: "a grape", cm: 2.3, g: 2, dev: "Tiny muscles are forming, and the face is taking shape." },
+  { week: 10, size: "a strawberry", cm: 3.1, g: 4, dev: "All the major organs are in place and starting to work." },
+  { week: 11, size: "a chestnut", cm: 4.1, g: 7, dev: "Baby can open and close tiny hands." },
+  { week: 12, size: "a kiwi", cm: 5.4, g: 14, dev: "Reflexes begin. The first trimester is almost over." },
+  { week: 13, size: "a lemon", cm: 7.4, g: 23, dev: "Fingerprints are forming on the tiny fingertips." },
+  { week: 14, size: "a peach", cm: 8.7, g: 43, dev: "Baby can frown and squint, and fine hair is growing." },
+  { week: 15, size: "an apple", cm: 10.1, g: 70, dev: "Bones are getting harder. Baby may sense light." },
+  { week: 16, size: "an avocado", cm: 11.6, g: 100, dev: "The heart pumps about 25 litres of blood a day." },
+  { week: 17, size: "an onion", cm: 13, g: 140, dev: "Fat starts to build up under the skin." },
+  { week: 18, size: "a sweet potato", cm: 14.2, g: 190, dev: "Baby can hear sounds. The anomaly scan is around now." },
+  { week: 19, size: "a mango", cm: 15.3, g: 240, dev: "A creamy coating (vernix) covers and protects the skin." },
+  { week: 20, size: "a banana", cm: 25.6, g: 300, dev: "Halfway there. Many women feel the first kicks." },
+  { week: 21, size: "a carrot", cm: 26.7, g: 360, dev: "Baby swallows a little fluid and has times of sleep and waking." },
+  { week: 22, size: "a coconut", cm: 27.8, g: 430, dev: "Eyebrows and eyelids are formed." },
+  { week: 23, size: "a large orange", cm: 28.9, g: 500, dev: "Baby can feel you move and hears your voice." },
+  { week: 24, size: "an ear of corn", cm: 30, g: 600, dev: "The lungs are developing, and baby is gaining weight steadily." },
+  { week: 25, size: "a head of broccoli", cm: 34.6, g: 660, dev: "Baby responds to your voice and your touch." },
+  { week: 26, size: "a bunch of spinach", cm: 35.6, g: 760, dev: "The eyes begin to open." },
+  { week: 27, size: "a cucumber", cm: 36.6, g: 875, dev: "Baby sleeps and wakes regularly, and may get hiccups." },
+  { week: 28, size: "a brinjal", cm: 37.6, g: 1000, dev: "The third trimester begins. Baby can blink." },
+  { week: 29, size: "a pineapple", cm: 38.6, g: 1150, dev: "Muscles and lungs keep maturing. Kicks get stronger." },
+  { week: 30, size: "a cabbage", cm: 39.9, g: 1300, dev: "Baby's brain is growing quickly." },
+  { week: 31, size: "a coconut in its husk", cm: 41.1, g: 1500, dev: "Baby can turn the head from side to side." },
+  { week: 32, size: "a bunch of bananas", cm: 42.4, g: 1700, dev: "Nails have grown, and baby practises breathing." },
+  { week: 33, size: "a melon", cm: 43.7, g: 1900, dev: "Bones are hardening, but the skull stays soft for birth." },
+  { week: 34, size: "a bag of potatoes", cm: 45, g: 2100, dev: "The nervous system and lungs are maturing." },
+  { week: 35, size: "a honeydew melon", cm: 46.2, g: 2400, dev: "Most babies settle head-down around now." },
+  { week: 36, size: "a papaya", cm: 47.4, g: 2600, dev: "Baby is getting ready for birth and may move lower." },
+  { week: 37, size: "a small pumpkin", cm: 48.6, g: 2900, dev: "Full term. Baby's organs are ready for life outside." },
+  { week: 38, size: "a small jackfruit", cm: 49.8, g: 3100, dev: "Baby has a firm grip and keeps putting on fat." },
+  { week: 39, size: "a small watermelon", cm: 50.7, g: 3300, dev: "Baby is ready. Labour could start any day." },
+  { week: 40, size: "a watermelon", cm: 51.2, g: 3400, dev: "Your estimated due date. Many babies arrive a little before or after." },
 ];
 
-export const babyFor = (week: number) => [...BABY].reverse().find((b) => b[0] <= Math.max(4, week)) ?? BABY[0];
+/** The growth row for a week, held to weeks 4–40. */
+export const growthFor = (week: number) => GROWTH[Math.min(40, Math.max(4, Math.round(week))) - 4];
+
+/** [week, size, what is happening] — the short form the overview uses. */
+export const babyFor = (week: number): [number, string, string] => {
+  const r = growthFor(week);
+  return [r.week, r.size, r.dev];
+};
 
 export const MILESTONES: [number, string][] = [
   [12, "End of 1st trimester"], [20, "Halfway"], [28, "3rd trimester"], [37, "Full term"], [40, "Due date"],
+];
+
+/** What her own body may be going through, in the same week bands as BABY. General, not advice. */
+export const BODY: [number, string][] = [
+  [4, "Your period is late. You may feel tired, or have tender breasts."],
+  [8, "Morning sickness and tiredness are common. Rest when you can."],
+  [12, "Sickness often starts to ease. Your bump may not show yet."],
+  [16, "Many women feel more energy now, and the bump begins to show."],
+  [20, "You may feel the first flutters. A little back ache can start."],
+  [24, "Your bump is growing fast. Leg cramps and itchy skin are common."],
+  [28, "Tiredness can return, and some breathlessness. Watch for sudden swelling."],
+  [32, "Practice tightenings are common. Sleeping on your left side helps."],
+  [36, "Baby may move lower. You may pass urine more often."],
+  [40, "Your body is getting ready for birth. Know the signs of labour."],
+];
+
+export const bodyFor = (week: number) => ([...BODY].reverse().find((b) => b[0] <= Math.max(4, week)) ?? BODY[0])[1];
+
+/**
+ * The road ahead, in weeks from her last period: scans, tests and moments to
+ * plan for. `to` is the end of the window; a single moment has no `to`.
+ * Guides from routine antenatal care, not a schedule — her doctor sets hers.
+ */
+export const JOURNEY: { from: number; to?: number; title: string; note: string; icon: string; href?: string }[] = [
+  { from: 11, to: 14, title: "Dating scan", note: "Confirms your due date and checks early growth.", icon: "ScanLine", href: "/app/health/pregnancy?tab=care&part=tests" },
+  { from: 12, title: "First trimester ends", note: "The risk of early loss falls a lot from here.", icon: "Flower2" },
+  { from: 18, to: 20, title: "Anomaly scan", note: "A detailed look at how baby is growing.", icon: "ScanLine", href: "/app/health/pregnancy?tab=care&part=tests" },
+  { from: 20, title: "Halfway", note: "Many women feel baby move for the first time.", icon: "Sparkles" },
+  { from: 24, to: 28, title: "Sugar test", note: "Checks for diabetes in pregnancy, if your doctor advises.", icon: "FlaskConical", href: "/app/health/pregnancy?tab=care&part=tests" },
+  { from: 28, title: "Third trimester · count kicks", note: "Start counting baby's movements every day.", icon: "Footprints", href: "/app/health/pregnancy?tab=tools" },
+  { from: 34, to: 36, title: "Pack your hospital bag", note: "Papers, clothes, baby things — ready by the door.", icon: "Briefcase", href: "/app/health/pregnancy?tab=tools#bag" },
+  { from: 37, title: "Full term", note: "Baby is ready to be born any day from now.", icon: "Baby" },
+  { from: 40, title: "Due date", note: "Only a few babies arrive exactly on it.", icon: "CalendarHeart" },
 ];
 
 /** A short, practical tip for each trimester. */
@@ -88,6 +176,64 @@ export const DANGER_SIGNS = [
 ];
 
 /* ── care plan ───────────────────────────────────────────────────────── */
+
+/** Weeks and days of pregnancy on a given day, from the (possibly confirmed) last-period date; null before it. */
+export function weeksOn(lmp: string, day: string): { w: number; d: number } | null {
+  const ga = daysBetween(day, lmp);
+  return ga < 0 ? null : { w: Math.floor(ga / 7), d: ga % 7 };
+}
+export const fmtWeeks = (x: { w: number; d: number } | null) => (x ? `${x.w}w ${x.d}d` : "—");
+
+/* ── pregnancy care: the choices her forms offer ──────────────────────── */
+
+export const CONFIRM_METHODS = ["Home test", "Blood test", "Ultrasound", "Doctor's exam"] as const;
+export const PLURALITY = ["Single", "Twins", "Triplets or more"] as const;
+export const PAST_OUTCOMES = ["Live birth", "Miscarriage", "Stillbirth", "Termination", "Ectopic", "Other"] as const;
+export const DELIVERY_MODES = ["Vaginal", "Assisted vaginal", "Caesarean"] as const;
+
+/**
+ * Common antenatal tests and scans, as names to tap. No ranges are kept here:
+ * a result is compared only with the range printed on her own report.
+ */
+export const TEST_PRESETS: { name: string; group: "Blood test" | "Urine test" | "Sugar test" | "Scan" | "Other"; unit?: string }[] = [
+  { name: "Haemoglobin", group: "Blood test", unit: "g/dL" },
+  { name: "Blood group and Rh", group: "Blood test" },
+  { name: "Complete blood count", group: "Blood test" },
+  { name: "Thyroid (TSH)", group: "Blood test", unit: "mIU/L" },
+  { name: "HIV", group: "Blood test" },
+  { name: "Syphilis (VDRL)", group: "Blood test" },
+  { name: "Hepatitis B", group: "Blood test" },
+  { name: "Fasting blood sugar", group: "Sugar test", unit: "mg/dL" },
+  { name: "Glucose tolerance test (OGTT)", group: "Sugar test", unit: "mg/dL" },
+  { name: "Urine routine", group: "Urine test" },
+  { name: "Urine protein", group: "Urine test" },
+  { name: "Dating scan", group: "Scan" },
+  { name: "Anomaly scan", group: "Scan" },
+  { name: "Growth scan", group: "Scan" },
+];
+export const TEST_STEPS = ["Ordered", "Sample given", "Processing", "Result ready", "Reviewed"] as const;
+
+/** Things doctors commonly watch in pregnancy — names to tap. She records the level her doctor gave. */
+export const RISK_PRESETS = [
+  "High blood pressure", "Sugar in pregnancy", "Anaemia", "Thyroid", "Twins or more", "Previous caesarean",
+  "Bleeding", "Low-lying placenta", "Baby growing slowly", "Under 18 or over 35", "Rh negative", "Other",
+] as const;
+
+export const ANC_SYMPTOMS = ["Headache", "Swelling", "Bleeding", "Less movement", "Back pain", "Tiredness", "Nausea", "None"] as const;
+
+export const POSTNATAL_CHECKS = {
+  Mother: ["Day 1 check", "Day 3 check", "1-week check", "6-week check", "Stitches / wound check", "Mood check"],
+  Baby: ["Birth check", "Day 3 check", "1-week check", "6-week check", "Vaccination visit", "Weight check"],
+} as const;
+
+/** A result outside the range printed on her report, or null when either side is missing. */
+export function outsideRange(result?: string, low?: string, high?: string): "low" | "high" | null {
+  const v = Number(result);
+  if (!result || Number.isNaN(v)) return null;
+  if (low && !Number.isNaN(Number(low)) && v < Number(low)) return "low";
+  if (high && !Number.isNaN(Number(high)) && v > Number(high)) return "high";
+  return null;
+}
 
 /** At least four antenatal check-ups (MoHFW). Weeks are guides, not rules. */
 export const ANC_VISITS: { id: string; when: string; from: number; to: number; title: string; items: string[] }[] = [

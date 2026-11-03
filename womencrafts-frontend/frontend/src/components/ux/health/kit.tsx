@@ -12,7 +12,11 @@ import {
   DEFAULT_SETTINGS, apiAddEntry, apiDeleteEntry, apiEditEntry, apiEntries, apiHealthSettings, apiSaveHealthSettings,
   type Entry, type HealthKind, type HealthSettings, type KindData,
 } from "@/lib/health-api";
+import { dailyIndex } from "@/components/ux/fill/content";
 import { hiddenFrom, setHiddenHealth } from "./nav-prefs";
+import { bannerFocus } from "./art";
+import { HEALTH_QUOTES, healthSection } from "./quotes";
+import frame from "./frame.module.css";
 
 /**
  * The Health module's shared parts.
@@ -104,49 +108,71 @@ export function HealthFrame(props: FrameProps) {
   return <Suspense><FrameInner {...props} /></Suspense>;
 }
 
-function FrameInner({ active, hue, icon, eyebrow, title, sub, actions, art, tabs = [], children, night, bare }: FrameProps) {
+/** This section's quote of the day; "Another" steps to the next of its quotes. */
+export function SectionQuote({ path }: { path: string }) {
+  const list = HEALTH_QUOTES[healthSection(path)] ?? HEALTH_QUOTES.home;
+  const [i, setI] = useState(() => dailyIndex(list.length, path));
+  return (
+    <figure className={frame.quote} data-health-quote>
+      <span className={frame.mark} aria-hidden>“</span>
+      <p>{list[i % list.length]}</p>
+      <cite>— <b>WomSakhi</b></cite>
+      {list.length > 1 && (
+        <button type="button" className={frame.another} onClick={() => setI((n) => n + 1)} aria-label="Show another quote" title="Another quote">
+          <Icons.RefreshCw />
+        </button>
+      )}
+    </figure>
+  );
+}
+
+function FrameInner({ active, hue, icon, eyebrow, title, sub, actions, art, tabs = [], children, bare }: FrameProps) {
   const [tab, setTab] = useTab(tabs);
   const h = HUE[hue];
   if (bare?.(tab)) {
     return (
       <HomeShell active={active} columns>
-        <div key={tab} className="ux-swap flex flex-col gap-5">{children(tab)}</div>
+        <div key={tab} data-dashboard="health" className="ux-swap flex flex-col gap-[var(--dashboard-gap,12px)]">{children(tab)}</div>
       </HomeShell>
     );
   }
   return (
     <HomeShell active={active} columns>
-      <section data-health-hero
-               className="relative mb-4 grid items-center gap-4 overflow-hidden rounded-[var(--ux-r-lg,20px)] p-5 sm:p-7 md:grid-cols-[minmax(0,1fr)_auto]"
-               style={night
-                 ? { background: "linear-gradient(125deg, var(--ux-deep) 0%, var(--ux-deep-2) 55%, var(--ux-brand-900) 100%)", color: "var(--ux-deep-ink)" }
-                 : { background: `linear-gradient(115deg, ${h.tint} 0%, var(--ux-surface) 62%)`, border: "1px solid var(--ux-line)" }}>
-        <div className="min-w-0">
-          <p className="mb-1.5 flex items-center gap-2 text-2xs font-extrabold uppercase tracking-[0.12em]"
-             style={{ color: night ? "var(--ux-deep-ink-2)" : h.ink }}>
-            <I name={icon} className="h-4 w-4" /> {eyebrow || "Health & Wellness"}
-          </p>
-          <h1 className="ux-screen-title text-[28px] font-extrabold leading-tight sm:text-[34px]"
-              style={{ color: night ? "var(--ux-deep-ink)" : "var(--ux-ink)" }}>{title}</h1>
-          <p className="mt-1.5 max-w-[60ch] text-[15px] leading-relaxed"
-             style={{ color: night ? "var(--ux-deep-ink-3)" : "var(--ux-muted)" }}>{sub}</p>
-          {actions && <div className="mt-4 flex flex-wrap items-center gap-2">{actions}</div>}
-        </div>
-        {art && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={art} alt="" className="hidden h-[150px] w-[240px] rounded-[18px] object-cover md:block" />
-        )}
-      </section>
+      <div data-dashboard="health" className="flex flex-col">
+      {/* The banner and the section's quote side by side, as Work lays out its
+          dashboard — on the same 320px column as the side panels below. */}
+      <div className={frame.top}>
+        <section data-health-hero className={frame.hero}>
+          {art && (() => {
+            const f = bannerFocus(art);
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={art} alt="" style={{ objectPosition: `70% ${f.y ?? "30%"}`, transform: f.flip ? "scaleX(-1)" : undefined }} />
+            );
+          })()}
+          <div className={frame.heroContent}>
+            <p className={frame.eyebrow}><I name={icon} /> {eyebrow || "Health & Wellness"}</p>
+            <h1 className="ux-screen-title">{title}</h1>
+            <p className={frame.sub}>{sub}</p>
+            {actions && <div className={frame.actions} data-health-actions>{actions}</div>}
+          </div>
+        </section>
+        <SectionQuote path={active} />
+      </div>
 
       {tabs.length > 1 && (
+        // Pills on a soft track, as the approved design draws them: the open tab is
+        // a raised white pill in the section's colour. It scrolls sideways on a phone.
         <div role="tablist" aria-label={`${title} sections`} data-health-tabs
-             className="mb-5 flex gap-1 overflow-x-auto border-b [scrollbar-width:none]" style={{ borderColor: "var(--ux-line)" }}>
+             className="ux-scroll-x mb-3 flex w-fit max-w-full gap-1 rounded-full p-1.5"
+             style={{ background: `color-mix(in srgb, ${h.tint} 70%, var(--ux-surface-2))` }}>
           {tabs.map((t) => {
             const on = t.id === tab;
             return (
               <button key={t.id} role="tab" type="button" aria-selected={on} onClick={() => setTab(t.id)}
-                      className="ux-press -mb-px min-h-[44px] shrink-0 whitespace-nowrap border-b-[2.5px] px-3.5 text-sm font-bold"
-                      style={{ borderColor: on ? h.ink : "transparent", color: on ? "var(--ux-ink)" : "var(--ux-muted)" }}>
+                      className="ux-press min-h-[40px] shrink-0 whitespace-nowrap rounded-full px-4 text-sm font-bold transition-colors"
+                      style={on ? { background: "var(--ux-surface)", color: h.ink, boxShadow: "0 2px 8px -2px rgba(27, 18, 56, 0.18)" }
+                                : { background: "transparent", color: "var(--ux-ink-2)" }}>
                 {t.label}
               </button>
             );
@@ -154,7 +180,8 @@ function FrameInner({ active, hue, icon, eyebrow, title, sub, actions, art, tabs
         </div>
       )}
 
-      <div key={tab} className="ux-swap flex flex-col gap-5">{children(tab)}</div>
+      <div key={tab} className="ux-swap flex flex-col gap-[var(--dashboard-gap,12px)]">{children(tab)}</div>
+      </div>
     </HomeShell>
   );
 }
@@ -167,13 +194,14 @@ export function Panel({ title, sub, action, hue, tint, children, className = "",
 }) {
   const h = hue ? HUE[hue] : null;
   return (
-    <section id={id} className={`ux-card flex min-w-0 flex-col gap-4 p-4 sm:p-5 ${className}`}
-             style={tint && h ? { background: h.tint } : undefined}>
+    <section id={id} data-health-panel className={`flex min-w-0 flex-col gap-3 rounded-[var(--ux-r-sm,8px)] border p-3 sm:px-4 sm:py-3.5 ${className}`}
+             style={{ borderColor: tint && h ? `color-mix(in srgb, ${h.ink} 18%, var(--ux-line))` : "var(--ux-line)",
+                      background: tint && h ? h.tint : "var(--ux-surface)" }}>
       {(title || action) && (
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-h-[23px] flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
-            {title && <h2 className="text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>{title}</h2>}
-            {sub && <p className="text-xs" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
+            {title && <h2 className="text-base font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{title}</h2>}
+            {sub && <p className="mt-0.5 text-[length:var(--dash-fs-sm,12px)]" style={{ color: "var(--ux-muted)" }}>{sub}</p>}
           </div>
           {action}
         </div>
@@ -183,18 +211,22 @@ export function Panel({ title, sub, action, hue, tint, children, className = "",
   );
 }
 
-/** Main column and a side column on wide screens; one column below 1100px. */
+/**
+ * Main column and a side column on wide screens; one column below 1280px. The
+ * side column is Work's 320px and the gap is the dashboard gap, so it lines up
+ * with the section's quote above it.
+ */
 export function Cols({ main, side }: { main: React.ReactNode; side: React.ReactNode }) {
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="flex min-w-0 flex-col gap-5">{main}</div>
-      <div className="flex min-w-0 flex-col gap-5">{side}</div>
+    <div className="grid items-start gap-[var(--dashboard-gap,12px)] xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="flex min-w-0 flex-col gap-[var(--dashboard-gap,12px)]">{main}</div>
+      <aside className="flex min-w-0 flex-col gap-[var(--dashboard-gap,12px)]">{side}</aside>
     </div>
   );
 }
 
 export function MetricGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>{children}</div>;
+  return <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>{children}</div>;
 }
 
 export function Metric({ hue, icon, label, value, unit, sub, pct, href }: {
@@ -203,26 +235,31 @@ export function Metric({ hue, icon, label, value, unit, sub, pct, href }: {
   const h = HUE[hue];
   const body = (
     <>
-      <span className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: h.tint, color: h.ink }}>
-        <I name={icon} className="h-[18px] w-[18px]" />
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--ux-r-sm,8px)]" style={{ background: h.tint, color: h.ink }}>
+        <I name={icon} className="h-6 w-6" />
       </span>
-      <span className="text-xs font-bold" style={{ color: "var(--ux-muted)" }}>{label}</span>
-      <span className="text-[22px] font-extrabold tabular-nums leading-tight" style={{ color: "var(--ux-ink)" }}>
-        {value}{unit && <small className="ms-1 text-xs font-bold" style={{ color: "var(--ux-muted)" }}>{unit}</small>}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <strong className="truncate text-[20px] font-bold leading-[1.15] tabular-nums" style={{ color: "var(--ux-ink)" }}>
+          {value}{unit && <small className="ms-1 text-[length:var(--dash-fs-sm,12px)] font-semibold" style={{ color: "var(--ux-muted)" }}>{unit}</small>}
+        </strong>
+        <small className="mt-1 truncate text-[length:var(--dash-fs-sm,12px)]" style={{ color: "var(--ux-muted)" }}>{label}</small>
+        {sub && <small className="truncate text-[length:var(--dash-fs-sm,12px)]" style={{ color: "var(--ux-muted)" }}>{sub}</small>}
+        {pct != null && (
+          <span className="mt-1.5 block h-[5px] overflow-hidden rounded-full" style={{ background: h.tint }}>
+            <span className="block h-full rounded-full transition-[width] duration-500"
+                  style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: h.ink }} />
+          </span>
+        )}
       </span>
-      {sub && <span className="text-xs" style={{ color: "var(--ux-muted)" }}>{sub}</span>}
-      {pct != null && (
-        <span className="mt-1 block h-[7px] overflow-hidden rounded-full" style={{ background: h.tint }}>
-          <span className="block h-full rounded-full transition-[width] duration-500"
-                style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: h.ink }} />
-        </span>
-      )}
+      {href && <I name="ChevronRight" className="h-3.5 w-3.5 shrink-0 self-center" style={{ color: "var(--ux-brand)" }} />}
     </>
   );
-  const cls = "ux-card flex min-w-0 flex-col gap-1.5 p-3.5";
+  // Work's stat tile: an icon box, the number and its label beside it.
+  const cls = "flex min-h-[70px] min-w-0 items-center gap-2.5 rounded-[var(--ux-r-sm,8px)] border p-2.5";
+  const style = { borderColor: "var(--ux-line)", background: "var(--ux-surface)" };
   return href
-    ? <Link href={href} className={`${cls} ux-hov ux-press`} aria-label={`Open ${label}`}>{body}</Link>
-    : <div className={cls}>{body}</div>;
+    ? <Link href={href} className={cls} style={style} aria-label={`Open ${label}`}>{body}</Link>
+    : <div className={cls} style={style}>{body}</div>;
 }
 
 /** A small, honest bar chart: one bar per label, an optional dashed goal line. */
@@ -252,7 +289,7 @@ export function BarChart({ data, goal, hue, unit = "", height = 160 }: {
           <span aria-hidden className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: "var(--ux-muted)" }} /> Goal {goal}{unit}
         </p>
       ) : null}
-      <div className="overflow-x-auto">
+      <div className="ux-scroll-x">
         {width > 0 && (
           <svg width={W} height={height} viewBox={`0 0 ${W} ${height}`} className="block" role="img"
                aria-label={data.map((d) => `${d.label}: ${d.value}${unit}`).join(", ") + (goal ? `. Goal ${goal}${unit}` : "")}>
@@ -287,10 +324,10 @@ export function Chips<T extends string>({ options, value, onChange, label, hue =
     <div role="group" aria-label={label} className="flex flex-wrap gap-2">
       {opts.map((o) => (
         <button key={o.value} type="button" aria-pressed={on(o.value)} onClick={() => onChange(o.value)}
-                className="ux-press min-h-[40px] rounded-full border-[1.5px] px-3.5 text-[13.5px] font-bold"
+                className="ux-press min-h-[36px] rounded-[var(--ux-r-sm,8px)] border px-3 text-[13px] font-semibold"
                 style={on(o.value)
-                  ? { borderColor: h.ink, background: h.tint, color: "var(--ux-ink)" }
-                  : { borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
+                  ? { borderColor: h.ink, background: h.ink, color: "var(--ux-on-brand, #fff)" }
+                  : { borderColor: "var(--ux-line)", background: "var(--ux-surface-2)", color: "var(--ux-ink-2)" }}>
           {o.label}
         </button>
       ))}
@@ -300,11 +337,11 @@ export function Chips<T extends string>({ options, value, onChange, label, hue =
 
 export function Empty({ icon, title, body, action }: { icon: string; title: string; body: string; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-start gap-2 rounded-[14px] border-[1.5px] border-dashed p-5"
+    <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-[var(--ux-r-sm,8px)] border border-dashed p-5 text-center"
          style={{ borderColor: "var(--ux-line-strong)" }}>
-      <I name={icon} className="h-6 w-6" style={{ color: "var(--ux-muted)" }} />
-      <b className="text-[15px]" style={{ color: "var(--ux-ink)" }}>{title}</b>
-      <p className="max-w-[56ch] text-sm" style={{ color: "var(--ux-muted)" }}>{body}</p>
+      <I name={icon} className="h-7 w-7" style={{ color: "var(--ux-muted)" }} />
+      <b className="text-[14px]" style={{ color: "var(--ux-ink)" }}>{title}</b>
+      <p className="max-w-[52ch] text-[13px]" style={{ color: "var(--ux-muted)" }}>{body}</p>
       {action}
     </div>
   );
@@ -313,7 +350,7 @@ export function Empty({ icon, title, body, action }: { icon: string; title: stri
 /** "Not medical advice" — said once per section that could be read as advice. */
 export function Disclaimer({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex items-start gap-2.5 rounded-[12px] p-3 text-[13.5px]"
+    <p className="flex items-start gap-2.5 rounded-[var(--ux-r-sm,8px)] p-3 text-[13px]"
        style={{ background: "var(--ux-tint-amber)", color: "var(--ux-ink)" }}>
       <I name="Info" className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--ux-amber-ink)" }} />
       <span>{children}</span>

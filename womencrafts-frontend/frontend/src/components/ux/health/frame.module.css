@@ -1,0 +1,79 @@
+/*
+ * The top of every Health & Wellness section, laid out as Work's dashboard is
+ * (components/ux/work/WorkDashboard.module.css): the banner and a quote side
+ * by side, on the same 320px right column and gap the content below uses, so
+ * the quote and every side panel share one edge.
+ */
+
+.top {
+  display: grid; gap: var(--dashboard-gap, 12px); margin-bottom: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 1280px) {
+  .top { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+
+/* ── banner ── */
+.hero {
+  position: relative; isolation: isolate; overflow: hidden; min-height: 296px; display: flex;
+  border-radius: var(--ux-r-lg, 20px); background: var(--ux-brand-900); color: var(--ux-on-brand);
+}
+.hero > img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 70% 30%; }
+.hero h1 { color: #fff !important; }
+.hero::after {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(90deg, rgba(55, 20, 40, .96), rgba(55, 20, 40, .88) 34%, rgba(55, 20, 40, .30) 65%, transparent 84%);
+}
+.heroContent { display: flex; flex-direction: column; width: min(560px, 64%); padding: 26px 28px 22px; }
+.eyebrow {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
+  font-size: var(--dash-fs-sm, 12px); font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #f6d3e1;
+}
+.eyebrow svg { width: 15px; height: 15px; }
+.hero h1 {
+  margin: 0; font-family: var(--font-fraunces), Georgia, serif; font-size: clamp(32px, 3.2vw, 46px);
+  line-height: 1.04; font-weight: 700; color: var(--ux-on-brand);
+}
+.sub { max-width: 400px; margin: 13px 0 0; font-size: 15px; line-height: 1.35; color: #f3e5ec; }
+.hero h1, .sub, .eyebrow { text-shadow: 0 1px 7px rgba(30, 8, 22, .5); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: auto; padding-top: 18px; }
+/* Earn's banner buttons: the first is the solid main action, the rest outlined in white. */
+.actions > :is(a, button) {
+  min-height: 43px !important; padding: 0 20px !important; border-radius: var(--ux-r-sm, 8px) !important;
+  font-size: 13px !important; font-weight: 700 !important;
+}
+.actions > :is(a, button):first-child { background: var(--ux-brand-600, var(--ux-fill)) !important; color: var(--ux-on-brand) !important; border: 1px solid transparent !important; }
+.actions > :is(a, button):not(:first-child) { background: rgba(255, 255, 255, .08) !important; color: #fff !important; border: 1px solid rgba(255, 255, 255, .55) !important; }
+
+/* ── the quote, as Work's ── */
+.quote {
+  position: relative; display: flex; flex-direction: column; justify-content: center; min-height: 172px; margin: 0;
+  padding: 20px 26px 18px; overflow: hidden; border: 1px solid var(--ux-line); border-radius: var(--ux-r-lg, 20px);
+  background: var(--ux-tint-pink); color: var(--ux-ink);
+}
+.mark { position: absolute; top: 2px; left: 15px; font: 68px/1 var(--ws-font, serif); color: var(--ux-brand); }
+.quote p {
+  position: relative; margin: 0 26px 8px 22px; font-family: var(--font-script), Georgia, serif;
+  font-size: 22px; line-height: 1.12; text-align: center; transform: rotate(-3deg);
+}
+.quote cite { font-size: var(--dash-fs-sm, 12px); font-style: normal; text-align: right; color: var(--ux-muted); }
+.quote cite b { color: var(--ux-brand); }
+.another {
+  position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 999px; border: 1px solid var(--ux-line); background: var(--ux-surface); color: var(--ux-ink-2); cursor: pointer;
+}
+.another:hover { color: var(--ux-brand); }
+.another:focus-visible { outline: 2.5px solid var(--ux-brand); outline-offset: 2px; }
+.another svg { width: 15px; height: 15px; }
+
+/* ── phones: the picture behind, washed top to bottom, the words full width ── */
+@media (max-width: 767px) {
+  .hero { min-height: 0; }
+  .hero::after { background: linear-gradient(180deg, rgba(55, 20, 40, .55), rgba(55, 20, 40, .9) 55%, rgba(55, 20, 40, .96)); }
+  .heroContent { width: 100%; padding: 22px 18px 18px; }
+  .hero h1 { font-size: 30px; }
+  .quote { min-height: 0; padding: 18px 20px 14px; }
+  .quote p { font-size: 19px; margin-right: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .quote p { transform: none; } }

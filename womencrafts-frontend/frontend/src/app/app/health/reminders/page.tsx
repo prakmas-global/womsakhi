@@ -12,6 +12,7 @@ import {
 } from "@/components/ux/health/records-data";
 import { fmtDay, nowHHMM, today as todayYmd, type Entry, type KindData } from "@/lib/health-api";
 import { ApptRow, MonthGrid, ReminderRow, fmtIN } from "./reminder-parts";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Appointments & Reminders — her own reminders beside the sessions she booked.
@@ -69,7 +70,7 @@ export default function RemindersPage() {
   return (
     <HealthFrame active="/app/health/reminders" hue="magenta" icon="CalendarClock" eyebrow="Appointments & Reminders"
                  title="Appointments & Reminders" sub="Stay on track with check-ups, medicines and daily habits."
-                 art="/ux/health/ill/hero-reminders.webp" tabs={TABS}
+                 art={illSrc("hero-reminders")} tabs={TABS}
                  actions={<>
                    <Btn icon="Plus" onClick={() => setSheet({})}>Add reminder</Btn>
                    <Btn variant="outline" icon="Stethoscope" href="/app/health/doctors">Book a consultation</Btn>

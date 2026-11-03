@@ -262,7 +262,11 @@ export const SECTIONS: Section[] = [
             { id: "health-today", label: "How are you today?", k: "ch.health-today", icon: "HeartPulse", href: "/app/health/today", note: "One tap, if you want to", unlisted: true },
           ],
         },
-        { id: "health-games", label: "Games & Stress Relief", icon: "Gamepad2", href: "/app/health/games", note: "A mindful break", },
+        { id: "health-games", label: "Games & Stress Relief", icon: "Gamepad2", href: "/app/health/games", note: "A mindful break",
+          children: [
+            { id: "health-rangoli", label: "Rangoli designs", icon: "Palette", href: "/app/health/games/rangoli", note: "Choose a design to colour", unlisted: true },
+          ],
+        },
         { id: "health-videos", label: "Videos", icon: "PlayCircle", href: "/app/health/videos", note: "Workout, yoga and calm", unlisted: true, },
         { id: "fertility", label: "Fertility", icon: "Flower2", href: "/app/health/fertility", note: "Know your cycle",
           children: [

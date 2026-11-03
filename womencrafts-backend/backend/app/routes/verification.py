@@ -26,6 +26,7 @@ from typing import Optional
 from bson import ObjectId
 from pymongo import ReturnDocument
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
+from starlette.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -524,6 +525,9 @@ async def upload_document(
             f"You can upload up to {MAX_IDENTITY_DOCUMENTS} verification documents. Delete one before adding another.",
         )
 
+    if doc_type == "selfie":
+        await _refuse_crowded_selfie(file)
+
     stored_name, _extension, size = await save_document_file(file, current_user)
 
     doc = DocumentModel.create_document(
@@ -574,6 +578,29 @@ async def upload_document(
     )
     await _submit_ready_application(current_user["_id"], background_tasks, request)
     return DocumentResponse(**DocumentModel.to_response(doc))
+
+
+async def _refuse_crowded_selfie(file: UploadFile) -> None:
+    """
+    The selfie must be her alone: two or more people in it is refused before it
+    is stored, with a reason she can act on (see app/core/faces.py — the ID
+    card's small printed face does not count, and a photo where no face is
+    found is left for the reviewer).
+    """
+    from app.core.faces import count_people
+
+    limit = settings.MAX_DOCUMENT_MB * 1024 * 1024
+    data = await file.read(limit + 1)
+    await file.seek(0)
+    if not data or len(data) > limit or not (file.content_type or "").lower().startswith("image/"):
+        return  # the size and type checks in save_document_file answer these
+    people = await run_in_threadpool(count_people, data)
+    if people is not None and people > 1:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            {"code": "too_many_faces",
+             "message": "Too many faces are visible. Take the selfie with only you in the photo, holding your ID."},
+        )
 
 
 def _member_document_query(document_id: str, current_user: dict) -> dict:

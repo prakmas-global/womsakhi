@@ -147,3 +147,61 @@ async def test_onboarding_settings_export_and_delete_all(api):
     assert (await client.get("/me/health/settings", headers=h)).json()["onboarded"] is False
     # Hers only: Bina's water is still there.
     assert len((await client.get("/me/health/entries", params={"kind": "water"}, headers=h2)).json()) == 1
+
+
+async def test_pregnancy_profile_gets_an_id_and_keeps_dating(api):
+    client, db, made = api
+    _, h = await _member(db, made, "Asha")
+    got = await client.put("/me/health/settings", headers=h, json={"pregnancy": {
+        "basis": "lmp", "date": "2026-05-01", "confirmedOn": "2026-06-02", "confirmMethod": "Blood test",
+        "plurality": "Twins", "gravida": 2, "para": 1,
+        "previous": [{"year": "2023", "outcome": "Live birth", "mode": "Caesarean"}],
+        "edd": "2027-02-10", "dating": [{"on": "2026-07-01", "edd": "2027-02-10", "method": "Dating scan", "note": "12-week scan"}]}})
+    assert got.status_code == 200, got.text
+    p = got.json()["pregnancy"]
+    assert p["id"].startswith("p") and p["plurality"] == "Twins" and p["edd"] == "2027-02-10" and p["dating"][0]["method"] == "Dating scan"
+    # Saving it again keeps the same id.
+    again = (await client.put("/me/health/settings", headers=h, json={"pregnancy": {**p, "notes": "Folic acid daily"}})).json()["pregnancy"]
+    assert again["id"] == p["id"] and again["notes"] == "Folic acid daily"
+    # Out-of-range or made-up values are refused.
+    for bad in ({"gravida": 40}, {"confirmMethod": "Guess"}, {"edd": "10 Feb"}):
+        assert (await client.put("/me/health/settings", headers=h, json={"pregnancy": {**p, **bad}})).status_code == 422
+
+    # A pregnancy saved before ids existed gets one on the next read.
+    uid = made["users"][0]
+    await db["health_settings"].update_one({"user_id": str(uid)}, {"$unset": {"pregnancy.id": ""}})
+    first = (await client.get("/me/health/settings", headers=h)).json()["pregnancy"]["id"]
+    assert first and first == (await client.get("/me/health/settings", headers=h)).json()["pregnancy"]["id"]
+
+
+async def test_pregnancy_care_entries_validate(api):
+    client, db, made = api
+    _, h = await _member(db, made, "Asha")
+    ok = [
+        {"kind": "anc", "data": {"preg": "pabc", "bp": "118/76", "weight": "61.5", "fhr": "142", "fundal": "24",
+                                 "movements": "Normal", "symptoms": ["Back pain"], "next_date": "2026-11-20"}},
+        {"kind": "pregtest", "data": {"preg": "pabc", "name": "Haemoglobin", "status": "Result ready", "result": "10.2",
+                                      "unit": "g/dL", "ref_low": "11", "ref_high": "15"}},
+        {"kind": "pregrisk", "data": {"preg": "pabc", "factor": "Anaemia", "level": "Moderate", "referral": "Dietitian"}},
+        {"kind": "delivery", "data": {"preg": "pabc", "mode": "Caesarean", "weeks_at_admission": 38,
+                                      "babies": [{"name": "Baby A", "sex": "Girl", "weight_g": 2900}, {"name": "Baby B", "weight_g": 2750}]}},
+        {"kind": "postnatal", "data": {"preg": "pabc", "who": "Baby", "baby": "Baby A", "check": "6-week check", "feeding": "Breastfeeding"}},
+    ]
+    for body in ok:
+        r = await client.post("/me/health/entries", headers=h, json=body)
+        assert r.status_code == 201, (body["kind"], r.text)
+    bad = [
+        {"kind": "anc", "data": {"bp": "high"}},
+        {"kind": "anc", "data": {"fhr": "fast"}},
+        {"kind": "pregtest", "data": {"name": "Hb", "status": "Lost"}},
+        {"kind": "pregrisk", "data": {"factor": "Anaemia", "level": "Severe"}},
+        {"kind": "delivery", "data": {"mode": "Other"}},
+        {"kind": "delivery", "data": {"babies": [{"weight_g": 9000}]}},
+        {"kind": "postnatal", "data": {"who": "Father", "check": "x"}},
+        {"kind": "pregepisode", "data": {"outcome": "Delivered"}},
+    ]
+    for body in bad:
+        assert (await client.post("/me/health/entries", headers=h, json=body)).status_code == 422, body
+    got = (await client.get("/me/health/entries", params={"kind": "anc,pregtest,pregrisk,delivery,postnatal"}, headers=h)).json()
+    assert {e["kind"] for e in got} == {"anc", "pregtest", "pregrisk", "delivery", "postnatal"}
+    assert all(e["data"]["preg"] == "pabc" for e in got)
