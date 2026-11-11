@@ -46,20 +46,27 @@ export function NavHistory() {
  * calendar" — means she can tell before she taps whether it is where she wants
  * to go, which matters most on the screens she reached by accident.
  */
-export function Back({ to, label, className = "" }: {
+export function Back({ to, label, className = "", fixed = false }: {
   /** Where to go when there is no in-app trail — a deep link, a fresh tab. */
   to: string;
   /** What that parent is called, for the fallback label. */
   label: string;
   className?: string;
+  /** Always go to `to`, whatever she visited before (a list whose items she
+   * opens and leaves, where "back" must never mean the item she just left). */
+  fixed?: boolean;
 }) {
   const t = useT();
   const pathname = usePathname() ?? "";
   // Starts null so the server and first client render agree; sessionStorage is
   // only readable in the browser.
-  const [prev, setPrev] = useState<string | null>(null);
+  const [visited, setPrev] = useState<string | null>(null);
 
-  useEffect(() => { setPrev(previous(pathname)); }, [pathname]);
+  useEffect(() => {
+    const t = setTimeout(() => setPrev(previous(pathname)), 0);
+    return () => clearTimeout(t);
+  }, [pathname]);
+  const prev = fixed ? null : visited;
 
   /**
    * Where she came from, and failing that the page's actual parent.
@@ -70,7 +77,7 @@ export function Back({ to, label, className = "" }: {
    * one of the 123 routes, so the declared `to` is now the last resort rather
    * than the second.
    */
-  const parent = parentFor(pathname);
+  const parent = fixed ? null : parentFor(pathname);
   const href = prev ?? parent?.href ?? to;
   // `pageFor` returns { title }, the tree returns { label } — one shape here.
   const page: { title: string; k?: string } | null =

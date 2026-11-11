@@ -8,6 +8,7 @@ import { ACTIVITIES, INTENSITIES } from "./fitness-data";
 import { artOf } from "./art";
 import { Chips, HUE, type Hue } from "./kit";
 import { Dial, PicChoice, Review, StepSheet, type FlowStep } from "./StepFlow";
+import { DropMeter } from "./WaterBuddy";
 
 /**
  * The quick logs the Health home, Fitness and Nutrition share — each a short
@@ -220,6 +221,7 @@ export function WaterButtons({ totalMl, goalMl, onAdd }: {
       <p className="text-sm" style={{ color: "var(--ux-ink-2)" }}>
         <b className="tabular-nums" style={{ color: "var(--ux-ink)" }}>{(totalMl / 1000).toFixed(2).replace(/0$/, "")} L</b> of {(goalMl / 1000).toFixed(1)} L today
       </p>
+      <DropMeter ml={totalMl} goalMl={goalMl} />
       <WaterDrops onAdd={add} busy={busy} />
     </div>
   );

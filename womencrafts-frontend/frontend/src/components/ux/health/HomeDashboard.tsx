@@ -21,6 +21,7 @@ import { HealthSettingsTab } from "./HealthSettingsTab";
 import { useMoodHistory } from "./mind/parts";
 import { pregInfo } from "./pregnancy-data";
 import { MealFlow, SleepFlow, WaterButtons, WorkoutFlow, fmtTime } from "./QuickForms";
+import { WaterBuddy } from "./WaterBuddy";
 import { ReminderSheet } from "./ReminderSheet";
 import { WatchListen } from "./WatchListen";
 import css from "./home.module.css";
@@ -424,6 +425,9 @@ export function HomeDashboard() {
             </div>
           )}
           {sheet}
+          <WaterBuddy ready={ready && !day.loading} ml={waterMl} goalMl={goalMl}
+                      lastAt={rows.filter((r) => r.kind === "water" && r.date === t).reduce((a, r) => (r.created_at > a ? r.created_at : a), "") || undefined}
+                      onDrink={(ml) => saveQuick("water", { ml }, t, "One glass added")} />
           <WorkoutFlow open={flow === "workout"} onClose={() => setFlow("")} onSave={(d, date) => saveQuick("workout", d, date, "Workout saved")} />
           <MealFlow open={flow === "meal"} onClose={() => setFlow("")} onSave={(d, date) => saveQuick("meal", d, date, "Meal saved")} />
           <SleepFlow open={flow === "sleep"} onClose={() => setFlow("")} onSave={(d, date) => saveQuick("sleep", d, date, "Sleep saved")} />

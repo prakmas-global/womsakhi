@@ -133,7 +133,7 @@ export function Text({ value, onChange, placeholder, label, prefix, type = "text
   prefix?: string; type?: string; max?: number;
 }) {
   return (
-    <span className="flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border px-4 lg:px-3.5"
+    <span className="ux-field flex min-w-0 flex-1 items-center gap-2 rounded-[12px] border px-4 lg:px-3.5"
           style={{ borderColor: v("--ux-line"), background: v("--ux-surface") }}>
       {prefix && <span className="shrink-0 text-xsm" style={{ color: v("--ux-muted") }}>{prefix}</span>}
       <input

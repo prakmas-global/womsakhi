@@ -797,6 +797,21 @@
   border-radius: 6px;
 }
 
+/* A field whose border is drawn by a wrapper (a prefix, an icon beside the
+   input): the wrapper takes the ring, so the input does not draw a second box
+   inside it. Inside or outside a dashboard, and in sheets that open over it. */
+.ux-field { transition: border-color 160ms ease, box-shadow 160ms ease; }
+.ux-field:focus-within {
+  border-color: var(--ux-brand) !important;
+  box-shadow: 0 0 0 3px var(--ux-dashboard-field-focus, color-mix(in srgb, var(--ux-brand) 18%, transparent)) !important;
+}
+.ux-field > :is(input, textarea):focus,
+.ux-field > :is(input, textarea):focus-visible {
+  outline: 0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* ── Surface treatments ────────────────────────────────────────────────────
    Three techniques, each where it earns its keep, and two deliberately left
    out.
