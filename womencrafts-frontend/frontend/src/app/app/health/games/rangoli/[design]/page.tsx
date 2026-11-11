@@ -9,6 +9,7 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { GameFrame } from "@/components/ux/games/GameFrame";
 import { BLANK, LINE, PAPER, RangoliArt, countOf } from "@/components/ux/games/RangoliArt";
 import { designOf, levelOf, segMarkup, type Design, type Seg } from "@/components/ux/games/rangoli-designs";
+import { RangoliGuide } from "@/components/ux/games/RangoliGuide";
 import { addSaved, listSaved, loadFills, storeFills, type Fills } from "@/components/ux/games/rangoli-store";
 import { toast } from "@/components/ux/mobile/Toast";
 import s from "@/components/ux/games/games.module.css";
@@ -73,6 +74,7 @@ function Colouring({ design }: { design: Design }) {
   const [whole, setWhole] = useState(false);
   const [feel, setFeel] = useState(false);
   const [note, setNote] = useState("");
+  const [prep, setPrep] = useState(false);
 
   // Her colouring of this design (or a copy she saved), read after the first paint.
   useEffect(() => {
@@ -233,6 +235,7 @@ function Colouring({ design }: { design: Design }) {
               <Btn variant="outline" icon="Sparkles" onClick={inspire}>Inspire me</Btn>
               <Btn variant="outline" icon="Download" onClick={download} disabled={!filled}>Download</Btn>
             </div>
+            <Btn variant="outline" icon="Ruler" full onClick={() => setPrep(true)}>Prepare: dots to draw it</Btn>
             <Btn variant="ghost" icon="LayoutGrid" full href={BASE}>Back to designs</Btn>
           </div>
           {note && <p className="mt-2 text-xs" style={{ color: "var(--ux-green-ink)" }}>{note}</p>}
@@ -241,6 +244,7 @@ function Colouring({ design }: { design: Design }) {
           </p>
         </Card>
       </div>
+      <RangoliGuide design={design} open={prep} onClose={() => setPrep(false)} />
     </GameFrame>
   );
 }

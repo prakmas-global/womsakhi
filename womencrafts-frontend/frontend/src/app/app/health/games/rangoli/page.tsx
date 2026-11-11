@@ -9,6 +9,7 @@ import { Back, Btn } from "@/components/ux/kit";
 import { ScreenHead } from "@/components/ux/learning/native";
 import * as Icons from "@/components/ux/icons";
 import { RangoliArt, countOf } from "@/components/ux/games/RangoliArt";
+import { RangoliGuide } from "@/components/ux/games/RangoliGuide";
 import { DESIGNS, designOf, levelOf, seedAt, type Design } from "@/components/ux/games/rangoli-designs";
 import {
   listMade, listSaved, loadFills, recent, removeSaved, type Fills, type SavedRangoli,
@@ -38,8 +39,10 @@ const LIBRARY_SIZE = 100;
 const APP_DESIGNS: Design[] = Array.from({ length: LIBRARY_SIZE - DESIGNS.length }, (_, i) => designOf(genId(i))!);
 const when = (at: number) => new Date(at).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
-function Card({ d, fills, href, foot, onRemove }: {
+function Card({ d, fills, href, foot, onRemove, onPrepare }: {
   d: Design; fills: Fills; href: string; foot?: string; onRemove?: () => void;
+  /** "Prepare": how to draw it on the floor, dot by dot. */
+  onPrepare: (d: Design) => void;
 }) {
   const n = countOf(d, fills), total = d.segs.length;
   return (
@@ -53,6 +56,12 @@ function Card({ d, fills, href, foot, onRemove }: {
       <span className="mx-1 mb-1 block h-[5px] overflow-hidden rounded-full" style={{ background: n ? "var(--ux-tint-pink)" : "transparent" }} aria-hidden>
         <i className="block h-full rounded-full" style={{ width: `${(n / total) * 100}%`, background: "var(--ux-brand)" }} />
       </span>
+      <button type="button" onClick={() => onPrepare(d)} data-rangoli-prepare
+              aria-label={`Prepare ${d.name}: see how many dots and where they go`}
+              className="ux-press relative z-[2] mx-1 mb-1 flex min-h-[36px] items-center justify-center gap-1.5 rounded-full border-[1.5px] text-[12.5px] font-bold"
+              style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
+        <Icons.Ruler className="h-[15px] w-[15px]" style={{ color: "var(--ux-brand)" }} /> Prepare
+      </button>
       {onRemove && (
         <button type="button" onClick={onRemove} aria-label={`Remove ${d.name} from My rangolis`}
                 className="ux-press absolute end-3 top-3 z-[2] grid h-8 w-8 place-items-center rounded-full"
@@ -89,6 +98,7 @@ export default function RangoliDesigns() {
   const [made, setMade] = useState<string[]>([]);
   const [shown, setShown] = useState(PAGE);
   const [level, setLevel] = useState<Level>("All");
+  const [prep, setPrep] = useState<Design | null>(null);
 
   // Everything she keeps is in this browser: read it after the first paint.
   useEffect(() => {
@@ -132,7 +142,7 @@ export default function RangoliDesigns() {
 
   return (
     <HomeShell active="/app/health/games">
-      <Back to="/app/health/games" label="Games & Stress Relief" className="mb-3" />
+      <Back to="/app/health/games" label="Back to Games & Stress Relief" className="mb-3" fixed />
       <ScreenHead title="Rangoli designs"
                   sub={`${LIBRARY_SIZE} designs to choose from, all drawn right here in the app. Pick one and start colouring.`} />
 
@@ -143,7 +153,7 @@ export default function RangoliDesigns() {
             <Grid>
               {started.slice(0, 8).map(({ id, fills }) => {
                 const d = designOf(id)!;
-                return <Card key={id} d={d} fills={fills} href={`${BASE}/${id}`} />;
+                return <Card onPrepare={setPrep} key={id} d={d} fills={fills} href={`${BASE}/${id}`} />;
               })}
             </Grid>
           </section>
@@ -165,21 +175,21 @@ export default function RangoliDesigns() {
         <section aria-labelledby="rg-featured">
           <Head id="rg-featured" title="Favourite designs" sub="Classic patterns, from a simple bloom to a pulli kolam." />
           {featured.length ? (
-            <Grid>{featured.map((d) => <Card key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
+            <Grid>{featured.map((d) => <Card onPrepare={setPrep} key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
           ) : <p className="text-sm" style={{ color: "var(--ux-muted)" }}>No {level.toLowerCase()} designs here. Try another level.</p>}
         </section>
 
         {mine.length > 0 && (
           <section aria-labelledby="rg-mine">
             <Head id="rg-mine" title="Designs you made" sub="New designs you made earlier — still here to colour." />
-            <Grid>{mine.map((d) => <Card key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
+            <Grid>{mine.map((d) => <Card onPrepare={setPrep} key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
           </section>
         )}
 
         <section aria-labelledby="rg-app">
           <Head id="rg-app" title="More designs to colour"
                 sub={`${matching.length} ${level === "All" ? "" : `${level.toLowerCase()} `}designs drawn by the app, each one different.`} />
-          <Grid>{app.map((d) => <Card key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
+          <Grid>{app.map((d) => <Card onPrepare={setPrep} key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
           {!app.length && <p className="text-sm" style={{ color: "var(--ux-muted)" }}>None of these is {level.toLowerCase()} — pick another level.</p>}
           {left > 0 && (
             <div className="mt-4 flex justify-center">
@@ -194,13 +204,14 @@ export default function RangoliDesigns() {
             <Grid>
               {saved.map((sv) => {
                 const d = designOf(sv.id)!;
-                return <Card key={sv.sid} d={d} fills={sv.fills} href={`${BASE}/${sv.id}?saved=${sv.sid}`}
+                return <Card onPrepare={setPrep} key={sv.sid} d={d} fills={sv.fills} href={`${BASE}/${sv.id}?saved=${sv.sid}`}
                              foot={`Saved ${when(sv.at)} · ${countOf(d, sv.fills)}/${d.segs.length}`} onRemove={() => remove(sv.sid)} />;
               })}
             </Grid>
           </section>
         )}
       </div>
+      <RangoliGuide key={prep?.id ?? "none"} design={prep} open={!!prep} onClose={() => setPrep(null)} colourHref={prep ? `${BASE}/${prep.id}` : undefined} />
     </HomeShell>
   );
 }

@@ -1,0 +1,179 @@
+/*
+  The meal plan board: the week in numbers, a ribbon of days with a ring of
+  four meals on each, and the chosen day as a timeline. Nutrition's green,
+  with gold for "up next". Class names steer clear of the dashboard contract's
+  pattern rules (__stat, __tag, __chip, grid, quick…).
+*/
+
+.board { container-type: inline-size; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+/* ── head ──────────────────────────────────────────────────────────────── */
+.head {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 18px; border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ux-green-ink) 16%, var(--ux-line));
+  background:
+    radial-gradient(110% 120% at 100% 0%, color-mix(in srgb, var(--ux-green-ink) 14%, transparent), transparent 55%),
+    radial-gradient(80% 100% at 0% 100%, color-mix(in srgb, var(--ws-gold, #e9b949) 14%, transparent), transparent 60%),
+    var(--ux-surface);
+}
+@container (min-width: 760px) {
+  .head { grid-template-columns: minmax(0, 1fr) auto; padding: 20px 22px; }
+  .kpis { grid-column: 1 / -1; }
+}
+.headText { min-width: 0; text-align: start; }
+.eyebrow { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ux-green-ink); }
+.headText h2 { margin: 4px 0 0; font-size: 22px; font-weight: 800; line-height: 1.2; color: var(--ux-ink); }
+.headSub { margin: 4px 0 0; font-size: 13px; line-height: 1.4; color: var(--ux-muted); }
+.headActs { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; gap: 8px; }
+@container (min-width: 760px) { .headActs { justify-content: flex-end; max-width: 420px; } }
+.confirm {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 4px 4px 12px; border-radius: 999px;
+  background: var(--ux-tint-green); font-size: 13px; font-weight: 700; color: var(--ux-green-ink);
+}
+
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@container (min-width: 560px) { .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.kpi {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 10px 12px; text-align: start;
+  border-radius: 12px; background: color-mix(in srgb, var(--ux-surface) 80%, transparent); border: 1px solid var(--ux-line);
+}
+.kpi > span { font-size: 11.5px; font-weight: 700; color: var(--ux-muted); }
+.kpi > b { font-size: 18px; font-weight: 800; line-height: 1.15; color: var(--ux-ink); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi > b small { font-size: 12px; font-weight: 700; color: var(--ux-muted); }
+
+.bar { display: block; height: 6px; overflow: hidden; border-radius: 999px; background: var(--ux-surface-2); }
+.bar > i {
+  display: block; height: 100%; border-radius: inherit; transition: width .6s cubic-bezier(.3, .9, .3, 1);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ux-green-ink) 60%, #8bd3a0), var(--ux-green-ink));
+}
+.bar > i[data-over] { background: linear-gradient(90deg, #f0b44c, #e07a2e); }
+
+/* ── the ribbon of days ────────────────────────────────────────────────── */
+.ribbon { display: grid; grid-auto-flow: column; grid-auto-columns: 82px; gap: 8px; padding: 2px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.ribbon::-webkit-scrollbar { display: none; }
+@container (min-width: 640px) { .ribbon { grid-auto-flow: row; grid-template-columns: repeat(7, minmax(0, 1fr)); overflow: visible; } }
+.day {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px 9px; scroll-snap-align: start;
+  border: 1px solid var(--ux-line); border-radius: 16px; background: var(--ux-surface); color: var(--ux-ink); cursor: pointer;
+  transition: transform .18s, box-shadow .18s, background .18s, border-color .18s;
+}
+.day:hover { transform: translateY(-2px); box-shadow: 0 8px 18px -12px rgba(20, 60, 40, .45); }
+.day:focus-visible { outline: 2px solid var(--ux-brand); outline-offset: 2px; }
+.day[data-today] .dayName { color: var(--ux-green-ink); }
+.day[aria-pressed="true"] {
+  border-color: var(--ux-green-ink); color: #fff; box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--ux-green-ink) 80%, transparent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--ux-green-ink) 82%, #2fa36b), var(--ux-green-ink));
+}
+.day[aria-pressed="true"] .dayName, .day[aria-pressed="true"] .dayKcal { color: #fff; }
+.dayName { font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ux-muted); }
+.dayRing { position: relative; display: grid; place-items: center; width: 44px; height: 44px; }
+.dayRing b { position: absolute; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.dayKcal { font-size: 10.5px; font-weight: 700; color: var(--ux-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ring { display: block; transform: rotate(-90deg); }
+.arcOff { stroke: var(--ux-surface-2); }
+.arcOn { stroke: color-mix(in srgb, var(--ux-green-ink) 55%, #9fdcb4); }
+.arcEaten { stroke: var(--ux-green-ink); }
+.day[aria-pressed="true"] .arcOff { stroke: rgba(255, 255, 255, .22); }
+.day[aria-pressed="true"] .arcOn { stroke: rgba(255, 255, 255, .7); }
+.day[aria-pressed="true"] .arcEaten { stroke: #ffd66b; }
+
+/* ── the chosen day ────────────────────────────────────────────────────── */
+.focus {
+  display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 18px; border: 1px solid var(--ux-line);
+  background: var(--ux-surface); animation: rise .35s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.focusHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.focusHead h3 { margin: 0; font-size: 18px; font-weight: 800; color: var(--ux-ink); }
+.focusHead h3 span { font-size: 13px; font-weight: 700; color: var(--ux-muted); }
+.focusHead p { margin: 2px 0 0; font-size: 12.5px; color: var(--ux-muted); }
+.meters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@container (min-width: 520px) { .meters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.meter { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border-radius: 12px; background: var(--ux-surface-2); }
+.meterHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 700; color: var(--ux-muted); }
+.meterHead b { font-size: 14px; font-weight: 800; color: var(--ux-ink); font-variant-numeric: tabular-nums; }
+.meterHead b small { font-size: 11.5px; font-weight: 700; color: var(--ux-muted); }
+
+/* the timeline */
+.slots { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.slot { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; }
+@container (min-width: 520px) { .slot { grid-template-columns: 52px minmax(0, 1fr); gap: 10px; } }
+.rail { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 14px; }
+.rail span { position: relative; z-index: 1; padding: 2px 6px; border-radius: 999px; background: var(--ux-tint-green); color: var(--ux-green-ink); font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+.rail i { flex: 1; width: 2px; margin-top: 4px; background: repeating-linear-gradient(180deg, var(--ux-line-strong) 0 5px, transparent 5px 9px); }
+.slot:last-child .rail i { background: none; }
+.slot[data-next] .rail span { background: var(--ws-gold, #e9b949); color: #3a2a00; box-shadow: 0 0 0 4px color-mix(in srgb, var(--ws-gold, #e9b949) 25%, transparent); }
+
+.card {
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; margin-bottom: 10px; padding: 11px 12px; text-align: start;
+  border: 1px solid var(--ux-line); border-radius: 14px; background: var(--ux-surface);
+  transition: border-color .2s, box-shadow .2s;
+}
+.slot[data-empty] .card { border-style: dashed; border-color: var(--ux-line-strong); background: color-mix(in srgb, var(--ux-surface-2) 55%, var(--ux-surface)); }
+.slot[data-next] .card { border-color: color-mix(in srgb, var(--ws-gold, #e9b949) 70%, var(--ux-line)); box-shadow: 0 8px 20px -14px rgba(150, 110, 0, .55); }
+.cardHead { display: flex; align-items: center; gap: 8px; }
+.mealArt { width: 24px; height: 24px; flex: none; }
+.cardHead b { font-size: 14px; font-weight: 800; color: var(--ux-ink); }
+.next { padding: 1px 8px; border-radius: 999px; background: var(--ws-gold, #e9b949); color: #3a2a00; font-size: 10.5px; font-style: normal; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.add {
+  display: grid; place-items: center; width: 32px; height: 32px; margin-left: auto; flex: none; border: 0; border-radius: 10px; cursor: pointer;
+  background: var(--ux-tint-green); color: var(--ux-green-ink); transition: transform .15s;
+}
+.add:hover { transform: rotate(90deg); }
+
+.dish {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 9px 10px; border-radius: 11px;
+  background: color-mix(in srgb, var(--ux-tint-green) 45%, var(--ux-surface)); animation: rise .3s ease;
+}
+.dish[data-eaten] { background: var(--ux-surface-2); }
+.dish[data-eaten] .dishName { color: var(--ux-muted); }
+.dishMain { flex: 1 1 180px; min-width: 0; }
+.dishName { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 14px; font-weight: 800; color: var(--ux-ink); overflow-wrap: anywhere; }
+.ok { flex: none; color: var(--ux-green-ink); }
+.link { padding: 0; border: 0; background: none; cursor: pointer; font: inherit; color: inherit; text-align: start; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ux-green-ink) 40%, transparent); text-underline-offset: 3px; }
+.link:hover { color: var(--ux-green-ink); }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 3px 0 0; font-size: 12px; font-weight: 600; color: var(--ux-muted); font-variant-numeric: tabular-nums; }
+.facts > span { display: inline-flex; align-items: center; gap: 3px; }
+.recipe { padding: 0 6px; border-radius: 6px; background: var(--ux-surface); color: var(--ux-green-ink); font-weight: 800; }
+.acts { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.eat {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--ux-green-ink); color: #fff; font-size: 12px; font-weight: 800;
+}
+.icon {
+  display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--ux-line); border-radius: 999px; cursor: pointer;
+  background: var(--ux-surface); color: var(--ux-ink-2);
+}
+.icon:hover { color: var(--ux-green-ink); border-color: var(--ux-green-ink); }
+
+.ideas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ideasLabel { width: 100%; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ux-muted); }
+.idea {
+  display: inline-flex; align-items: center; gap: 5px; max-width: 100%; min-height: 34px; padding: 0 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--ux-green-ink) 30%, var(--ux-line)); background: var(--ux-surface); color: var(--ux-ink);
+  font-size: 12.5px; font-weight: 700; transition: background .15s, transform .15s;
+}
+.idea span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.idea small { font-size: 11px; font-weight: 700; color: var(--ux-muted); white-space: nowrap; }
+.idea:hover { background: var(--ux-tint-green); transform: translateY(-1px); }
+.idea:disabled { opacity: .5; cursor: default; }
+.idea svg { color: var(--ux-green-ink); flex: none; }
+.more { padding: 0 6px; border: 0; background: none; cursor: pointer; font-size: 12.5px; font-weight: 800; color: var(--ux-green-ink); }
+.add:focus-visible, .idea:focus-visible, .more:focus-visible, .eat:focus-visible, .icon:focus-visible, .link:focus-visible { outline: 2px solid var(--ux-brand); outline-offset: 2px; }
+
+.foot { margin: 0; font-size: 12px; color: var(--ux-muted); text-align: start; }
+
+/* ── the shopping list ─────────────────────────────────────────────────── */
+.shop { display: flex; flex-direction: column; gap: 14px; }
+.shopGroup h4 { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; margin: 0 0 6px; font-size: 14px; font-weight: 800; color: var(--ux-ink); }
+.shopGroup h4 span { font-size: 11.5px; font-weight: 700; color: var(--ux-muted); }
+.shopGroup ul { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.shopItem { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 10px; border-radius: 10px; background: var(--ux-surface-2); cursor: pointer; font-size: 13.5px; color: var(--ux-ink); }
+.shopItem input { width: 18px; height: 18px; flex: none; accent-color: var(--ux-green-ink); }
+.shopItem[data-got] span { color: var(--ux-muted); text-decoration: line-through; }
+.loose { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ux-ink-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .focus, .dish { animation: none; }
+  .day, .add, .idea, .bar > i { transition: none; }
+}
