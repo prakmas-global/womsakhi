@@ -16,6 +16,7 @@ import { FormLauncher } from "@/components/ux/health/StepFlow";
 import { WorkoutPlayer } from "@/components/ux/health/WorkoutPlayer";
 import { addDays, fmtDay, today, type Entry } from "@/lib/health-api";
 import { WatchListen } from "@/components/ux/health/WatchListen";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Fitness — guided routines, a manual log, four-week plans, progress and
@@ -48,7 +49,7 @@ export default function FitnessPage() {
   return (
     <HealthFrame active="/app/health/fitness" hue="orange" icon="Dumbbell" eyebrow="Fitness"
                  title="Move your body" sub="Move your body, feel stronger and more confident." tabs={TABS}
-                 art="/ux/health/ill/hero-fitness.webp"
+                 art={illSrc("hero-fitness")}
                  actions={<>
                    <Btn icon="Play" href="/app/health/fitness?tab=workouts">Start a workout</Btn>
                    <Btn variant="outline" icon="Plus" href="/app/health/fitness?tab=workouts#log">Log workout</Btn>

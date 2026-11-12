@@ -57,11 +57,21 @@ export function record(path: string): void {
  *
  * Skips any entry equal to the current path, so a re-render or a query-string
  * change does not make "back" point at the screen she is already looking at.
+ *
+ * And when she has come back to a screen already on the trail — Games → Rangoli
+ * designs → a design → back to Rangoli designs — the trip out from it is over:
+ * back now means where she was before it (Games), not the design she just left.
+ * Otherwise back would bounce her between the list and the design for ever.
  */
 export function previous(current: string): string | null {
-  const t = trail();
-  for (let i = t.length - 1; i >= 0; i--) {
-    if (t[i] !== current) return t[i];
+  // The trail as a stack: coming back to a screen on it closes everything after it.
+  const stack: string[] = [];
+  for (const p of trail()) {
+    const at = stack.indexOf(p);
+    if (at >= 0) stack.length = at + 1; else stack.push(p);
   }
-  return null;
+  // This screen may not be recorded yet (the shell records after the page renders).
+  const here = stack.indexOf(current);
+  if (here >= 0) stack.length = here;
+  return stack[stack.length - 1] ?? null;
 }

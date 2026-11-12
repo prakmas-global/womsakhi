@@ -111,6 +111,7 @@ export {
   EllipsisVertical,
   Droplet,
   EarOff,
+  Eraser,
   ExternalLink,
   Eye,
   EyeOff,
@@ -205,6 +206,7 @@ export {
   Quote,
   Radio,
   Receipt,
+  Redo2,
   RefreshCw,
   Repeat,
   Ribbon,
@@ -324,6 +326,8 @@ export {
   // Fertility & Pregnancy
   ArrowLeftRight,
   CalendarHeart,
+  ScanLine,
+  TestTube,
   // Health Records
   FileCheck,
   Ruler,

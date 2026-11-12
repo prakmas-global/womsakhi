@@ -76,11 +76,12 @@ export function ConsultCard({ icon, hue, title, body, href, cta }: {
   icon: string; hue: Hue; title: string; body: string; href: string; cta: string;
 }) {
   return (
-    <Panel hue={hue} tint>
+    // Full height with the button at the foot, so cards side by side line up.
+    <Panel hue={hue} tint className="h-full">
       <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: "var(--ux-surface)", color: HUE[hue].ink }}>
         <I name={icon} />
       </span>
-      <div>
+      <div className="flex-1">
         <h2 className="text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>{title}</h2>
         <p className="text-sm" style={{ color: "var(--ux-ink-2)" }}>{body}</p>
       </div>

@@ -10,9 +10,12 @@ import {
 } from "@/components/ux/health/kit";
 import { artOf } from "@/components/ux/health/art";
 import { Dial, FormLauncher, PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
+import { WaterDrops } from "@/components/ux/health/QuickForms";
+import { DropMeter, WaterBuddy } from "@/components/ux/health/WaterBuddy";
 import { addDays, fmtDay, nowHHMM, today, type Entry, type HealthKind, type HealthSettings, type KindData, type MealType } from "@/lib/health-api";
 import { DIETS, DIET_GUIDE, DIET_TILES, FOODS, GOAL_ART, MEAL_ICON, MEAL_TYPES, RECIPES, mealByTime, recipeArt, recipeFor, type Recipe } from "./data";
 import { Field, FlowNote } from "./parts";
+import { MealPlanBoard } from "./MealPlanBoard";
 
 /**
  * Nutrition & Diet — Today, Meal Plan, Recipes, Goals, Insights.
@@ -316,8 +319,9 @@ function WaterPanel({ store, s }: { store: Store; s: Settings }) {
   const todays = water.filter((w) => w.date === t);
   const ml = todays.reduce((a, w) => a + w.data.ml, 0);
   const goalMl = s.settings.waterGoal * GLASS;
-  const glasses = Math.floor(ml / GLASS);
+  const lastAt = todays.reduce((a, w) => (w.created_at > a ? w.created_at : a), "");
   const days = lastDays(7);
+  const add = (n: number) => store.add("water", { ml: n }, t, `+${n >= 1000 ? `${n / 1000} L` : `${n} ml`} of water`);
   return (
     <Panel title="Water" sub={`${(ml / 1000).toFixed(2).replace(/0$/, "")} L of ${(goalMl / 1000).toFixed(1)} L today`} hue="blue">
       <div className="flex flex-wrap gap-1.5" aria-label={`${glasses} of ${s.settings.waterGoal} glasses`} role="img" data-water-glasses>
@@ -350,12 +354,10 @@ function WaterPanel({ store, s }: { store: Store; s: Settings }) {
 /* ── Meal plan ─────────────────────────────────────────────────────── */
 
 export function PlanTab({ store, s }: { store: Store; s: Settings }) {
-  const days = Array.from({ length: 7 }, (_, i) => addDays(today(), i));
   const plans = only(store.rows, "plan");
   const meals = only(store.rows, "meal");
-  // The open "Plan a meal" flow — from the card (starts at the day) or a slot's + (starts at the dish).
+  // The open "Plan a meal" flow, from a meal's + or "More dishes" (it starts at the dish).
   const [adding, setAdding] = useState<{ date: string; mealType: MealType; at: number } | null>(null);
-  const [nowMeal] = useState<MealType>(() => mealByTime());
 
   const eat = async (p: Entry<"plan">) => {
     const r = p.data.recipe ? recipeFor(p.data.recipe) : undefined;
@@ -364,58 +366,18 @@ export function PlanTab({ store, s }: { store: Store; s: Settings }) {
                            p.date > today() ? today() : p.date, `${p.data.food} added to your diary`);
   };
 
-  const planned = plans.filter((p) => p.date >= today()).length;
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   return (
     <>
       <DietBar s={s} />
-      <FormLauncher art="Calendar" hue="green" steps={PLAN_STEPS} title="Plan a meal"
-                    sub={`${PLAN_STEPS} quick steps · pick a day, a meal and a dish`}
-                    onStart={() => setAdding({ date: today(), mealType: nowMeal, at: 0 })} />
-      <Panel title="This week's meal plan" sub={planned ? `${planned} meal${planned === 1 ? "" : "s"} planned for the next 7 days` : "Plan a few meals — it makes shopping and cooking easier"}
-             action={<Btn size="sm" variant="soft" icon="ChefHat" href="?tab=recipes">Browse recipes</Btn>}>
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }} data-plan-grid>
-          {days.map((d) => (
-            <div key={d} className="flex flex-col gap-2 rounded-[14px] p-3" style={{ background: "var(--ux-surface-2)" }}>
-              <b className="text-sm" style={{ color: d === today() ? HUE.green.ink : "var(--ux-ink)" }}>{dayName(d)}
-                <span className="ms-1.5 text-xs font-semibold" style={{ color: "var(--ux-muted)" }}>{d === today() || d === addDays(today(), 1) ? fmtDay(d) : ""}</span>
-              </b>
-              {MEAL_TYPES.map((mt) => {
-                const xs = plans.filter((p) => p.date === d && p.data.mealType === mt);
-                return (
-                  <div key={mt} className="rounded-[10px] p-2" style={{ background: "var(--ux-surface)" }}>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-2xs font-extrabold uppercase tracking-[0.06em]" style={{ color: "var(--ux-muted)" }}>{mt}</span>
-                      <button type="button" aria-label={`Plan ${mt} for ${dayName(d)}`} onClick={() => setAdding({ date: d, mealType: mt, at: 2 })}
-                              className="ux-press grid h-7 w-7 place-items-center rounded-[8px]" style={{ background: HUE.green.tint, color: HUE.green.ink }}>
-                        <I name="Plus" className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    {xs.map((p) => (
-                      <div key={p.id} className="mt-1.5 flex items-center gap-1.5 text-[13px] font-semibold"
-                           style={{ color: "var(--ux-ink)", opacity: p.data.eaten ? 0.6 : 1 }}>
-                        <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{p.data.food}</span>
-                        {p.data.eaten ? (
-                          <span className="rounded-full px-2 py-0.5 text-2xs font-bold" style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>Eaten</span>
-                        ) : d <= today() ? (
-                          <button type="button" onClick={() => eat(p)} aria-label={`Mark ${p.data.food} eaten`}
-                                  className="ux-press rounded-[7px] px-1.5 py-1 text-2xs font-extrabold" style={{ background: HUE.green.tint, color: HUE.green.ink }}>
-                            ✓ Eaten
-                          </button>
-                        ) : null}
-                        <button type="button" onClick={() => store.remove(p.id, "Removed from your plan")} aria-label={`Remove ${p.data.food}`}
-                                className="ux-press grid h-6 w-6 place-items-center rounded-[7px]" style={{ background: "var(--ux-surface-2)", color: "var(--ux-muted)" }}>
-                          <I name="X" className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <p className="text-xs" style={{ color: "var(--ux-muted)" }}>Tap “✓ Eaten” to add a planned meal to your diary.</p>
-      </Panel>
+      <MealPlanBoard plans={plans} diet={s.settings.diet} kcalGoal={s.settings.kcalGoal} proteinGoal={s.settings.proteinGoal}
+                     onPlan={(date, mealType) => setAdding({ date, mealType, at: 2 })}
+                     onAdd={(date, mealType, d, msg) => store.add("plan", { mealType, food: d.food, recipe: d.recipe ?? "", eaten: false }, date, msg)}
+                     onSwap={(p, d) => store.edit(p.id, { data: { food: d.food, recipe: d.recipe ?? "" } }, `Swapped for ${d.food}`)}
+                     onEat={eat}
+                     onRemove={(p) => store.remove(p.id, "Removed from your plan")}
+                     onRecipe={(id) => setRecipe(recipeFor(id) ?? null)} />
+      {recipe && <RecipeSheet r={recipe} store={store} onClose={() => setRecipe(null)} />}
       {adding && (
         <PlanFlow key={`${adding.date}${adding.mealType}${adding.at}`} at={adding} diet={s.settings.diet} meals={meals}
                   onClose={() => setAdding(null)}
@@ -424,8 +386,6 @@ export function PlanTab({ store, s }: { store: Store; s: Settings }) {
     </>
   );
 }
-
-const PLAN_STEPS = 4;
 
 /** "Plan a meal": the day, the meal, the dish, then what will go in the plan. */
 function PlanFlow({ at, diet, meals, onClose, onSave }: {

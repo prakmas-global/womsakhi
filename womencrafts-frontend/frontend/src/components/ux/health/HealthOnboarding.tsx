@@ -95,7 +95,7 @@ export function HealthOnboarding({ settings, first, save, onDone }: {
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <p className="text-2xs font-extrabold uppercase tracking-[0.12em]" style={{ color: HUE.magenta.ink }}>
-            Welcome to WomSakhi · Step {step + 1} of {STEPS.length}
+            Health &amp; Wellness setup · Step {step + 1} of {STEPS.length}
           </p>
           <Btn size="sm" variant="ghost" disabled={busy} onClick={skip}>Skip for now</Btn>
         </div>

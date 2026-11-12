@@ -6,6 +6,7 @@ import { Cols, HealthFrame, useEntries, useHealthSettings } from "@/components/u
 import { BedtimeTab, InsightsTab, LogTab, OverviewTab } from "@/components/ux/health/sleep/SleepTabs";
 import { WatchListen } from "@/components/ux/health/WatchListen";
 import { Sounds } from "@/components/ux/health/Sounds";
+import { illSrc } from "@/components/ux/health/art";
 
 /**
  * Sleep — after the approved Health & Wellness design: a night hero, and
@@ -33,7 +34,7 @@ export default function SleepPage() {
   return (
     <HealthFrame night active="/app/health/sleep" hue="violet" icon="Moon" eyebrow="Rest better, live brighter"
                  title="Sleep" sub="Track your nights and build a calm bedtime routine."
-                 art="/ux/health/ill/hero-sleep.webp" tabs={TABS}
+                 art={illSrc("hero-sleep")} tabs={TABS}
                  actions={<>
                    <Btn size="sm" variant="on-brand" icon="Plus" href="/app/health/sleep?tab=log">Log sleep</Btn>
                    <Btn size="sm" variant="outline" icon="Bed" href="/app/health/sleep?tab=bedtime">Bedtime routine</Btn>

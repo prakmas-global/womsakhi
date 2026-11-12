@@ -55,7 +55,6 @@ export function WatchListen({ section, hue, title = "Watch & listen", sub, compa
   const watch = useEntries("vwatch");
   const [filter, setFilter] = useState("All");
   const [playing, setPlaying] = useState<HealthVideo | null>(null);
-  const h = HUE[hue];
 
   const videos = useMemo(() => all.filter((v) => !cats.length || cats.includes(v.category)), [all, cats]);
   const byVideo = useMemo(() => new Map(watch.rows.map((w) => [w.data.video_id, w])), [watch.rows]);
@@ -117,22 +116,29 @@ export function WatchListen({ section, hue, title = "Watch & listen", sub, compa
                body={filter === "Saved" ? "Tap the heart on a video to keep it here." : "Videos you finish show up here."}
                action={<Btn size="sm" variant="outline" onClick={() => setFilter("All")}>Show all</Btn>} />
       ) : (
-        <>
+        <div className="@container flex flex-col gap-3">
+          {/* Up next: the picture, and its words beside it in a wide panel or under it in a
+              narrow one. Never over it — most thumbnails carry words of their own — and never
+              stretched to fill the page. */}
           {featured && !playing && (
             <button type="button" onClick={() => setPlaying(featured)} aria-label={`Play ${featured.title}`}
-                    className="ux-press group relative block aspect-video w-full overflow-hidden rounded-[14px] text-start"
+                    className="ux-press group grid w-full overflow-hidden rounded-[14px] text-start @3xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
                     style={{ background: "var(--ux-deep)" }}>
-              <Thumb v={featured} hue={hue} />
-              <span className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(12,8,22,.78) 0%, rgba(12,8,22,0) 60%)" }} />
-              <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
-                <span className="min-w-0">
-                  <span className="mb-1 inline-block rounded-full px-2 py-0.5 text-2xs font-extrabold uppercase tracking-[0.08em]"
-                        style={{ background: h.tint, color: h.ink }}>{byVideo.get(featured.id)?.data.completed ? "Watch again" : "Up next"}</span>
-                  <b className="block text-lg leading-snug text-white">{featured.title}</b>
-                  <span className="text-xs text-white/80">{[featured.category, featured.level, fmtDuration(featured.duration_sec)].filter(Boolean).join(" · ")}</span>
+              <span className="relative block aspect-video w-full overflow-hidden">
+                <Thumb v={featured} hue={hue} big />
+                <span className="absolute inset-0 grid place-items-center"><PlayDot /></span>
+                <span className="absolute bottom-2 end-2 rounded-[6px] px-1.5 py-0.5 text-xs font-bold tabular-nums text-white @3xl:hidden" style={{ background: "rgba(12,8,22,.75)" }}>
+                  {fmtDuration(featured.duration_sec)}
                 </span>
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: "rgba(255,255,255,.92)", color: "var(--ux-deep)" }}>
-                  <I name="Play" className="ms-0.5 h-5 w-5" />
+              </span>
+              <span className="flex min-w-0 flex-col justify-center gap-1.5 p-4 @3xl:gap-2 @3xl:p-6">
+                <UpNext done={!!byVideo.get(featured.id)?.data.completed} hue={hue} />
+                <b className="block text-base leading-snug text-white @3xl:text-xl">{featured.title}</b>
+                <span className="text-xs text-white/75 @3xl:text-sm">{[featured.category, featured.level, fmtDuration(featured.duration_sec)].filter(Boolean).join(" · ")}</span>
+                {featured.source && <span className="hidden text-xs text-white/60 @3xl:block">{featured.source}</span>}
+                <span className="mt-2 hidden w-fit items-center gap-2 rounded-full px-4 py-2 text-sm font-extrabold @3xl:inline-flex"
+                      style={{ background: "rgba(255,255,255,.94)", color: "var(--ux-deep)" }}>
+                  <I name="Play" className="h-4 w-4" /> Play now
                 </span>
               </span>
             </button>
@@ -142,18 +148,45 @@ export function WatchListen({ section, hue, title = "Watch & listen", sub, compa
               {rest.map((v) => <Card key={v.id} v={v} w={byVideo.get(v.id)} hue={hue} onPlay={() => setPlaying(v)} onFav={() => void fav(v)} />)}
             </div>
           )}
-        </>
+        </div>
       )}
     </Panel>
   );
 }
 
-function Thumb({ v, hue }: { v: HealthVideo; hue: Hue }) {
+function UpNext({ done, hue }: { done: boolean; hue: Hue }) {
+  return (
+    <span className="mb-1 inline-block w-fit rounded-full px-2 py-0.5 text-2xs font-extrabold uppercase tracking-[0.08em]"
+          style={{ background: HUE[hue].tint, color: HUE[hue].ink }}>{done ? "Watch again" : "Up next"}</span>
+  );
+}
+
+function PlayDot() {
+  return (
+    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: "rgba(255,255,255,.92)", color: "var(--ux-deep)" }}>
+      <I name="Play" className="ms-0.5 h-5 w-5" />
+    </span>
+  );
+}
+
+function Thumb({ v, hue, big }: { v: HealthVideo; hue: Hue; big?: boolean }) {
   // Staff may add a picture; a YouTube video without one shows YouTube's own still.
-  const src = v.thumbnail || (v.youtube_id ? `https://i.ytimg.com/vi/${v.youtube_id}/hqdefault.jpg` : "");
+  // A big picture asks for the 1280px still and a card for the 640px one, so both stay sharp on
+  // high-density screens. Not every video has them: YouTube then sends a 120px grey placeholder
+  // (or a 404), so anything that small steps down — 1280 → 640 → 480, which every video has.
+  // A saved thumbnail that is only YouTube's own still counts as none, so it gets the right size too.
+  const yt = (size: string) => `https://i.ytimg.com/vi/${v.youtube_id}/${size}.jpg`;
+  const custom = v.thumbnail && !(v.youtube_id && /(^|\/\/)i\d?\.ytimg\.com\/vi\//.test(v.thumbnail)) ? v.thumbnail : "";
+  const src = custom || (v.youtube_id ? yt(big ? "maxresdefault" : "sddefault") : "");
+  const fallback = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (!v.youtube_id || !(e.type === "error" || img.naturalWidth <= 120)) return;
+    if (img.src.endsWith("/maxresdefault.jpg")) img.src = yt("sddefault");
+    else if (img.src.endsWith("/sddefault.jpg")) img.src = yt("hqdefault");
+  };
   return src
     // eslint-disable-next-line @next/next/no-img-element
-    ? <img src={src} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+    ? <img src={src} alt="" loading="lazy" onLoad={fallback} onError={fallback} className="absolute inset-0 h-full w-full object-cover" />
     : <span className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${HUE[hue].ink}, var(--ux-violet))` }} />;
 }
 

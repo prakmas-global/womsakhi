@@ -2,23 +2,35 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Btn } from "@/components/ux/kit";
 import {
   Chips, Cols, Disclaimer, Empty, HealthFrame, HUE, I, Metric, MetricGrid, Panel, useEntries,
 } from "@/components/ux/health/kit";
-import { artOf } from "@/components/ux/health/art";
+import { artOf, illSrc } from "@/components/ux/health/art";
 import { fmtTime } from "@/components/ux/health/QuickForms";
 import { FormLauncher, PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
 import { Checklist, ConsultCard, useChecks } from "@/components/ux/health/checklist";
 import {
-  ANC_VISITS, APPT_TITLES, BABY, BAG, CARE_CHECKS, DANGER_SIGNS, MILESTONES, PREG_QUESTIONS, PREG_SYMPTOMS, SEVERITY,
-  TRIMESTER_TIPS, babyFor, nextPmsma, pregInfo, type PregInfo,
+  ANC_VISITS, APPT_TITLES, BAG, CARE_CHECKS, DANGER_SIGNS, PREG_QUESTIONS, PREG_SYMPTOMS, SEVERITY,
+  TRIMESTER_TIPS, nextPmsma, pregInfo, type PregInfo,
 } from "@/components/ux/health/pregnancy-data";
-import { addDays, daysBetween, fmtDay, today, type Entry, type Pregnancy } from "@/lib/health-api";
+import { addDays, apiDeleteEntry, daysBetween, fmtDay, today, type Entry, type Pregnancy } from "@/lib/health-api";
 import { WatchListen } from "@/components/ux/health/WatchListen";
+import { toast } from "@/components/ux/mobile/Toast";
 import { TrendChart } from "@/app/app/health/records/record-parts";
 import { readingProblem } from "@/components/ux/health/records-data";
+import { PREG_KINDS, type PregStore } from "@/components/ux/health/pregnancy/parts";
+import { DetailsTab } from "@/components/ux/health/pregnancy/DetailsTab";
+import { CheckupsTab, missedVisits, overdueVisit } from "@/components/ux/health/pregnancy/CheckupsTab";
+import { TestsTab, testsToReview } from "@/components/ux/health/pregnancy/TestsTab";
+import { RiskTab, reviewsDue, riskLevel } from "@/components/ux/health/pregnancy/RiskTab";
+import { MedicinesTab } from "@/components/ux/health/pregnancy/MedicinesTab";
+import { BirthTab } from "@/components/ux/health/pregnancy/BirthTab";
+import { HistoryTab } from "@/components/ux/health/pregnancy/HistoryTab";
+import { JourneyPanel, WhatsNext } from "@/components/ux/health/pregnancy/Journey";
+import { BabyGrowth } from "@/components/ux/health/pregnancy/BabyGrowth";
 
 /**
  * Pregnancy — week by week, with support at every step.
@@ -31,8 +43,22 @@ import { readingProblem } from "@/components/ux/health/records-data";
  *
  * Weeks and the due date are estimates and say so; danger signs are shown on
  * every tab that could be read as advice, with 108 to call.
+ *
+ * Her own pregnancy record lives in components/ux/health/pregnancy/: the
+ * pregnancy's details and dating (My details), antenatal visits (Check-ups),
+ * tests and scans, what her doctor is watching (Risks), medicines and
+ * vaccinations, the birth and after-birth care, and a timeline (History). All
+ * of it is what she records from her own care; nothing is diagnosed. Each
+ * record carries the pregnancy's id (`preg`), so a closed pregnancy keeps its
+ * own history.
  */
 
+/*
+ * The tabs of the approved Health & Wellness design. Her pregnancy record sits
+ * inside them: Care Plan holds her checklist, details, tests and scans, what
+ * her doctor is watching, medicines, the birth and the timeline (as sections,
+ * `?part=`); Consultation holds her appointments and the check-ups she had.
+ */
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "baby", label: "Baby Growth" },
@@ -43,6 +69,22 @@ const TABS = [
   { id: "watch", label: "Watch & listen" },
 ];
 
+const PARTS = [
+  { id: "checklist", label: "Checklist", icon: "ListChecks" },
+  { id: "details", label: "My details", icon: "ClipboardList" },
+  { id: "tests", label: "Tests & scans", icon: "FlaskConical" },
+  { id: "risks", label: "Risks", icon: "ShieldAlert" },
+  { id: "medicines", label: "Medicines", icon: "Pill" },
+  { id: "birth", label: "Birth & after", icon: "HeartPulse" },
+  { id: "history", label: "History", icon: "History" },
+] as const;
+type Part = (typeof PARTS)[number]["id"];
+/** Where each part of her record lives: the tab and, in Care Plan, the section. */
+const PREG_LINK = {
+  checkups: "/app/health/pregnancy?tab=consultation",
+  ...Object.fromEntries(PARTS.map((p) => [p.id, `/app/health/pregnancy?tab=care&part=${p.id}`])),
+} as Record<"checkups" | Part, string>;
+
 const TRI = ["", "First", "Second", "Third"];
 const VISIT = "Prenatal checkup";
 /** What appointments were saved as before they took the Reminders type's name. */
@@ -52,10 +94,26 @@ export default function PregnancyPage() {
   const ck = useChecks();
   const { settings, ready, save } = ck;
   const info = pregInfo(settings.pregnancy);
-  const entries = useEntries(["pregsym", "kick", "contraction", "reminder", "measure"]);
-  // The setup sheet (start, or change dates) and the appointment sheet: mounted only while open.
+  const entries = useEntries([...PREG_KINDS]);
+  // The setup, appointment and symptom sheets: mounted only while open.
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [logging, setLogging] = useState(false);
+  // Ending tracking is one tap, so it can be put back for seven seconds. The
+  // pregnancy is kept in History either way, with everything recorded for it.
+  const endTracking = async () => {
+    const before = settings.pregnancy;
+    if (!before) return;
+    const kept = await entries.add("pregepisode", { pregnancy: before, outcome: "Tracking ended", closed_on: today() }, today());
+    if (!(await save({ pregnancy: null }))) return;
+    toast("Pregnancy tracking has ended", {
+      tone: "success", duration: 7000,
+      action: { label: "Undo", onPress: () => {
+        void save({ pregnancy: before }, "Pregnancy tracking is back on");
+        if (kept) void apiDeleteEntry(kept.id).then(entries.reload).catch(() => undefined);
+      } },
+    });
+  };
 
   const sub = info
     ? `Week ${info.week}${info.day ? ` + ${info.day} day${info.day > 1 ? "s" : ""}` : ""} · ${TRI[info.trimester]} trimester · ${info.overdue ? "due date has passed" : `${info.daysLeft} days to go`}`
@@ -67,31 +125,55 @@ export default function PregnancyPage() {
 
   return (
     <HealthFrame active="/app/health/pregnancy" hue="lilac" icon="Baby" eyebrow="Pregnancy" title="Pregnancy" sub={sub}
-                 art="/ux/health/ill/hero-pregnancy.webp" tabs={info ? TABS : []}
+                 art={illSrc("hero-pregnancy")} tabs={TABS}
                  actions={info ? (
                    <>
-                     <Btn icon="Plus" onClick={() => setAdding(true)}>Add appointment</Btn>
-                     <Btn variant="outline" icon="Footprints" href="/app/health/pregnancy?tab=tools">Kick counter</Btn>
+                     <Btn icon="Plus" onClick={() => setLogging(true)}>Log symptoms</Btn>
+                     <Btn variant="outline" icon="Footprints" href="/app/health/pregnancy?tab=tools">Count kicks</Btn>
+                     <Btn variant="on-brand" icon="CalendarPlus" onClick={() => setAdding(true)}>Add appointment</Btn>
                    </>
-                 ) : null}>
+                 ) : <Btn icon="Baby" onClick={() => setEditing(true)}>Start tracking</Btn>}>
       {(tab) => !ready ? <Loading /> : !info ? (
+        // Before she starts tracking, every tab is still there: Overview is the
+        // start screen, Medicines and Watch & listen work as they are, and the
+        // rest say what they will hold and offer to start.
         <>
-          <SetupPanel onStart={() => setEditing(true)} />
           {setupFlow}
+          {tab === "overview" ? <SetupPanel onStart={() => setEditing(true)} />
+            : tab === "medicines" ? <MedicinesTab store={entries} />
+            : tab === "watch" ? <WatchListen section="pregnancy" hue="lilac" sub="Prenatal yoga, care tips and what to expect, week by week." />
+            : <StartFirst tab={tab} onStart={() => setEditing(true)} />}
         </>
       ) : (
         <>
           {setupFlow}
           {adding && <AppointmentFlow entries={entries} hospital={settings.pregnancy?.hospital ?? ""} onClose={() => setAdding(false)} />}
+          {logging && <SymptomFlow entries={entries} onClose={() => setLogging(false)} />}
           {tab === "overview" && (
-            <Overview info={info} preg={settings.pregnancy!} reminders={entries.rows.filter(isVisit)} onAdd={() => setAdding(true)}
-                      onEdit={() => setEditing(true)} onEnd={() => save({ pregnancy: null }, "Pregnancy tracking has ended")} />
+            <Overview info={info} preg={settings.pregnancy!} store={entries} reminders={entries.rows.filter(isVisit)} onAdd={() => setAdding(true)}
+                      onLog={() => setLogging(true)} onEdit={() => setEditing(true)} onEnd={endTracking} />
           )}
           {tab === "baby" && <BabyGrowth info={info} />}
-          {tab === "symptoms" && <Symptoms entries={entries} />}
-          {tab === "care" && <CarePlan info={info} ck={ck} entries={entries} onAdd={() => setAdding(true)} />}
+          {tab === "symptoms" && <Symptoms entries={entries} onLog={() => setLogging(true)} />}
+          {tab === "care" && (
+            <CarePlanTab render={(part) => (
+              part === "details" ? <DetailsTab preg={settings.pregnancy!} settings={settings} save={save} />
+              : part === "tests" ? <TestsTab preg={settings.pregnancy!} store={entries} />
+              : part === "risks" ? <RiskTab preg={settings.pregnancy!} store={entries} />
+              : part === "medicines" ? <MedicinesTab store={entries} />
+              : part === "birth" ? <BirthTab preg={settings.pregnancy!} store={entries} settings={settings} save={save}
+                                             onClosed={() => window.scrollTo({ top: 0, behavior: "smooth" })} />
+              : part === "history" ? <HistoryTab preg={settings.pregnancy!} store={entries} settings={settings} />
+              : <CarePlan info={info} ck={ck} entries={entries} onAdd={() => setAdding(true)} />
+            )} />
+          )}
           {tab === "tools" && <Tools info={info} ck={ck} entries={entries} />}
-          {tab === "consultation" && <Consultation ck={ck} preg={settings.pregnancy!} save={save} />}
+          {tab === "consultation" && (
+            <>
+              <CheckupsTab preg={settings.pregnancy!} store={entries} onAdd={() => setAdding(true)} />
+              <Consultation ck={ck} preg={settings.pregnancy!} save={save} entries={entries} onAdd={() => setAdding(true)} />
+            </>
+          )}
           {tab === "watch" && <WatchListen section="pregnancy" hue="lilac" sub="Prenatal yoga, care tips and what to expect, week by week." />}
         </>
       )}
@@ -99,7 +181,7 @@ export default function PregnancyPage() {
   );
 }
 
-type Entries = ReturnType<typeof useEntries<"pregsym" | "kick" | "contraction" | "reminder" | "measure">>;
+type Entries = PregStore;
 type Checks = ReturnType<typeof useChecks>;
 
 const isVisit = (e: Entry) => e.kind === "reminder" && [VISIT, OLD_VISIT].includes((e.data as { category?: string }).category ?? "");
@@ -130,6 +212,73 @@ function Field({ label, value, onChange, placeholder, max = 80 }: {
 }
 
 /** Before tracking starts: what it gives her, and one card that opens the setup sheet. */
+/**
+ * Care Plan's sections, as a row of pills under the tab bar. The section is in
+ * the address (`?part=`), so a link can open one and Back returns to it.
+ */
+function CarePlanTab({ render }: { render: (part: Part) => React.ReactNode }) {
+  const params = useSearchParams();
+  const router = useRouter();
+  const path = usePathname();
+  const want = params.get("part") ?? "";
+  const part: Part = PARTS.some((p) => p.id === want) ? (want as Part) : "checklist";
+  const go = (id: Part) => {
+    const q = new URLSearchParams(params.toString());
+    q.set("tab", "care");
+    if (id === "checklist") q.delete("part"); else q.set("part", id);
+    router.replace(`${path}?${q}`, { scroll: false });
+  };
+  return (
+    <>
+      <div role="tablist" aria-label="Care Plan sections" className="ux-scroll-x -mx-1 flex gap-2 px-1 pb-1" data-care-parts>
+        {PARTS.map((p) => {
+          const on = p.id === part;
+          return (
+            <button key={p.id} type="button" role="tab" aria-selected={on} onClick={() => go(p.id)}
+                    className="ux-press inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full border-[1.5px] px-3.5 text-[13.5px] font-bold"
+                    style={on ? { borderColor: HUE.lilac.ink, background: HUE.lilac.tint, color: HUE.lilac.ink }
+                              : { borderColor: "var(--ux-line)", background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
+              <I name={p.icon} className="h-4 w-4" />{p.label}
+            </button>
+          );
+        })}
+      </div>
+      <div key={part} className="ux-swap flex flex-col gap-5">{render(part)}</div>
+    </>
+  );
+}
+
+/** What each tab holds, for the tabs that need a pregnancy before they can show anything. */
+const TAB_INTRO: Record<string, { icon: string; title: string; body: string }> = {
+  consultation: { icon: "Stethoscope", title: "Appointments and check-ups", body: "Book and keep your antenatal appointments, record what was measured at each check-up, and find a gynaecologist or a mentor." },
+  details: { icon: "ClipboardList", title: "Your pregnancy details", body: "How your pregnancy was confirmed, your due date and any change a scan or your doctor makes, gravida and para, blood group, your doctor and your history." },
+  care: { icon: "ListChecks", title: "Your care plan", body: "Your check-up schedule and checklist, your pregnancy details, tests and scans, what your doctor is watching, your medicines, the birth and your timeline." },
+  tests: { icon: "FlaskConical", title: "Tests and scans", body: "Every test and scan from ordered to reviewed, with your results, the range on your report, the report itself and what your doctor said." },
+  risks: { icon: "ShieldAlert", title: "What your doctor is watching", body: "Anything your doctor says needs extra care, the level they gave, referrals, the plan and when it is reviewed next." },
+  baby: { icon: "Baby", title: "Baby's growth, week by week", body: "How big your baby is this week and what is developing, with the milestones ahead." },
+  symptoms: { icon: "Activity", title: "Your symptoms", body: "Tap how you feel each day and see your last 30 days, to tell your doctor." },
+  tools: { icon: "Footprints", title: "Kick counter and more", body: "A kick counter, a contraction timer, your weight through pregnancy and a hospital bag checklist." },
+  birth: { icon: "HeartPulse", title: "The birth and after", body: "Labour and the birth, each baby, the checks for you and your baby afterwards, and a summary to print." },
+  history: { icon: "History", title: "Your pregnancy timeline", body: "Everything in your pregnancy on one timeline, your papers, and earlier pregnancies you closed." },
+};
+
+function StartFirst({ tab, onStart }: { tab: string; onStart: () => void }) {
+  const t = TAB_INTRO[tab] ?? TAB_INTRO.details;
+  return (
+    <Panel>
+      <div className="flex flex-col items-start gap-3 py-2" data-start-first={tab}>
+        <span className="grid h-12 w-12 place-items-center rounded-[14px]" style={{ background: HUE.lilac.tint, color: HUE.lilac.ink }}>
+          <I name={t.icon} className="h-6 w-6" />
+        </span>
+        <h2 className="text-lg font-extrabold" style={{ color: "var(--ux-ink)" }}>{t.title}</h2>
+        <p className="max-w-[60ch] text-sm" style={{ color: "var(--ux-muted)" }}>{t.body}</p>
+        <p className="text-sm font-semibold" style={{ color: "var(--ux-ink-2)" }}>Start tracking your pregnancy to use this — it takes one date.</p>
+        <Btn icon="Baby" onClick={onStart}>Start tracking</Btn>
+      </div>
+    </Panel>
+  );
+}
+
 function SetupPanel({ onStart }: { onStart: () => void }) {
   return (
     <Cols
@@ -258,28 +407,6 @@ function SetupFlow({ current, editing, onSave, onClose }: {
 
 /* ── overview ─────────────────────────────────────────────────────────── */
 
-function Timeline({ info }: { info: PregInfo }) {
-  const pct = Math.min(100, (info.ga / 280) * 100);
-  return (
-    <div className="relative mx-1 mt-2 h-[64px]" aria-label={`Pregnancy timeline, week ${info.week} of 40`} data-preg-timeline>
-      <div className="absolute inset-x-0 top-[12px] h-[10px] overflow-hidden rounded-full" style={{ background: "var(--ux-surface-2)" }}>
-        <i className="block h-full rounded-full" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${HUE.lilac.ink}, var(--ux-brand))` }} />
-      </div>
-      {MILESTONES.map(([w, l]) => (
-        <span key={w} className="absolute top-[6px] flex flex-col items-center gap-1 text-[11px] font-bold"
-              style={{ left: `${(w / 40) * 100}%`, transform: w === 40 ? "translateX(-100%)" : "translateX(-50%)", color: "var(--ux-muted)", alignItems: w === 40 ? "flex-end" : "center" }}>
-          <span className="block h-[22px] w-[3px] rounded-full" style={{ background: "var(--ux-line-strong)" }} />
-          {/* "Full term" sits three weeks from the due date: its tick stays, its
-              label would collide. On a phone only the trimester marks are named. */}
-          {w !== 37 && <span className={`whitespace-nowrap ${w === 20 || w === 40 ? "max-sm:hidden" : ""}`}>{l}</span>}
-        </span>
-      ))}
-      <span className="absolute top-[4px] h-[26px] w-[26px] -translate-x-1/2 rounded-full"
-            style={{ left: `${pct}%`, background: "var(--ux-surface)", border: `4px solid ${HUE.lilac.ink}`, boxShadow: "var(--ux-shadow-sm)" }} title="You are here" />
-    </div>
-  );
-}
-
 function DangerCard() {
   return (
     <section className="ux-card flex flex-col gap-3 p-4 sm:p-5" style={{ background: "var(--ux-danger-tint)" }} data-danger-signs>
@@ -305,38 +432,80 @@ function nextVisit(rows: Entry[]) {
     .sort((a, b) => (a.date + ((a.data as { time?: string }).time ?? "")).localeCompare(b.date + ((b.data as { time?: string }).time ?? "")))[0];
 }
 
-function Overview({ info, preg, reminders, onAdd, onEdit, onEnd }: {
-  info: PregInfo; preg: Pregnancy; reminders: Entry[]; onAdd: () => void; onEdit: () => void; onEnd: () => void;
+/**
+ * What needs her attention across her pregnancy record, most urgent first:
+ * a check-up that is overdue or was missed, results to show her doctor,
+ * reviews her doctor asked for, and after the birth, the checks to come.
+ * Each item goes straight to the tab that deals with it.
+ */
+function Attention({ preg, store }: { preg: Pregnancy; store: PregStore }) {
+  const overdue = overdueVisit(store, preg);
+  const missed = missedVisits(store);
+  const tests = testsToReview(store, preg);
+  const reviews = reviewsDue(store, preg);
+  const level = riskLevel(store, preg);
+  const items: { icon: string; text: React.ReactNode; href: string; cta: string; tone: "amber" | "danger" | "lilac" }[] = [];
+  if (overdue) items.push({ icon: "AlarmClock", tone: "amber", href: PREG_LINK.checkups, cta: "Consultation",
+                            text: <>Your next check-up was due <b>{fmtDay(overdue.due, { day: "numeric", month: "short" })}</b> — book it.</> });
+  if (missed.length) items.push({ icon: "CalendarX", tone: "amber", href: PREG_LINK.checkups, cta: "Consultation",
+                                  text: <><b>{missed.length}</b> appointment{missed.length === 1 ? "" : "s"} not marked as done.</> });
+  if (tests.length) items.push({ icon: "FlaskConical", tone: "danger", href: PREG_LINK.tests, cta: "Tests & scans",
+                                 text: <><b>{tests.map((t) => t.data.name).slice(0, 2).join(", ")}</b>{tests.length > 2 ? ` and ${tests.length - 2} more` : ""} — show your doctor.</> });
+  if (reviews.length) items.push({ icon: "ShieldAlert", tone: "amber", href: PREG_LINK.risks, cta: "Risks",
+                                   text: <>Review due: <b>{reviews.map((r) => r.data.factor).join(", ")}</b>.</> });
+  if (level === "High") items.push({ icon: "ShieldAlert", tone: "danger", href: PREG_LINK.risks, cta: "Risks",
+                                     text: <>Your doctor said part of your pregnancy needs <b>extra care</b>. Keep every check-up.</> });
+  if (preg.status === "Delivered") items.push({ icon: "HeartPulse", tone: "lilac", href: PREG_LINK.birth, cta: "Birth & after",
+                                                text: <>Your baby is here. Record your checks after the birth.</> });
+  if (!items.length) return null;
+  return (
+    <section className="ux-card flex flex-col gap-2.5 p-4 sm:p-5" data-preg-attention>
+      <h2 className="text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>Needs your attention</h2>
+      <ul className="flex flex-col gap-2">
+        {items.map((it, i) => (
+          <li key={i} className="flex items-center gap-3 rounded-[12px] p-2.5"
+              style={{ background: it.tone === "danger" ? "var(--ux-danger-tint)" : HUE[it.tone].tint }}>
+            <I name={it.icon} className="h-5 w-5 shrink-0" style={{ color: it.tone === "danger" ? "var(--ux-danger-ink)" : HUE[it.tone].ink }} />
+            <span className="min-w-0 flex-1 text-sm" style={{ color: "var(--ux-ink)" }}>{it.text}</span>
+            <Btn size="sm" variant="outline" iconEnd="ArrowRight" href={it.href}>{it.cta}</Btn>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Her pregnancy record in numbers, each one a way into its tab. */
+function CareAtAGlance({ preg, store }: { preg: Pregnancy; store: PregStore }) {
+  const own = (k: "anc" | "pregtest" | "pregrisk") => store.rows.filter((r) => r.kind === k && ((r.data as { preg?: string }).preg ?? "") === (preg.id ?? ""));
+  const visits = own("anc").filter((v) => (v.data as { status?: string }).status !== "Missed").length;
+  const tests = own("pregtest");
+  const waiting = tests.filter((t) => ["Ordered", "Sample given", "Processing"].includes((t.data as { status: string }).status)).length;
+  const watching = own("pregrisk").filter((r) => (r.data as { status: string }).status !== "Resolved").length;
+  const meds = store.rows.filter((r) => r.kind === "medication" && ((r.data as { status?: string }).status ?? "Taking now") === "Taking now").length;
+  return (
+    <MetricGrid>
+      <Metric hue="lilac" icon="Stethoscope" label="Check-ups" value={visits} href={PREG_LINK.checkups} />
+      <Metric hue="blue" icon="FlaskConical" label="Tests waiting" value={waiting} sub={`${tests.length} in all`} href={PREG_LINK.tests} />
+      <Metric hue="amber" icon="ShieldAlert" label="Being watched" value={watching} href={PREG_LINK.risks} />
+      <Metric hue="green" icon="Pill" label="Medicines" value={meds} href={PREG_LINK.medicines} />
+    </MetricGrid>
+  );
+}
+
+function Overview({ info, preg, store, reminders, onAdd, onLog, onEdit, onEnd }: {
+  info: PregInfo; preg: Pregnancy; store: PregStore; reminders: Entry[]; onAdd: () => void; onLog: () => void; onEdit: () => void; onEnd: () => void;
 }) {
-  const b = babyFor(info.week);
   const up = nextVisit(reminders);
   const [ending, setEnding] = useState(false);
   return (
     <Cols
       main={
         <>
-          <Panel>
-            <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
-              <div>
-                <p className="text-2xs font-extrabold uppercase tracking-[0.12em]" style={{ color: HUE.lilac.ink }}>Estimated progress</p>
-                <p className="text-[48px] font-extrabold leading-none tabular-nums" style={{ color: HUE.lilac.ink }} data-preg-week>
-                  Week {info.week}{info.day ? <span className="text-[22px]"> + {info.day}d</span> : null}
-                </p>
-                <p className="mt-1.5 text-sm" style={{ color: "var(--ux-muted)" }}>
-                  {TRI[info.trimester]} trimester · {info.overdue ? "Due date has passed" : `${info.daysLeft} days to go`}
-                </p>
-              </div>
-            </div>
-            <MetricGrid>
-              <Metric hue="lilac" icon="CalendarHeart" label="Estimated due date" value={fmtDay(info.due, { day: "numeric", month: "short", year: "numeric" })} />
-              <Metric hue="pink" icon="Baby" label="Baby's size" value={b[1].replace(/^an? /, "").replace(/^./, (c) => c.toUpperCase())} sub="Approximate comparison" />
-              <Metric hue="amber" icon="Hourglass" label="Weeks to go" value={Math.max(0, 40 - info.week)} />
-            </MetricGrid>
-            <Timeline info={info} />
-            <p className="text-sm" style={{ color: "var(--ux-ink-2)" }}>{b[2]}</p>
-            {info.overdue && <Disclaimer><b>Your estimated due date has passed.</b> Please see your doctor, and update your dates or end tracking below.</Disclaimer>}
-            <Disclaimer><b>Weeks and due date are estimates</b> based on the date you entered. Confirm your due date and care plan with your doctor or ANM.</Disclaimer>
-          </Panel>
+          <Attention preg={preg} store={store} />
+          <JourneyPanel info={info} />
+          <CareAtAGlance preg={preg} store={store} />
+          <WhatsNext info={info} />
           <Panel title={`This trimester`} sub={`${TRI[info.trimester]} trimester tips`}>
             <ul className="flex flex-col gap-2">
               {TRIMESTER_TIPS[info.trimester].map((t) => (
@@ -372,15 +541,21 @@ function Overview({ info, preg, reminders, onAdd, onEdit, onEnd }: {
           </Panel>
           <Panel title="Quick actions">
             <div className="grid grid-cols-2 gap-2.5">
-              {([["Activity", "Log symptoms", "/app/health/pregnancy?tab=symptoms"], ["Footprints", "Count kicks", "/app/health/pregnancy?tab=tools"],
-                 ["Scale", "Log weight", "/app/health/pregnancy?tab=tools#weight"], ["CalendarPlus", "Add appointment", "/app/health/pregnancy?tab=care#appointment"],
-                 ["Briefcase", "Hospital bag", "/app/health/pregnancy?tab=tools#bag"], ["Stethoscope", "Talk to an OB-GYN", "/app/health/doctors?speciality=Gynaecologist"]] as const).map(([ic, l, href]) => (
-                <Link key={l} href={href} className="ux-card ux-press ux-hov flex min-h-[86px] flex-col items-center justify-center gap-2 p-2 text-center text-[13px] font-bold"
-                      style={{ color: "var(--ux-ink)" }}>
-                  <span className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: HUE.lilac.tint, color: HUE.lilac.ink }}><I name={ic} className="h-[18px] w-[18px]" /></span>
-                  {l}
-                </Link>
-              ))}
+              {/* The two that log something open their steps here; the rest go where the thing lives. */}
+              {([["Activity", "Log symptoms", onLog], ["Footprints", "Count kicks", "/app/health/pregnancy?tab=tools"],
+                 ["Scale", "Log weight", "/app/health/pregnancy?tab=tools#weight"], ["CalendarPlus", "Add appointment", onAdd],
+                 ["Briefcase", "Hospital bag", "/app/health/pregnancy?tab=tools#bag"], ["Stethoscope", "Talk to an OB-GYN", "/app/health/doctors?speciality=Gynaecologist"]] as const).map(([ic, l, to]) => {
+                const cls = "ux-card ux-press ux-hov flex h-[92px] flex-col items-center justify-center gap-2 p-2 text-center text-[13px] font-bold leading-tight";
+                const inner = (
+                  <>
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: HUE.lilac.tint, color: HUE.lilac.ink }}><I name={ic} className="h-[18px] w-[18px]" /></span>
+                    {l}
+                  </>
+                );
+                return typeof to === "string"
+                  ? <Link key={l} href={to} className={cls} style={{ color: "var(--ux-ink)" }}>{inner}</Link>
+                  : <button key={l} type="button" onClick={to} className={cls} style={{ color: "var(--ux-ink)" }}>{inner}</button>;
+              })}
             </div>
           </Panel>
           <Panel title="Your details">
@@ -410,65 +585,6 @@ function Overview({ info, preg, reminders, onAdd, onEdit, onEnd }: {
         </>
       }
     />
-  );
-}
-
-/* ── baby growth ──────────────────────────────────────────────────────── */
-
-function BabyGrowth({ info }: { info: PregInfo }) {
-  const first = BABY[0][0], last = BABY[BABY.length - 1][0];
-  const mine = Math.min(last, Math.max(first, info.week));
-  const [week, setWeek] = useState(mine);
-  const cur = babyFor(week);
-  const mark = MILESTONES.find(([w]) => w === week);
-  return (
-    <Panel title="Baby's journey, week by week" sub="General information with approximate size comparisons. Every pregnancy is different.">
-      <div className="flex flex-col gap-3 rounded-[16px] p-4" style={{ background: HUE.lilac.tint }} data-baby-explore>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-2xs font-extrabold uppercase tracking-[0.12em]" style={{ color: HUE.lilac.ink }}>
-              {week === mine ? "Your week" : "Exploring"}{mark ? ` · ${mark[1]}` : ""}
-            </p>
-            <p className="text-[34px] font-extrabold leading-none tabular-nums" style={{ color: HUE.lilac.ink }}>Week {week}</p>
-          </div>
-          {week !== mine && <Btn size="sm" variant="outline" onClick={() => setWeek(mine)}>Go to my week ({info.week})</Btn>}
-        </div>
-        <label className="flex flex-col gap-1 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>
-          Explore weeks {first} to {last}
-          <input type="range" min={first} max={last} step={1} value={week} onChange={(e) => setWeek(Number(e.target.value))}
-                 aria-valuetext={`Week ${week}`} style={{ accentColor: HUE.lilac.ink }} />
-        </label>
-        <p className="text-sm" style={{ color: "var(--ux-ink)" }}><b>About the size of {cur[1]}.</b> {cur[2]}</p>
-        <div className="flex flex-wrap gap-1.5" aria-label="Milestones">
-          {MILESTONES.map(([w, l]) => (
-            <button key={w} type="button" aria-pressed={week === w} onClick={() => setWeek(w)}
-                    className="ux-press rounded-full border px-3 py-1 text-xs font-bold"
-                    style={week === w ? { borderColor: HUE.lilac.ink, background: "var(--ux-surface)", color: HUE.lilac.ink }
-                                      : { borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
-              {w} · {l}
-            </button>
-          ))}
-        </div>
-      </div>
-      <ol className="flex flex-col gap-1.5" data-baby-weeks>
-        {BABY.map((b) => {
-          const on = b[0] === cur[0];
-          return (
-            <li key={b[0]} className="grid grid-cols-[64px_minmax(0,1fr)] gap-3 rounded-[14px] p-3"
-                style={on ? { background: HUE.lilac.tint, outline: `1.5px solid ${HUE.lilac.ink}` } : undefined} aria-current={on ? "step" : undefined}>
-              <span className="text-[22px] font-extrabold tabular-nums" style={{ color: HUE.lilac.ink }}>
-                {b[0]}<small className="ms-0.5 text-[11px] font-bold" style={{ color: "var(--ux-muted)" }}>wk</small>
-              </span>
-              <span>
-                <b className="block text-sm" style={{ color: "var(--ux-ink)" }}>About the size of {b[1]}</b>
-                <span className="text-[13px]" style={{ color: "var(--ux-muted)" }}>{b[2]}</span>
-                {on && week === mine && <span className="mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-extrabold" style={{ background: "var(--ux-surface)", color: HUE.lilac.ink }}>You are around here</span>}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </Panel>
   );
 }
 
@@ -522,15 +638,88 @@ function SymptomFlow({ entries, onClose }: { entries: Entries; onClose: () => vo
                     onSubmit={log} busy={busy} submitLabel="Save" />;
 }
 
-function Symptoms({ entries }: { entries: Entries }) {
-  const [logging, setLogging] = useState(false);
+/**
+ * Today's symptoms, one tap each: the first tap starts today's entry (mild),
+ * more taps add to it or take away, and "Add details" opens the full steps.
+ */
+function TodaySymptoms({ entries, rows, onLog }: { entries: Entries; rows: Entry<"pregsym">[]; onLog: () => void }) {
+  const t = today();
+  const mine = rows.find((r) => r.date === t);
+  const on = mine?.data.symptoms ?? [];
+  const [busy, setBusy] = useState("");
+  const tap = async (s: string) => {
+    if (busy) return;
+    setBusy(s);
+    if (!mine) await entries.add("pregsym", { symptoms: [s], severity: "Mild", note: "" }, t, `${s} saved for today`);
+    else {
+      const next = on.includes(s) ? on.filter((x) => x !== s) : [...on, s];
+      if (next.length) await entries.edit(mine.id, { data: { symptoms: next } });
+      else await entries.remove(mine.id, "Today's entry removed");
+    }
+    setBusy("");
+  };
+  return (
+    <Panel title="Today" sub={on.length ? `${on.length} logged · tap again to take one off` : "How are you feeling? Tap what applies."}
+           action={<Btn size="sm" variant="outline" icon="SlidersHorizontal" onClick={onLog}>Add details</Btn>}>
+      <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))" }} role="group" aria-label="Today's symptoms" data-today-symptoms>
+        {PREG_SYMPTOMS.map((s) => {
+          const sel = on.includes(s);
+          return (
+            <button key={s} type="button" aria-pressed={sel} disabled={!!busy} onClick={() => tap(s)}
+                    className="ux-press flex h-[84px] flex-col items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] px-1.5 text-center text-[12.5px] font-bold leading-tight transition-colors"
+                    style={sel ? { borderColor: HUE.lilac.ink, background: HUE.lilac.tint, color: "var(--ux-ink)" }
+                               : { borderColor: "var(--ux-line)", background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={artOf(s)} alt="" className="h-8 w-8 object-contain" />
+              {s}
+            </button>
+          );
+        })}
+      </div>
+      {mine && (mine.data.severity || mine.data.note) && (
+        <p className="text-xs" style={{ color: "var(--ux-muted)" }}>{[mine.data.severity, mine.data.note].filter(Boolean).join(" · ")}</p>
+      )}
+    </Panel>
+  );
+}
+
+/** How often each symptom came up in the last 30 days. */
+function Last30({ rows }: { rows: Entry<"pregsym">[] }) {
+  const from = addDays(today(), -29);
+  const recent = rows.filter((r) => r.date >= from);
+  const days = new Set(recent.map((r) => r.date)).size;
+  const count = new Map<string, number>();
+  for (const r of recent) for (const s of new Set(r.data.symptoms)) count.set(s, (count.get(s) ?? 0) + 1);
+  const top = [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const max = Math.max(1, ...top.map(([, n]) => n));
+  return (
+    <Panel title="Last 30 days" sub={days ? `Logged on ${days} ${days === 1 ? "day" : "days"}` : "Nothing logged in the last 30 days"}>
+      {top.length ? (
+        <ul className="flex flex-col gap-2.5" data-pregsym-30>
+          {top.map(([s, n]) => (
+            <li key={s} className="grid grid-cols-[28px_minmax(0,110px)_minmax(0,1fr)_auto] items-center gap-2.5 text-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={artOf(s)} alt="" className="h-7 w-7 object-contain" />
+              <span className="truncate font-bold" style={{ color: "var(--ux-ink)" }}>{s}</span>
+              <span className="block h-2.5 overflow-hidden rounded-full" style={{ background: HUE.lilac.tint }}>
+                <i className="block h-full rounded-full" style={{ width: `${(n / max) * 100}%`, background: HUE.lilac.ink }} />
+              </span>
+              <span className="text-xs font-bold tabular-nums" style={{ color: "var(--ux-muted)" }}>{n} {n === 1 ? "day" : "days"}</span>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Tap a symptom above when you feel it. Patterns show up here.</p>}
+    </Panel>
+  );
+}
+
+function Symptoms({ entries, onLog }: { entries: Entries; onLog: () => void }) {
   const rows = entries.rows.filter((r) => r.kind === "pregsym") as Entry<"pregsym">[];
   return (
     <Cols
       main={
         <>
-          {logging && <SymptomFlow entries={entries} onClose={() => setLogging(false)} />}
-          <DangerCard />
+          <TodaySymptoms entries={entries} rows={rows} onLog={onLog} />
           <Panel title="Symptom journal" sub="What you felt, by day">
             {rows.length ? (
               <ul className="flex flex-col" data-pregsym-list>
@@ -549,13 +738,17 @@ function Symptoms({ entries }: { entries: Entries }) {
                 ))}
               </ul>
             ) : <Empty icon="NotebookPen" title="Nothing logged yet" body="Log how you feel. It helps you remember what to tell your doctor."
-                       action={<Btn size="sm" icon="Plus" onClick={() => setLogging(true)}>Log symptoms</Btn>} />}
+                       action={<Btn size="sm" icon="Plus" onClick={onLog}>Log symptoms</Btn>} />}
           </Panel>
+          <DangerCard />
         </>
       }
       side={
-        <FormLauncher art="Pregnancy care" title="How are you feeling?" sub="Log symptoms · 4 quick steps, mostly taps" steps={4} hue="lilac"
-                      onStart={() => setLogging(true)} cta="Log" />
+        <>
+          <Last30 rows={rows} />
+          <FormLauncher art="Pregnancy care" title="Log with details" sub="Symptoms, how strong, a note · 4 quick steps" steps={4} hue="lilac"
+                        onStart={onLog} cta="Log" />
+        </>
       }
     />
   );
@@ -563,11 +756,50 @@ function Symptoms({ entries }: { entries: Entries }) {
 
 /* ── care plan ────────────────────────────────────────────────────────── */
 
-function CarePlan({ info, ck, entries, onAdd }: { info: PregInfo; ck: Checks; entries: Entries; onAdd: () => void }) {
+/** Her prenatal appointments: upcoming first, then the last few, each with Done and Delete. */
+function AppointmentList({ entries, onAdd }: { entries: Entries; onAdd?: () => void }) {
   const visits = entries.rows.filter(isVisit) as Entry<"reminder">[];
   const t = today();
   const upcoming = visits.filter((v) => v.date >= t && !(v.data.done ?? []).includes(v.date)).sort((a, b) => a.date.localeCompare(b.date));
   const past = visits.filter((v) => !upcoming.includes(v)).sort((a, b) => b.date.localeCompare(a.date));
+  return (
+    <Panel title="Appointments" sub={upcoming.length ? `${upcoming.length} coming up` : undefined}
+           action={onAdd ? <Btn size="sm" variant="outline" icon="Plus" onClick={onAdd}>Add</Btn> : undefined}>
+      {upcoming.length + past.length === 0 ? (
+        <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Your check-ups will show here, and in Appointments &amp; Reminders.</p>
+      ) : (
+        <ul className="flex flex-col" data-appts>
+          {[...upcoming, ...past.slice(0, 6)].map((v, i) => {
+            const done = (v.data.done ?? []).includes(v.date);
+            const soon = !done && v.date >= t;
+            return (
+              <li key={v.id} className={`flex items-center gap-3 py-2.5 ${i ? "border-t" : ""}`} style={{ borderColor: "var(--ux-line)" }}>
+                <span className="min-w-0 flex-1">
+                  <b className="block truncate text-sm" style={{ color: done ? "var(--ux-muted)" : "var(--ux-ink)" }}>{v.data.title}</b>
+                  <span className="text-xs" style={{ color: "var(--ux-muted)" }}>
+                    {fmtDay(v.date, { weekday: "short", day: "numeric", month: "short" })}{v.data.time ? ` · ${fmtTime(v.data.time)}` : ""}
+                    {soon && daysBetween(v.date, t) <= 1 ? (daysBetween(v.date, t) === 0 ? " · Today" : " · Tomorrow") : ""}
+                    {done ? " · Done" : !soon ? " · Missed?" : ""}
+                  </span>
+                </span>
+                {!done && (
+                  <button type="button" onClick={() => entries.edit(v.id, { data: { done: [...(v.data.done ?? []), v.date] } }, "Marked as done")}
+                          className="ux-press min-h-[34px] rounded-[10px] px-2.5 text-xs font-bold" style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>Done</button>
+                )}
+                <button type="button" aria-label="Delete appointment" onClick={() => entries.remove(v.id, "Appointment removed")}
+                        className="ux-press grid h-9 w-9 place-items-center rounded-[10px]" style={{ color: "var(--ux-muted)" }}>
+                  <I name="Trash2" className="h-4 w-4" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+function CarePlan({ info, ck, entries, onAdd }: { info: PregInfo; ck: Checks; entries: Entries; onAdd: () => void }) {
   useEffect(() => {
     if (window.location.hash === "#appointment") document.getElementById("appointment")?.scrollIntoView({ block: "start" });
   }, []);
@@ -623,38 +855,7 @@ function CarePlan({ info, ck, entries, onAdd }: { info: PregInfo; ck: Checks; en
         <>
           <FormLauncher id="appointment" art="Prenatal checkup" title="Add a prenatal appointment" steps={5} hue="lilac"
                         sub="We'll remind you the day before · 5 quick steps" onStart={onAdd} cta="Add" />
-          <Panel title="Appointments">
-            {upcoming.length + past.length === 0 ? (
-              <p className="text-sm" style={{ color: "var(--ux-muted)" }}>Your check-ups will show here, and in Appointments &amp; Reminders.</p>
-            ) : (
-              <ul className="flex flex-col" data-appts>
-                {[...upcoming, ...past.slice(0, 6)].map((v, i) => {
-                  const done = (v.data.done ?? []).includes(v.date);
-                  const soon = !done && v.date >= t;
-                  return (
-                    <li key={v.id} className={`flex items-center gap-3 py-2.5 ${i ? "border-t" : ""}`} style={{ borderColor: "var(--ux-line)" }}>
-                      <span className="min-w-0 flex-1">
-                        <b className="block truncate text-sm" style={{ color: done ? "var(--ux-muted)" : "var(--ux-ink)" }}>{v.data.title}</b>
-                        <span className="text-xs" style={{ color: "var(--ux-muted)" }}>
-                          {fmtDay(v.date, { weekday: "short", day: "numeric", month: "short" })}{v.data.time ? ` · ${v.data.time}` : ""}
-                          {soon && daysBetween(v.date, t) <= 1 ? (daysBetween(v.date, t) === 0 ? " · Today" : " · Tomorrow") : ""}
-                          {done ? " · Done" : !soon ? " · Missed?" : ""}
-                        </span>
-                      </span>
-                      {!done && (
-                        <button type="button" onClick={() => entries.edit(v.id, { data: { done: [...(v.data.done ?? []), v.date] } }, "Marked as done")}
-                                className="ux-press min-h-[34px] rounded-[10px] px-2.5 text-xs font-bold" style={{ background: "var(--ux-tint-green)", color: "var(--ux-green-ink)" }}>Done</button>
-                      )}
-                      <button type="button" aria-label="Delete appointment" onClick={() => entries.remove(v.id, "Appointment removed")}
-                              className="ux-press grid h-9 w-9 place-items-center rounded-[10px]" style={{ color: "var(--ux-muted)" }}>
-                        <I name="Trash2" className="h-4 w-4" />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </Panel>
+          <AppointmentList entries={entries} />
         </>
       }
     />
@@ -917,7 +1118,7 @@ function WeightTracker({ entries }: { entries: Entries }) {
 
 /* ── consultation ─────────────────────────────────────────────────────── */
 
-function Consultation({ ck, preg, save }: { ck: Checks; preg: Pregnancy; save: Checks["save"] }) {
+function Consultation({ ck, preg, save, entries, onAdd }: { ck: Checks; preg: Pregnancy; save: Checks["save"]; entries: Entries; onAdd: () => void }) {
   const [doctor, setDoctor] = useState(preg.doctor ?? "");
   const [hospital, setHospital] = useState(preg.hospital ?? "");
   const dirty = doctor !== (preg.doctor ?? "") || hospital !== (preg.hospital ?? "");
@@ -925,12 +1126,15 @@ function Consultation({ ck, preg, save }: { ck: Checks; preg: Pregnancy; save: C
     <Cols
       main={
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }} data-consult-cards>
             <ConsultCard icon="Stethoscope" hue="green" title="OB-GYN consultation" body="Book with a gynaecologist — online or in person."
                          href="/app/health/doctors?speciality=Gynaecologist" cta="Find a gynaecologist" />
+            <ConsultCard icon="Baby" hue="lilac" title="Child health doctor" body="Meet a paediatrician before baby arrives, or ask about newborn care."
+                         href="/app/health/doctors?speciality=Paediatrician" cta="Find a paediatrician" />
             <ConsultCard icon="Users" hue="orange" title="Talk to a mother who's been there" body="Mentors share what helped them — not medical advice."
                          href="/app/health/mentors?topic=Pregnancy" cta="Find a mentor" />
           </div>
+          <AppointmentList entries={entries} onAdd={onAdd} />
           <Panel title="Questions for your next check-up" sub="Tick the ones you want to ask">
             <Checklist label="preg-questions" hue="green" items={PREG_QUESTIONS} done={ck.checks["preg-questions"] ?? []} onToggle={(id) => ck.toggle("preg-questions", id)} />
           </Panel>

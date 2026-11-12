@@ -583,7 +583,7 @@ function Uploader({ status, fixing, onChanged }: { status: VerificationStatus; f
         <SlotCard
           n={1}
           title="Live selfie"
-          hint={fixing ? "Take it again" : "Your face, in good light"}
+          hint={fixing ? "Take it again, with only you in the photo" : "Only your face, in good light"}
           doc={selfie}
           refusedNote={!selfie && !fixing ? refused("selfie")?.review_note : undefined}
           thumb={selfie ? thumbs[selfie.id] : undefined}

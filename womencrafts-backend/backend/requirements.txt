@@ -54,3 +54,7 @@ py-vapid==1.9.4
 # QR codes for staff authenticator setup, drawn as SVG on the server so the
 # web app needs no QR dependency. Pure Python, no transitive dependencies.
 segno==1.6.6
+
+# Counting faces in the verification selfie (app/core/faces.py): the headless
+# build needs no system graphics libraries on the slim image.
+opencv-python-headless==4.10.0.84
