@@ -53,33 +53,23 @@ function Icon({ name, className }: { name: string; className?: string }) {
  * a bad day, so it is not behind a menu. That is the reading of §65 that
  * actually protects her, rather than the one that satisfies a tab count.
  *
- * `.ux-dock-bottom` is what keeps it above the tab bar: `mobile.css` sets that
- * class to `bottom: var(--tabbar-h)`, which already includes the home
- * indicator. It used to carry a hand-written `calc(56px + env(...))` that had
- * to be kept in step with a bar height defined somewhere else, and was already
- * two pixels out.
+ * The shared utility strip reserves space above the tab bar, including the
+ * home indicator. The link opens safety choices without dialling a number.
  */
 export function SafetyPin() {
   const tr = useT();
   const pathname = usePathname();
   if (pathname.startsWith("/app/safety")) return null;
 
+  // Opens the existing safety screen; it never makes a call automatically.
   return (
     <Link
       href="/app/safety"
-      aria-label={tr("ch.safety.label")}
-      className="ux-press ux-sq ux-dock-bottom fixed bottom-0 left-3 z-[var(--ux-z-sticky)] mb-3 flex min-h-[44px] items-center gap-1.5 rounded-full px-3 lg:hidden"
-      style={{
-        background: "var(--ux-surface)",
-        border: "1px solid var(--ux-line-strong)",
-        boxShadow: "var(--ux-shadow-card)",
-        color: "var(--ux-ink-2)",
-      }}
+      aria-label={`SOS — ${tr("ch.safety.label")}`}
+      className="ux-press ux-safety-trigger fixed z-[var(--ux-z-sticky)] lg:hidden"
     >
-      <span style={{ color: "var(--ux-danger-solid)" }}>
-        <Icon name="ShieldAlert" className="h-[16px] w-[16px]" />
-      </span>
-      <span className="text-2xs font-bold">{tr("ch.safety.label")}</span>
+      <Icon name="ShieldAlert" className="h-5 w-5" />
+      <span>SOS · Get help</span>
     </Link>
   );
 }

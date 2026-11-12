@@ -24,7 +24,7 @@ from typing import Optional
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
-from app.core import mongosafe
+from app.core import masters, mongosafe
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.permissions import require_permission
@@ -437,6 +437,7 @@ async def get_program(program_id: str, _: dict = Depends(get_current_user)):
     dependencies=[Depends(require_permission("programs.create"))],
 )
 async def create_program(payload: AdminProgramCreate, request: Request, me: dict = Depends(get_current_user)):
+    payload.category = await masters.check("course_categories", payload.category, level="child", field="category")
     dates = _format_schedule(payload.startDate) or "To be scheduled"
     note = "Coming soon" if payload.status == "Upcoming" else payload.status
     doc = ProgramModel.create_document(
@@ -476,6 +477,8 @@ async def update_program(program_id: str, payload: AdminProgramUpdate, request: 
         if start:
             updates["dates"] = start
 
+    if updates.get("category") and updates["category"] != before.get("category"):
+        updates["category"] = await masters.check("course_categories", updates["category"], level="child", field="category")
     if updates.get("category"):
         updates["cat_tone"] = ProgramModel.tone_for(updates["category"])
         updates["bar"] = ProgramModel.bar_for(updates["category"])
@@ -756,6 +759,9 @@ async def set_enrollment_status(
     existing = await _enrollments().find_one({"_id": to_object_id(enrollment_id), "program_id": program_id})
     if not existing:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That enrolment is not on this programme")
+
+    if payload.status in EnrollmentModel.LEARNING and not ProgramModel.payment_confirmed(program, existing):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "The course owner must confirm payment before this paid enrolment can be activated or completed.")
 
     now = datetime.now(timezone.utc)
     updates: dict = {"status": payload.status, "updated_at": now}

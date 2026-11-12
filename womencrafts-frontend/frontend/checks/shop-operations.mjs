@@ -1,5 +1,5 @@
 /** Exercise every formerly-placeholder shop workflow against the real API. */
-import { APP, launch } from "./_shared.mjs";
+import { APP, launch, codeSignIn, CHECK_MEMBER_EMAIL } from "./_shared.mjs";
 
 const kinds = ["preorder", "subscription", "slot", "wholesale", "live", "voice", "dispute"];
 const browser = await launch();
@@ -23,7 +23,7 @@ try {
   const unauth = await request("/shop/operations?kind=preorder");
   check(unauth.status === 401, "anonymous access is refused", String(unauth.status));
 
-  const login = await request("/auth/signin", "POST", { email: "priya.sharma@example.com", password: "Womsakhi!2026" });
+  const login = { status: 200, data: await codeSignIn(CHECK_MEMBER_EMAIL, (path, body) => request(`/auth/${path}`, "POST", body)) };
   check(login.status === 200, "member signs in", String(login.status));
 
   for (const kind of kinds) {

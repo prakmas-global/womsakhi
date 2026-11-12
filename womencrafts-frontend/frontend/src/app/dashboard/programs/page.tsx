@@ -81,6 +81,7 @@ import {
 } from "@/lib/programs-api";
 import { memberError } from "@/lib/member-api";
 import { ResizableColumns } from "@/layout-engine";
+import { useMaster } from "@/lib/masters-api";
 
 /**
  * Programmes — what members can join, who is in each one, and how far they
@@ -689,10 +690,15 @@ export default function ProgramsPage() {
   // The fixed list is what the form offers by default; whatever the catalogue
   // already contains is offered too, so an existing programme can be filtered
   // and edited without its category being silently forced to something else.
+  // The form offers the course categories master (Masters → Course categories);
+  // the filter also offers whatever older programmes still carry.
+  const masterCats = useMaster("course_categories", CATEGORY_OPTIONS).labels;
   const categoryOptions = useMemo(
-    () => Array.from(new Set([...CATEGORY_OPTIONS, ...rows.map((r) => r.category).filter(Boolean)])).sort(),
-    [rows],
+    () => Array.from(new Set([...masterCats, ...rows.map((r) => r.category).filter(Boolean)])).sort(),
+    [rows, masterCats],
   );
+  const formCategoryOptions = form.category && !masterCats.includes(form.category)
+    ? [form.category, ...masterCats] : masterCats;
 
   const filteredLearners = useMemo(() => {
     if (!learners) return [];
@@ -1019,7 +1025,7 @@ export default function ProgramsPage() {
               emptyTable
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-215 text-left">
+                <table className="relative w-full min-w-215 text-left">
                   <thead>
                     <tr className="border-b border-line text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
                       <th scope="col" className="px-4 py-3">Programme</th>
@@ -1329,7 +1335,7 @@ export default function ProgramsPage() {
             value={form.desc}
             onChange={setField("desc")}
           />
-          <Select label="Category" options={categoryOptions} value={form.category} onChange={setField("category")} />
+          <Select label="Category" options={formCategoryOptions} value={form.category} onChange={setField("category")} />
           <Select label="Delivery mode" options={MODE_OPTIONS} value={form.mode} onChange={setField("mode")} />
           <Input label="Duration" placeholder="e.g. 8 Weeks" value={form.duration} onChange={setField("duration")}
                  hint="Without modules, members see one outline entry per week of this." />

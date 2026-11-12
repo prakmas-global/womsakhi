@@ -1,5 +1,7 @@
 "use client";
 
+import { JourneyTrail } from "@/components/ux/home/JourneyTrail";
+
 import { useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
@@ -12,6 +14,9 @@ import { RailStat, StageTrack } from "@/components/ux/work/parts";
 import { STAGES as RAW_STAGES, WORK_ART as RAW_WORK_ART } from "@/components/ux/work/data";
 import { useApplications, workStats } from "@/components/ux/growth";
 import { artFor } from "@/components/ux/media/art";
+import { toast } from "@/components/ux/mobile/Toast";
+import { apiErrorMessage } from "@/lib/api";
+import { apiIFinished } from "@/lib/work-api";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 
@@ -28,7 +33,15 @@ export default function Applications() {
   const STAGES = useTranslated(RAW_STAGES);
   const WORK_ART = useTranslated(RAW_WORK_ART);
   const tr = useT();
-  const { data: APPLICATIONS, source } = useApplications();
+  const { data: APPLICATIONS, source, refetch } = useApplications();
+  const [finishing, setFinishing] = useState("");
+  // She says the work she was offered is done; the poster is asked to confirm.
+  const finish = async (id: string) => {
+    setFinishing(id);
+    try { await apiIFinished(id); toast("Marked as done. We have asked them to confirm.", { tone: "success" }); refetch(); }
+    catch (e) { toast(apiErrorMessage(e, "That did not work. Try again."), { tone: "error" }); }
+    finally { setFinishing(""); }
+  };
   const WORK_STATS = workStats(APPLICATIONS);
   const [tab, setTab] = useState<string>("Active");
 
@@ -92,6 +105,7 @@ export default function Applications() {
         </div>
       }
     >
+      <JourneyTrail goal="work" />
       <ScreenHead
         title={tr("applications.yourApplications")}
         sub={<>
@@ -126,8 +140,8 @@ export default function Applications() {
                           style={{ color: closed ? "var(--ux-muted)" : "var(--ux-ink)" }}>
                         {a.title}
                       </h2>
-                      <Tag tone={closed ? "neutral" : a.stage === "Interview" ? "brand" : "blue"} size="sm">
-                        {a.stage}
+                      <Tag tone={closed ? "neutral" : a.stage === "Done" ? "green" : a.stage === "Interview" ? "brand" : "blue"} size="sm">
+                        {a.stage === "Done" ? (a.done === "confirmed" ? "✓ Work done" : "Done · to confirm") : a.stage}
                       </Tag>
                     </div>
                     <p className="mt-1 flex flex-wrap items-center gap-x-3 text-[13px] lg:text-xs" style={{ color: "var(--ux-muted)" }}>
@@ -154,6 +168,11 @@ export default function Applications() {
                       ? <Btn href={/https:\/\/\S+/i.exec(a.when)![0]} variant="primary" size="sm" icon="Video">{tr("applications.joinTheCall")}</Btn>
                       : <Btn href="/app/messages" variant="soft" size="sm" icon="MessageCircle">Ask about the interview</Btn>)}
                     {closed && <Btn href="/app/opportunities" variant="soft" size="sm">{tr("applications.findSimilar")}</Btn>}
+                    {a.stage === "Offer" && (
+                      <Btn variant="primary" size="sm" icon="CheckCircle2" loading={finishing === a.id}
+                           onClick={() => void finish(a.id)}>I finished this work</Btn>
+                    )}
+                    {a.stage === "Done" && <Btn href="/app/work/profile#wp-work" variant="soft" size="sm" icon="BadgeCheck">On my work profile</Btn>}
                   </span>
                 </div>
               </Card>

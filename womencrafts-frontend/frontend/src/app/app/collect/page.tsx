@@ -1,8 +1,11 @@
 "use client";
 
+import { JourneyTrail } from "@/components/ux/home/JourneyTrail";
+
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 
-import { usePayoutMethods } from "@/components/ux/business";
+import { AccountUpiEditor } from "@/components/ux/payments/AccountUpiEditor";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { Btn, Card, EmptyState, I, Pill, v } from "@/components/ux/kit";
 import { EYEBROW, GROUP, GROUP_ROW, Section } from "@/components/ux/earn/phone";
@@ -73,7 +76,6 @@ export default function CollectPage() {
     useCallback((s: AbortSignal) => apiShopOrders(s), []),
     [] as ShopOrder[],
   );
-  const payout = usePayoutMethods();
 
   /** True only when the server actually answered. `[]` from a failure is not an answer. */
   const known = orders.source === "live";
@@ -90,12 +92,7 @@ export default function CollectPage() {
     [live],
   );
 
-  /** The UPI id she has saved is the one thing here a customer can pay into. */
-  const upi = useMemo(() => payout.data.find((m) => m.kind === "UPI"), [payout.data]);
-  const primary = useMemo(
-    () => payout.data.find((m) => m.primary) ?? payout.data[0],
-    [payout.data],
-  );
+
 
   /*
     Her shop link, from the server.
@@ -144,10 +141,14 @@ export default function CollectPage() {
       </span>
       <div className="flex flex-col gap-6 lg:gap-5">
 
-        <header>
+        <JourneyTrail goal="sell" />
+      <header>
           <p className={EYEBROW}>{tr("collect.gettingPaid")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("collect.sellToPeopleWhoAreNot")}</h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("collect.sellToPeopleWhoAreNot")}</h1>
+          </div>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Your customers are already on WhatsApp. They are not going to install an app to buy a
             blouse. Send them this link instead — it opens on any phone and needs no account.
@@ -229,49 +230,8 @@ export default function CollectPage() {
         <div>
           <Section title={tr("collect.whereYourMoneyReaches")} icon="Landmark" />
           <Card pad={16}>
-            {payout.source === "loading" ? (
-              <p className="text-xsm" style={{ color: v("--ux-muted") }}>Loading…</p>
-            ) : primary ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3.5">
-                  <span className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]"
-                        style={{ background: v(primary.tint), color: v(primary.ink) }}>
-                    <I name={primary.icon} className="h-[20px] w-[20px]" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold" style={{ color: v("--ux-ink") }}>{primary.label}</p>
-                    <p className="mt-0.5 break-all text-xs" style={{ color: v("--ux-muted") }}>
-                      {primary.kind} · {primary.detail}
-                    </p>
-                  </div>
-                  {primary.verified
-                    ? <Pill tone="green" size="sm">Checked</Pill>
-                    : <Pill tone="orange" size="sm">{tr("settingsPayments.notCheckedYet")}</Pill>}
-                </div>
-                <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>
-                  {upi
-                    ? `This is the id to read out to a customer: ${upi.detail}. She pays it from her own phone, and it arrives in your account.`
-                    : "This is where WomSakhi sends money you withdraw. It is not something to give a customer — we only keep the last four digits of your account number. Add your UPI id and you will have it here to read out."}
-                </p>
-                <div>
-                  <Btn variant="outline" size="sm" icon="Settings2" href="/app/settings/payments" className="max-lg:w-full max-lg:px-4">
-                    {tr("collect.addHowYouGetPaid")}
-                  </Btn>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <p className="text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
-                  You have not told us where money should reach you. Add your bank account or your
-                  UPI id, and it is yours to read out to a customer.
-                </p>
-                <div>
-                  <Btn variant="outline" size="sm" icon="Plus" href="/app/settings/payments" className="max-lg:w-full max-lg:px-4">
-                    {tr("collect.addHowYouGetPaid")}
-                  </Btn>
-                </div>
-              </div>
-            )}
+            <AccountUpiEditor/>
+
           </Card>
         </div>
 

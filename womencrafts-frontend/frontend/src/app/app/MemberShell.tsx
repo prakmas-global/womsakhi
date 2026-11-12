@@ -23,6 +23,7 @@ import { apiOnboarding, isOnboardingSettled, markOnboardingSettled, onboardingDe
 import "@/app/ux/tokens.css";
 // After tokens.css on purpose: both are unlayered, so the later import wins.
 import "@/app/ux/mobile.css";
+import "@/app/ux/polish.css";
 
 /**
  * The local preview switch (see lib/auth-preview), written out here rather

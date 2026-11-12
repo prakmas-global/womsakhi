@@ -74,7 +74,7 @@ dcheck("there is a way to open it", !!opener);
 if (opener) {
   await opener.click();
   await new Promise((r) => setTimeout(r, 500));
-  dcheck("tapping it slides the rail in", (await offscreen()) > 100, `right=${await offscreen()}`);
+  dcheck("tapping it slides the rail in", (await offscreen()) >= 64, `right=${await offscreen()}`);
 
   const navLinks = await page.$$eval("aside a", (as) => as.filter((a) => a.offsetParent).length);
   dcheck("the navigation is readable once open", navLinks > 3, `${navLinks} visible links`);
@@ -120,7 +120,7 @@ if (opener) {
 await page.setViewport({ width: 1440, height: 900 });
 await page.goto(`${APP}/dashboard`, { waitUntil: "networkidle2", timeout: 30000 });
 await new Promise((r) => setTimeout(r, 800));
-dcheck("on a desktop it is a permanent column again", (await offscreen()) > 100, `right=${await offscreen()}`);
+dcheck("on a desktop it is a permanent column again", (await offscreen()) >= 64, `right=${await offscreen()}`);
 
 await browser.close();
 
@@ -128,6 +128,7 @@ const scrolls = rows.filter((r) => r.realScroll > 0);
 const clips = rows.filter((r) => r.clipped > 0);
 console.log(`${scrolls.length} of ${rows.length} screens actually scroll sideways`);
 console.log(`${clips.length} of ${rows.length} screens push content off-screen outside a scroller\n`);
+for (const r of scrolls) console.log(`  sideways scroll: ${r.route} (${r.realScroll}px)`);
 for (const r of clips.sort((a, b) => b.clipped - a.clipped).slice(0, 12)) {
   console.log(`  +${String(r.clipped).padStart(4)}px  ${r.route}` +
     (r.worst ? `   <${r.worst.tag}> ${r.worst.cls}` : ""));

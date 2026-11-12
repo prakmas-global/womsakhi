@@ -265,6 +265,8 @@ class ApplicationRow(BaseModel):
     verified_skills: list[dict] = []
     #: Her skills that match the job, snapshot when she applied.
     matching_skills: list[dict] = []
+    #: Work done: "" | mine (she said so — confirm it) | confirmed.
+    done: str = ""
 
 
 class ApplicationDecide(BaseModel):
@@ -274,7 +276,7 @@ class ApplicationDecide(BaseModel):
     @field_validator("status")
     @classmethod
     def known(cls, v: str) -> str:
-        allowed = ("applied", "shortlisted", "interview", "offered", "closed")
+        allowed = ("applied", "shortlisted", "interview", "offered", "closed", "completed")
         if v not in allowed:
             raise ValueError("Unknown status")
         return v

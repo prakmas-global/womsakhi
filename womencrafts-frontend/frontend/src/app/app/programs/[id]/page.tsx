@@ -1,5 +1,8 @@
 "use client";
 
+import { JourneyTrail } from "@/components/ux/home/JourneyTrail";
+
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -83,7 +86,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
   const byMember = (detail?.owner_kind ?? row?.owner_kind) === "member";
   const done = lessons.filter((l) => l.done).length;
   const nextIndex = lessons.findIndex((l) => !l.done);
-  const next = nextIndex >= 0 ? nextIndex + 1 : 1;
+  const next = detail?.resume_lesson || (nextIndex >= 0 ? nextIndex + 1 : 1);
   const pct = Math.round(detail?.progress ?? 0);
   // The first lesson the teacher opened as a free preview (1-based; 0 = none).
   const firstPreview = lessons.findIndex((l) => l.preview) + 1;
@@ -160,7 +163,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
     if (canLearn) {
       return (
         <Btn href={`/app/programs/${id}/lesson/${next}`} variant="primary" full iconEnd="ArrowRight">
-          {done > 0 ? `Continue lesson ${next}` : "Start the first lesson"}
+          {detail?.resume_lesson ? `Resume reading · lesson ${next}` : done > 0 ? `Continue lesson ${next}` : "Start the first lesson"}
         </Btn>
       );
     }
@@ -239,12 +242,13 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
         </div>
       }
     >
+      <JourneyTrail goal="learn" />
       <Back to="/app/programs" label={tr("programs.allCourses2")} className="mb-4" />
 
       <Card className="mb-[16px] overflow-hidden" pad={0}>
         <div className="relative h-[190px] overflow-hidden" style={{ background: "var(--ux-tint-violet)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img loading="lazy" decoding="async" src={courseArt(category, detail?.cover)} alt="" className="h-full w-full object-cover" />
+          <img loading="lazy" decoding="async" src={courseArt(category, detail?.cover || row?.cover)} alt="" className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.55), transparent 60%)" }} />
           <span className="absolute start-4 top-4 flex gap-2">
             <Tag tone={price > 0 ? "orange" : "green"} size="sm">{price > 0 ? rupees(price) : "Free"}</Tag>
@@ -254,7 +258,10 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
         </div>
         <div className="p-[20px]">
           <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>{category}</p>
-          <h1 className="ux-screen-title mt-1 text-2xl font-bold leading-tight" style={{ color: "var(--ux-ink)" }}>{name}</h1>
+          <div className="mt-1 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-2xl font-bold leading-tight min-w-0" style={{ color: "var(--ux-ink)" }}>{name}</h1>
+          </div>
           <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <span className="inline-flex items-center gap-1.5"><Icons.PlayCircle className="h-4 w-4" /> {lessons.length} lessons</span>
             {duration && <span className="inline-flex items-center gap-1.5"><Icons.Clock className="h-4 w-4" /> {duration}</span>}
@@ -262,8 +269,18 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
             {learners > 0 && <span className="inline-flex items-center gap-1.5"><Icons.Users className="h-4 w-4" /> {learners} learning</span>}
           </p>
           {desc && <p className="mt-3.5 text-smd leading-relaxed lg:text-sm" style={{ color: "var(--ux-ink-2)" }}>{desc}</p>}
+          <div className="mt-4">{action}</div>
         </div>
       </Card>
+
+      {lessons.some(l=>l.content_type==="book"||l.content_type==="article")&&<Card className="mb-[16px]">
+        <SectionHead title="Articles & books" sub="Open a reading lesson for paper-style pages, page-turn controls and your saved reading place."/>
+        <div className="grid gap-3 sm:grid-cols-2">{lessons.map((l,i)=>l.content_type==="book"||l.content_type==="article"?<div key={l.id??i} className="rounded-xl border p-4" style={{borderColor:"var(--ux-line)",background:"var(--ux-surface-2)"}}>
+          <span className="text-xs font-bold uppercase" style={{color:"var(--ux-brand)"}}>{l.content_type}</span>
+          <p className="my-2 text-sm font-semibold">{l.title}</p>
+          <Btn href={`/app/programs/${id}/lesson/${i+1}`} variant="outline" icon="BookOpen">{canLearn||l.preview?`Read ${l.content_type}`:"Join to read"}</Btn>
+        </div>:null)}</div>
+      </Card>}
 
       {/* ── Paying the teacher ────────────────────────────────────────────── */}
       {state === "pending" && !isOwner && (
@@ -305,19 +322,20 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                 </div>
               </div>
               <label className="mt-4 block text-xsm font-semibold" style={{ color: "var(--ux-ink)" }} htmlFor="pay-ref">
-                UPI reference number <span style={{ color: "var(--ux-muted)", fontWeight: 400 }}>(optional)</span>
+                UPI transaction reference <span style={{ color: "var(--ux-muted)", fontWeight: 400 }}>(required)</span>
               </label>
               <input
                 id="pay-ref"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 maxLength={40}
-                placeholder="12-digit number from your payment app"
+                placeholder="Transaction reference from your UPI app"
+                required
                 className="ux-sq mt-1.5 min-h-[46px] w-full rounded-[12px] border px-4 text-xsm outline-none"
                 style={{ borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink)" }}
               />
               <div className="mt-4 flex flex-wrap gap-2">
-                <Btn variant="primary" icon="CheckCircle2" loading={paid.busy} onClick={() => void paid.run()}>I&apos;ve paid</Btn>
+                <Btn variant="primary" icon="CheckCircle2" loading={paid.busy} disabled={!reference.trim()} onClick={() => void paid.run()}>Submit payment reference</Btn>
                 <Btn variant="ghost" loading={cancel.busy} onClick={() => void cancel.run()}>Cancel</Btn>
               </div>
               {pay === "declined" && (
@@ -337,7 +355,7 @@ export default function CourseDetail({ params }: { params: Promise<{ id: string 
                        sub={canLearn ? `${lessons.length} lessons · ${done} done` : `${lessons.length} lessons · open when you join`} />
           <ul className="ux-sq overflow-hidden rounded-[12px] border" style={{ borderColor: "var(--ux-line)" }}>
             {lessons.map((l, i) => {
-              const current = canLearn && !isOwner && i === nextIndex;
+              const current = canLearn && !isOwner && i === next-1;
               const inner = (
                 <>
                   <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full"

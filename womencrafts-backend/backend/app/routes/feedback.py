@@ -32,7 +32,7 @@ from typing import Optional
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
-from app.core import mongosafe
+from app.core import masters, mongosafe
 from app.core.audit import record
 from app.core.config import settings
 from app.core.deps import get_current_user
@@ -130,6 +130,15 @@ def _pct_change(now_n: int, before_n: int) -> Optional[str]:
     return f"{abs(change)}%"
 
 
+# --- Feedback types (the `feedback_types` master, app/core/masters.py) ---------
+async def _counting_as(kind: str) -> list[str]:
+    """Every type whose “counts as” is `kind` ("Suggestion", "Complaint"), plus `kind` itself."""
+    rows = await masters.rows("feedback_types")
+    out = {kind}
+    out.update(r["label"] for r in rows if (r.get("extra") or {}).get("counts_as") == kind)
+    return sorted(out)
+
+
 # --- Query building -------------------------------------------------------------
 def _build_query(
     q: Optional[str],
@@ -138,12 +147,13 @@ def _build_query(
     rating: Optional[str],
     tab: Optional[str],
     date_range: Optional[str] = None,
+    suggestion_types: Optional[list[str]] = None,
 ) -> dict:
     """Translate the toolbar filters + active tab into a Mongo query."""
     query: dict = {}
 
     if ftype and ftype not in ("All Types", "all"):
-        query["type"] = ftype
+        query["type"] = {"$regex": f"^{re.escape(ftype.strip())}$", "$options": "i"}
     if program and program not in ("All Programs", "all"):
         query["program"] = program
     if rating and rating not in ("All Ratings", "all"):
@@ -166,7 +176,7 @@ def _build_query(
     elif tab == "Negative":
         query.setdefault("rating", {"$lte": 2})
     elif tab == "Suggestions":
-        query["type"] = "Suggestion"
+        query["type"] = {"$in": suggestion_types or ["Suggestion"]}
 
     return query
 
@@ -196,7 +206,7 @@ async def list_feedback(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
 ):
-    query = _build_query(q, type, program, rating, tab, date_range)
+    query = _build_query(q, type, program, rating, tab, date_range, await _counting_as("Suggestion"))
     total, docs = await paged(_feedback(), query, sort=_sort_spec(sort), page=page, page_size=page_size)
     return FeedbackListResponse(items=[_row(d) for d in docs], **page_meta(total, page, page_size))
 
@@ -261,7 +271,7 @@ _OVERVIEW_COLORS = {
 }
 
 
-def _overview_bucket(doc: dict) -> str:
+def _overview_bucket(doc: dict, suggestion: set[str]) -> str:
     """One slice per row. Sentiment wins so the slices agree with the positive
     percentage; a remaining Suggestion gets its own slice; the rest is Neutral."""
     sentiment = doc.get("sentiment")
@@ -269,7 +279,7 @@ def _overview_bucket(doc: dict) -> str:
         return "Positive"
     if sentiment == "Negative":
         return "Negative"
-    if doc.get("type") == "Suggestion":
+    if doc.get("type") in suggestion:
         return "Suggestion"
     return "Neutral"
 
@@ -284,8 +294,9 @@ async def feedback_overview(date_range: Optional[str] = Query(None)):
         docs = [d for d in docs if _in_window(d, *bounds)]
     total = len(docs)
     counts = {name: 0 for name in _OVERVIEW_COLORS}
+    suggestion = set(await _counting_as("Suggestion"))
     for doc in docs:
-        counts[_overview_bucket(doc)] += 1
+        counts[_overview_bucket(doc, suggestion)] += 1
 
     def _pct(value: int) -> int:
         return round(value / total * 100) if total else 0
@@ -301,14 +312,6 @@ async def feedback_overview(date_range: Optional[str] = Query(None)):
 # and compared with the window before it. Not themes extracted from prose —
 # nothing here does that yet, and a card that pretended to would be worse
 # than none.
-_THEMES = [
-    ("positive", "Positive feedback", "ThumbsUp", "emerald", lambda d: d.get("sentiment") == "Positive"),
-    ("suggestions", "Suggestions", "Lightbulb", "violet", lambda d: d.get("type") == "Suggestion"),
-    ("complaints", "Complaints", "AlertTriangle", "amber", lambda d: d.get("type") == "Complaint"),
-    ("negative", "Negative feedback", "ThumbsDown", "rose", lambda d: d.get("sentiment") == "Negative"),
-]
-
-
 @router.get("/themes", response_model=FeedbackThemeListResponse, summary="What people are saying, by bucket",
     dependencies=[Depends(require_permission("feedback.view"))],
 )
@@ -319,8 +322,16 @@ async def feedback_themes(date_range: Optional[str] = Query("Last 30 Days")):
     span = end - start
     before = (start - span, start)
     window_label = (date_range or "Last 30 Days").lower()
+    suggestion = set(await _counting_as("Suggestion"))
+    complaint = set(await _counting_as("Complaint"))
+    themes = [
+        ("positive", "Positive feedback", "ThumbsUp", "emerald", lambda d: d.get("sentiment") == "Positive"),
+        ("suggestions", "Suggestions", "Lightbulb", "violet", lambda d: d.get("type") in suggestion),
+        ("complaints", "Complaints", "AlertTriangle", "amber", lambda d: d.get("type") in complaint),
+        ("negative", "Negative feedback", "ThumbsDown", "rose", lambda d: d.get("sentiment") == "Negative"),
+    ]
     items = []
-    for key, label, icon, tone, pred in _THEMES:
+    for key, label, icon, tone, pred in themes:
         n = sum(1 for d in docs if pred(d) and _in_window(d, start, end))
         b = sum(1 for d in docs if pred(d) and _in_window(d, *before))
         items.append({
@@ -371,7 +382,7 @@ async def export_feedback(
     sort: str = Query("Newest First"),
     me: dict = Depends(get_current_user),
 ):
-    query = _build_query(q, type, program, rating, tab, date_range)
+    query = _build_query(q, type, program, rating, tab, date_range, await _counting_as("Suggestion"))
     cursor = _feedback().find(query).sort(_sort_spec(sort))
 
     buffer = io.StringIO()

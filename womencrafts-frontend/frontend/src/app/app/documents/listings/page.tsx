@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { PlaceMark } from "@/components/ux/nav/Place";
+import { Suspense, useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -10,7 +12,8 @@ import { GROUP, GROUP_ROW } from "@/components/ux/earn/phone";
 import { useResource } from "@/lib/use-resource";
 import { apiListings, type Listing } from "@/lib/shop-api";
 import { useT } from "@/i18n";
-import { artFor } from "@/components/ux/media/art";
+import { ChooseCategoryPrompt, OutsideCategoryPanel, listingPicture, useShopCategories } from "@/components/ux/shop/categories";
+import type { ShopCategory } from "@/lib/shop-categories-api";
 
 const STATUS: Record<string, { label: string; tint: string; ink: string }> = {
   live:   { label: "Live",   tint: "--ux-tint-green",  ink: "--ux-green-ink" },
@@ -35,8 +38,15 @@ type Filter = "all" | "product" | "service" | "live" | "paused";
  * table, it is a puzzle.
  */
 export default function MyListingsPage() {
+  return <Suspense><MyListings /></Suspense>;
+}
+
+function MyListings() {
   const tr = useT();
-  const [filter, setFilter] = useState<Filter>("all");
+  // `?show=paused` — where "Fix them" after a category change lands.
+  const params = useSearchParams();
+  const [filter, setFilter] = useState<Filter>(params.get("show") === "paused" ? "paused" : "all");
+  const cats = useShopCategories();
   const [q, setQ] = useState("");
 
   /**
@@ -145,16 +155,23 @@ export default function MyListingsPage() {
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:mb-5">
         <div className="min-w-0">
-          <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em]"
-              style={{ color: v("--ux-ink") }}>
-            {tr("documents.whatYouSell")}
-          </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-3xl font-extrabold leading-[1.15] tracking-[-0.02em] min-w-0"
+                style={{ color: v("--ux-ink") }}>
+              {tr("documents.whatYouSell")}
+            </h1>
+          </div>
           <p className="mt-1.5 text-sm" style={{ color: v("--ux-muted") }}>
             {tr("documentsListings.everythingInYourShopAndHow")}
           </p>
         </div>
         <Btn href="/app/documents/new" icon="Plus" className="ux-action-primary">{tr("documentsListings.addProductOrService")}</Btn>
       </div>
+
+      {/* Her shop's one category decides what she can list. */}
+      {cats.data && !cats.data.store_category_key && <div className="mb-5"><ChooseCategoryPrompt /></div>}
+      <OutsideCategoryPanel listings={all} storeCat={cats.storeCat} onChanged={listings.refetch} />
 
       {/* ── The five numbers ─────────────────────────────────────────────── */}
       {/* On a phone: one group, a row per number, the figure on the end. */}
@@ -217,7 +234,7 @@ export default function MyListingsPage() {
             ))}
           </div>
 
-          {shown.map((l) => <Row key={l.id} l={l} />)}
+          {shown.map((l) => <Row key={l.id} l={l} categories={cats.data?.categories} />)}
         </Card>
       ) : (
         <Card>
@@ -248,7 +265,7 @@ export default function MyListingsPage() {
 }
 
 /** One listing — a table row on a desktop, a stacked block on a phone. */
-function Row({ l }: { l: Listing }) {
+function Row({ l, categories }: { l: Listing; categories?: ShopCategory[] | null }) {
   const tr = useT();
   const s = STATUS[l.status] ?? UNKNOWN_STATUS;
   return (
@@ -258,9 +275,9 @@ function Row({ l }: { l: Listing }) {
          style={{ borderColor: v("--ux-line") }}>
       {/* What it is */}
       <div className="flex min-w-0 items-center gap-3 max-lg:basis-full max-lg:pe-12">
-        {/* Her photo, or a picture of that kind of work — never initials. */}
+        {/* Her photo, or its sub-category's picture — never initials. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={artFor([l.title, l.category], l.kind === "service" ? "service" : "product", l.photo, l.id)}
+        <img src={listingPicture(l, categories)}
              alt="" loading="lazy" decoding="async"
              className="h-[64px] w-[84px] shrink-0 rounded-[12px] object-cover"
              style={{ background: v("--ux-surface-2"), opacity: l.photo ? 1 : 0.85 }} />
@@ -275,6 +292,11 @@ function Row({ l }: { l: Listing }) {
             {[l.category, l.created_at ? `added ${addedOn(l.created_at)}` : ""]
               .filter(Boolean).join(" · ")}
           </p>
+          {l.paused_reason === "category_changed" && (
+            <p className="mt-0.5 text-2xs font-semibold" style={{ color: v("--ux-amber-ink") }}>
+              Doesn&rsquo;t fit your shop&rsquo;s category
+            </p>
+          )}
         </div>
       </div>
 

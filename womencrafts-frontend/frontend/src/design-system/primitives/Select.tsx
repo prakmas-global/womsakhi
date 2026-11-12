@@ -34,6 +34,7 @@ export default function Select({
   placeholder = "Select…",
   searchable,
   searchPlaceholder = "Search options…",
+  hint, error, disabled, onBlur, name,
 }: {
   label?: string;
   icon?: React.ElementType;
@@ -46,6 +47,7 @@ export default function Select({
   /** Defaults on for lists long enough to be slow to scan. */
   searchable?: boolean;
   searchPlaceholder?: string;
+  hint?: string; error?: string; disabled?: boolean; onBlur?: () => void; name?: string;
 }) {
   const norm = options.map((o) => (typeof o === "string" ? { value: o, label: o } : o));
   const selected = norm.find((o) => o.value === value);
@@ -85,6 +87,7 @@ export default function Select({
   };
 
   const toggle = () => {
+    if (disabled) return;
     if (!open) place();
     if (open) setQuery("");
     setOpen((o) => !o);
@@ -161,6 +164,7 @@ export default function Select({
 
   return (
     <div className={className}>
+      {name && <input type="hidden" name={name} value={value ?? ""} disabled={disabled} />}
       {label && (
         <span id={labelId} className={labelClass}>
           {label}
@@ -171,6 +175,13 @@ export default function Select({
         type="button"
         ref={triggerRef}
         onClick={toggle}
+        onBlur={onBlur}
+        disabled={disabled}
+        aria-required={required || undefined}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error || hint ? `${id}-help` : undefined}
+        role="combobox"
+        aria-controls={open ? `${id}-listbox` : undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-labelledby={label ? `${labelId} ${valueId}` : undefined}
@@ -188,11 +199,13 @@ export default function Select({
         />
       </button>
 
+      {(error || hint) && <p id={`${id}-help`} className={error ? "mt-1 text-xs text-status-danger-ink" : "mt-1 text-xs text-ink-subtle"}>{error || hint}</p>}
       {open &&
         typeof document !== "undefined" &&
         createPortal(
           <div
             ref={panelRef}
+            id={`${id}-listbox`}
             role="listbox"
             aria-labelledby={label ? labelId : undefined}
             style={{

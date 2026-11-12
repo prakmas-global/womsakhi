@@ -33,6 +33,11 @@ class BackupModel:
         "trusted_contacts", "safety_alerts", "safety_reports",
         "member_messages", "member_notifications", "content", "feedback",
         "platform_settings", "activity_log", "support_tickets",
+        # Core learn / sell / work records must survive the documented full backup.
+        "shop_listings", "shop_orders", "shop_reviews", "shop_operations",
+        "work_profiles", "work_categories", "work_skills", "market_categories",
+        "onboarding_profiles",
+        "money_commitments", "khata_entries", "khata_notes", "khata_chits", "khata_settings",
     ]
 
     # Collections holding identity documents or auth material are excluded even

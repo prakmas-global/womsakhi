@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
@@ -206,7 +207,10 @@ export default function PayCircle({ params }: { params: Promise<{ id: string }> 
         <Icons.ArrowLeft className="ux-ico h-4 w-4" /> {c.name}
       </Link>
 
-      <h1 className="text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("circlesPay.payThisMonth")}</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>{tr("circlesPay.payThisMonth")}</h1>
+      </div>
       <p className="mb-[20px] mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
         Month {savings.round} · {c.name}
       </p>

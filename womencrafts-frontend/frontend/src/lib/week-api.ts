@@ -54,6 +54,6 @@ export interface Week {
 }
 
 /** `start` is the ISO date of any day in the week she wants. */
-export const apiWeek = (start?: string, signal?: AbortSignal) =>
-  apiClient.get<Week>("/me/week", { params: start ? { start } : {}, signal })
+export const apiWeek = (start?: string, signal?: AbortSignal, view: "week" | "month" = "week") =>
+  apiClient.get<Week>("/me/week", { params: { ...(start ? { start } : {}), view, tz: Intl.DateTimeFormat().resolvedOptions().timeZone }, signal })
     .then((r) => r.data);

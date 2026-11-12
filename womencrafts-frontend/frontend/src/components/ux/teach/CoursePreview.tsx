@@ -5,6 +5,7 @@ import { Card, SectionHead } from "@/components/ux/kit";
 import { CourseCard } from "@/components/ux/learning/parts";
 import { courseArt, normCategory, realDuration, type Course } from "@/components/ux/learning/data";
 import { useMe } from "@/components/ux/me";
+import { useMasterPictures } from "@/components/ux/media/MasterPictures";
 import type { CourseInput } from "@/lib/teach-api";
 
 /**
@@ -17,6 +18,7 @@ import type { CourseInput } from "@/lib/teach-api";
  */
 export function CoursePreview({ value, paid }: { value: CourseInput; paid: boolean }) {
   const me = useMe();
+  const catPics = useMasterPictures("course_categories");
   const category = normCategory(value.category || "");
   const lessons = value.lessons.filter((l) => l.title.trim() || l.video_url.trim() || l.body.trim());
   const c: Course = {
@@ -26,7 +28,8 @@ export function CoursePreview({ value, paid }: { value: CourseInput; paid: boole
     level: "Beginner",
     rating: "",
     count: "",
-    thumb: courseArt(category),
+    // The picture a learner sees until the course has a cover: its category's.
+    thumb: value.cover || (value.category ? catPics.pic(value.category) : courseArt(category)),
     category: category || "Category",
     hours: realDuration(value.duration),
     teacher: me.name,
@@ -39,7 +42,7 @@ export function CoursePreview({ value, paid }: { value: CourseInput; paid: boole
       <Card>
         <SectionHead title="How it will look" icon="Eye" />
         <p className="-mt-1 mb-3.5 text-xs leading-relaxed" style={{ color: "var(--ux-muted)" }}>
-          Your course in Learn → Courses. It changes as you type; the picture comes from the category.
+          Your course in Learn → Courses. It changes as you type — with your picture, or your category’s until you add one.
         </p>
         <div className="mx-auto max-w-[280px]">
           <CourseCard c={c} preview />

@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useState, useSyncExternalStore } from "react";
 
 import {
@@ -101,7 +102,10 @@ export default function ReferPage() {
         </div>
       }
     >
-      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("refer.referAFriend")}</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>{tr("refer.referAFriend")}</h1>
+      </div>
       <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>
         {source === "loading" ? "\u00a0" : <>You have brought {r.invited} {women(r.invited)} in so far.</>}
       </p>

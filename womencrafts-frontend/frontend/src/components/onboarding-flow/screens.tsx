@@ -181,7 +181,7 @@ export function SettingUpScreen({ answers, labels, onDone, onNeedConsent, previe
         <p className="wso-label">Using your answers:</p>
         <AnswerPills pills={answerPills(answers, labels)} />
       </div>
-      <SettingUpList rows={rows} />
+      <div role="status" aria-live="polite" aria-atomic="true"><SettingUpList rows={rows} /></div>
       {problem && (
         <div className="wso-err" role="alert">
           <p>{problem.text}</p>

@@ -1,5 +1,7 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
+import { topicPicture, useCircleTopics } from "@/components/ux/circle/topics";
 import * as Icons from "@/components/ux/icons";
 import { useT } from "@/i18n";
 import { Card, I, IconTile, v } from "@/components/ux/kit";
@@ -18,9 +20,12 @@ export function CreateHero() {
              style={{ background: "linear-gradient(102deg, var(--ux-brand-tint) 0%, var(--ux-tint-lilac) 58%, var(--ux-tint-pink) 100%)",
                       border: "1px solid var(--ux-line)" }}>
       <div className="relative z-[1] max-w-[520px] p-6 sm:p-7 max-lg:p-4">
-        <h1 className="ux-screen-title text-3xl font-extrabold leading-tight tracking-[-0.02em]" style={{ color: v("--ux-ink") }}>
-          {tr("createviews.createYourCircle")}
-        </h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title text-3xl font-extrabold leading-tight tracking-[-0.02em] min-w-0" style={{ color: v("--ux-ink") }}>
+            {tr("createviews.createYourCircle")}
+          </h1>
+        </div>
         <p className="mt-2 max-w-[380px] text-xsm leading-relaxed" style={{ color: v("--ux-ink-2") }}>
           {tr("createviews.bringPeopleTogetherAroundSharedInterests")}
         </p>
@@ -201,8 +206,9 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
   name: string; desc: string; cover: string; icon: string;
   category: string; privacy: string; tags: string[]; count: number;
 }) {
+  const live = useCircleTopics();
   const tr = useT();
-  const t = topicOf(category);
+  const t = topicOf(category, live);
   return (
     <Card pad={0} className="overflow-hidden">
       <div className="px-[18px] pb-3 pt-[18px] max-lg:px-4 max-lg:pt-4">
@@ -217,6 +223,18 @@ export function LivePreview({ name, desc, cover, icon, category, privacy, tags, 
           // eslint-disable-next-line @next/next/no-img-element
           <img src={cover} alt="" aria-hidden loading="lazy" decoding="async"
                className="h-full w-full object-cover" />
+        ) : category ? (
+          // No cover yet: the topic's picture, which is what the circle shows until she adds one.
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={topicPicture(t)} alt="" aria-hidden loading="lazy" decoding="async"
+                 className="absolute inset-0 h-full w-full object-cover opacity-80" />
+            <span className="relative flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] lg:text-2xs font-semibold"
+                  style={{ background: "rgba(16,6,24,.55)", color: "#fff" }}>
+              <I name="ImagePlus" className="h-[13px] w-[13px]" />
+              {tr("createviews.yourCoverGoesHere")}
+            </span>
+          </>
         ) : (
           <span className="flex items-center gap-1.5 text-[12px] lg:text-2xs font-semibold" style={{ color: v(t.ink) }}>
             <I name="ImagePlus" className="h-[13px] w-[13px]" />

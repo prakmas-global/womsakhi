@@ -1,67 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import * as Icons from "@/components/ux/icons";
 import { trailFor } from "@/components/ux/nav-tree";
-import { toast } from "@/components/ux/mobile/Toast";
-import { FACTS, QUOTES, SHORTCUTS, dailyIndex, type Quote } from "./content";
+import { FACTS, SHORTCUTS, dailyIndex } from "./content";
 
-/**
- * No empty screen.
- *
- * Every page ends here: a word from a woman worth hearing, and the rest of
- * WomSakhi as pictures — never the module she is already in. Pages without a
- * column of their own also get `DefaultRail` beside them on a wide screen.
- * Both change daily and per screen, so they read as fresh rather than as a
- * footer she learns to ignore.
- */
+/** Related destinations and a supporting rail. Quotes live in the shared shell. */
 
 function useSection(): string {
   const path = usePathname() ?? "";
   return trailFor(path)[0]?.id ?? "";
 }
 
-export function QuoteCard({ compact = false }: { compact?: boolean }) {
-  const path = usePathname() ?? "";
-  const [i, setI] = useState(() => dailyIndex(QUOTES.length, path));
-  const q: Quote = QUOTES[i % QUOTES.length];
-  const share = async () => {
-    const line = `“${q.text}” — ${q.by}`;
-    try {
-      if (navigator.share) await navigator.share({ text: `${line}\n\nShared from WomSakhi` });
-      else { await navigator.clipboard.writeText(line); toast("Quote copied", { tone: "success" }); }
-    } catch { /* she closed the share sheet */ }
-  };
-  return (
-    <figure className="relative overflow-hidden rounded-[var(--ux-r-card,18px)] p-5"
-            style={{ background: "linear-gradient(135deg, var(--ux-tint-lilac, #f3ecfb), var(--ux-tint-pink, #fbe9f1))",
-                     border: "1px solid var(--ux-line)" }}>
-      <Icons.Quote aria-hidden className="absolute end-4 top-3 h-10 w-10 opacity-15" style={{ color: "var(--ux-brand)" }} />
-      <blockquote className={`relative font-semibold leading-snug ${compact ? "text-[15px]" : "text-[17px] lg:text-lg"}`}
-                  style={{ color: "var(--ux-ink)" }}>
-        “{q.text}”
-      </blockquote>
-      <figcaption className="mt-2.5 text-xs" style={{ color: "var(--ux-muted)" }}>
-        — <b style={{ color: "var(--ux-brand)" }}>{q.by}</b>{q.who ? `, ${q.who}` : ""}
-      </figcaption>
-      <div className="mt-3 flex gap-2">
-        <button type="button" onClick={() => setI((n) => n + 1)}
-                className="ux-press inline-flex min-h-[34px] items-center gap-1.5 rounded-full px-3 text-xs font-bold"
-                style={{ background: "var(--ux-surface)", color: "var(--ux-ink-2)", border: "1px solid var(--ux-line)" }}>
-          <Icons.RefreshCw className="h-3.5 w-3.5" /> Another
-        </button>
-        <button type="button" onClick={share}
-                className="ux-press inline-flex min-h-[34px] items-center gap-1.5 rounded-full px-3 text-xs font-bold"
-                style={{ background: "var(--ux-surface)", color: "var(--ux-ink-2)", border: "1px solid var(--ux-line)" }}>
-          <Icons.Share2 className="h-3.5 w-3.5" /> Share
-        </button>
-      </div>
-    </figure>
-  );
-}
 
 function Tile({ s }: { s: (typeof SHORTCUTS)[number] }) {
   return (
@@ -81,8 +34,8 @@ function Tile({ s }: { s: (typeof SHORTCUTS)[number] }) {
   );
 }
 
-/** The end of every page: other modules as pictures, and a quote. */
-export function MoreForYou({ withQuote = true, quoteHiddenXl = false }: { withQuote?: boolean; quoteHiddenXl?: boolean }) {
+/** Related modules; the shared shell owns the page-specific quote. */
+export function MoreForYou() {
   const section = useSection();
   const path = usePathname() ?? "";
   const tiles = useMemo(() => {
@@ -102,25 +55,23 @@ export function MoreForYou({ withQuote = true, quoteHiddenXl = false }: { withQu
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:gap-4">
         {tiles.map((s) => <Tile key={s.href} s={s} />)}
       </div>
-      {/* On a wide screen with the default column, the quote is already there. */}
-      {withQuote && <div className={`mt-4 ${quoteHiddenXl ? "xl:hidden" : ""}`}><QuoteCard /></div>}
     </section>
   );
 }
 
-/** The side column for pages that have none: today's quote, quick actions, one true fact. */
+/** The side column for pages that have none: quick actions and one useful fact. */
 export function DefaultRail() {
   const path = usePathname() ?? "";
   const fact = FACTS[dailyIndex(FACTS.length, `fact${path}`)];
   const actions = [
-    { href: "/app/health/today", label: "How are you today?", icon: "Smile", tint: "--ux-tint-green", ink: "--ux-green-ink" },
-    { href: "/app/health/games", label: "A calm minute", icon: "Flower2", tint: "--ux-tint-violet", ink: "--ux-violet-ink" },
-    { href: "/app/opportunities", label: "Work for my skills", icon: "Briefcase", tint: "--ux-tint-pink", ink: "--ux-brand" },
-    { href: "/app/sakhi", label: "Ask Sakhi anything", icon: "Sparkles", tint: "--ux-tint-orange", ink: "--ux-orange-ink" },
+    // One tint, the brand's: four colours side by side read as four apps.
+    { href: "/app/health/today", label: "How are you today?", icon: "Smile", tint: "--ux-brand-tint", ink: "--ux-brand" },
+    { href: "/app/health/games", label: "A calm minute", icon: "Flower2", tint: "--ux-brand-tint", ink: "--ux-brand" },
+    { href: "/app/opportunities", label: "Work for my skills", icon: "Briefcase", tint: "--ux-brand-tint", ink: "--ux-brand" },
+    { href: "/app/sakhi", label: "Ask Sakhi anything", icon: "Sparkles", tint: "--ux-brand-tint", ink: "--ux-brand" },
   ];
   return (
     <div className="space-y-4">
-      <QuoteCard compact />
       <div className="ux-card p-4">
         <h2 className="mb-2.5 text-sm font-extrabold" style={{ color: "var(--ux-ink)" }}>Quick actions</h2>
         <div className="grid grid-cols-2 gap-2">

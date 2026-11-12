@@ -1,11 +1,13 @@
 "use client";
 
+import { kindLook, useOpportunityTypePictures, useOpportunityTypes } from "@/components/ux/work/types";
+import { CategoryTiles, PictureChoice, SkillChip } from "@/components/ux/work/pictures";
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import * as Icons from "@/components/ux/icons";
 
 import { Back, Btn, Card, ScreenSkeleton } from "@/components/ux/kit";
-import { Choice, Label, More, Picks, Select, Stepper, Text } from "@/components/ux/kit/form";
+import { Label, More, Picks, Stepper, Text } from "@/components/ux/kit/form";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ScreenHead } from "@/components/ux/learning/native";
 import { toast } from "@/components/ux/mobile/Toast";
@@ -26,13 +28,7 @@ import {
  * everything is a tap; the title fills itself in from what she picked.
  */
 
-const KINDS = [
-  { key: "Job", title: "A job", sub: "Regular work", icon: "Briefcase" },
-  { key: "Freelance", title: "Freelance", sub: "Work as it comes", icon: "Sparkles" },
-  { key: "Craft order", title: "Order to make", sub: "Pieces made for you", icon: "Package" },
-  { key: "Internship", title: "Internship", sub: "Learn on the job", icon: "GraduationCap" },
-  { key: "Training", title: "Training", sub: "You teach the work", icon: "Presentation" },
-];
+
 const WHERE = [
   { key: "On-site", label: "At my place" },
   { key: "Remote", label: "From home" },
@@ -70,6 +66,9 @@ const togglePhrase = (note: string, phrase: string) => {
 const noSubscribe = () => () => {};
 
 export default function PostJobPage() {
+  // Types are the staff-controlled master; the built-in five show until it loads.
+  const KINDS = useOpportunityTypes().map((k) => ({ key: k, ...kindLook(k) }));
+  const kindPictures = useOpportunityTypePictures();
   const router = useRouter();
   // `?id=` edits one of her posts. Read as an external store so the server
   // render (no URL) and the first client render agree.
@@ -86,7 +85,18 @@ export default function PostJobPage() {
   const [keys, setKeys] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [titleTouched, setTitleTouched] = useState(false);
-  const [kind, setKind] = useState("Job");
+  const requestedKind = useSyncExternalStore(noSubscribe,
+    () => new URLSearchParams(window.location.search).get("kind"), () => null);
+  const [kindChoice, setKind] = useState<string|null>(null);
+  const kind = kindChoice ?? (requestedKind === "Craft order" ? "Craft order" : "Job");
+  const bulk = kind === "Craft order";
+  const [city,setCity]=useState("");
+  const [area,setArea]=useState("");
+  const [quantity,setQuantity]=useState("100");
+  const [unit,setUnit]=useState("pieces");
+  const [delivery,setDelivery]=useState("");
+  const [materials,setMaterials]=useState("");
+  const [paymentTerms,setPaymentTerms]=useState("");
   const [mode, setMode] = useState("On-site");
   const [location, setLocation] = useState("");
   const [pay, setPay] = useState("");
@@ -104,6 +114,9 @@ export default function PostJobPage() {
   if (editing && editing.id !== loadedId) {
     setLoadedId(editing.id);
     setCat(editing.category); setKeys(editing.skill_keys); setTitle(editing.title); setTitleTouched(true);
+    setCity(editing.city ?? "");setArea(editing.area ?? "");
+    setQuantity(String(editing.order_details?.quantity ?? 100));setUnit(editing.order_details?.unit ?? "pieces");
+    setDelivery(editing.order_details?.delivery_date ?? "");setMaterials(editing.order_details?.materials ?? "");setPaymentTerms(editing.order_details?.payment_terms ?? "");
     setKind(editing.kind); setMode(editing.mode); setLocation(editing.location); setPay(editing.pay);
     setOpenings(String(editing.openings)); setExperience(editing.experience); setDeadline(editing.deadline);
     setLastPick(editing.deadline ? "" : "No last date"); setDesc(editing.desc);
@@ -115,7 +128,7 @@ export default function PostJobPage() {
     return keys.map((k) => all.get(k) ?? k);
   }, [tax.data, keys]);
   const n = Math.max(1, Number(openings) || 1);
-  const shownTitle = titleTouched ? title : autoTitle(names, n);
+  const shownTitle = titleTouched ? title : bulk && names.length ? `${quantity} ${unit} · ${names[0]}` : autoTitle(names, n);
 
   const toggleSkill = (key: string) => {
     if (keys.includes(key)) { setKeys(keys.filter((k) => k !== key)); return; }
@@ -123,7 +136,8 @@ export default function PostJobPage() {
     setKeys([...keys, key]);
   };
 
-  const ready = keys.length > 0 && shownTitle.trim().length >= 4;
+  const ready = keys.length > 0 && shownTitle.trim().length >= 4 && (!bulk || (
+    city.trim().length > 0 && Number.isInteger(Number(quantity)) && Number(quantity)>=1 && Number(quantity)<=1000000 && unit.trim().length>0 && !!delivery && (editing || delivery>=isoIn(0)) && (!deadline || deadline<=delivery) && materials.trim().length>=3 && paymentTerms.trim().length>=3));
 
   const submit = async () => {
     if (!ready || busy) return;
@@ -131,11 +145,12 @@ export default function PostJobPage() {
     const input: JobInput = {
       title: shownTitle.trim(), category: cat, skill_keys: keys, kind, mode,
       location: location.trim(), pay: pay.trim(), openings: Math.min(50, n), deadline,
-      desc: desc.trim(), experience,
+      desc: desc.trim(), experience, city: bulk ? city.trim() : "", area: bulk ? area.trim() : "",
+      order_details: bulk ? {quantity:Number(quantity),unit:unit.trim(),delivery_date:delivery,materials:materials.trim(),payment_terms:paymentTerms.trim()} : null,
     };
     try {
       const job = editing ? await apiEditJob(editing.id, input) : await apiPostJob(input);
-      toast(editing ? "Your job post is updated" : "Your job is posted", { tone: "success" });
+      toast(editing ? "Your post is updated" : bulk ? "Your big order is posted" : "Your job is posted", { tone: "success" });
       router.push(`/app/work/posts?job=${job.id}`);
     } catch (e) {
       setError(apiErrorMessage(e, "That did not save. Check your connection and try again."));
@@ -161,7 +176,7 @@ export default function PostJobPage() {
   if (editId && posts.source !== "loading" && !editing) {
     return (
       <HomeShell>
-        <Back to="/app/work/posts" label="My job posts" className="mb-4" />
+        <Back to="/app/work/posts" label="My posts & applicants" className="mb-4" />
         <ScreenHead title="Edit job post" />
         <Card><p className="text-sm" style={{ color: "var(--ux-muted)" }}>That job post was not found among yours.</p></Card>
       </HomeShell>
@@ -175,13 +190,13 @@ export default function PostJobPage() {
     <HomeShell
       rail={
         <Card className="xl:sticky xl:top-[96px]">
-          <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>How it looks in Find work</p>
+          <p className="text-2xs font-bold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>{bulk ? "How it looks in Big orders" : "How it looks in Find work"}</p>
           <div className="mt-3 rounded-[14px] border p-4" style={{ borderColor: "var(--ux-line)", background: "var(--ux-surface)" }}>
             <p className="text-sm font-bold leading-snug" style={{ color: shownTitle ? "var(--ux-ink)" : "var(--ux-faint)" }}>
               {shownTitle || "Your job title"}
             </p>
             <p className="mt-1 text-xs" style={{ color: "var(--ux-muted)" }}>
-              {kindLabel} · {whereLabel}{location.trim() ? ` · ${location.trim()}` : ""}
+              {kindLabel} · {whereLabel}{bulk ? ` · ${[area,city].filter(Boolean).join(", ")}` : location.trim() ? ` · ${location.trim()}` : ""}
             </p>
             {names.length > 0 && (
               <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -201,21 +216,23 @@ export default function PostJobPage() {
         </Card>
       }
     >
-      <Back to="/app/work/posts" label="My job posts" className="mb-4" />
-      <ScreenHead title={editing ? "Edit job post" : "Post a job"}
-                  sub="Women whose skills match get a notification. They apply with their skills; you choose whom to talk to. Their phone numbers stay private until they share them." />
+      <Back to="/app/work/posts" label="My posts & applicants" className="mb-4" />
+      <ScreenHead title={editing ? "Edit your post" : bulk ? "Post a big order" : "Post a job"}
+                  sub={bulk ? "Ask for a quantity of products by a delivery date. Matching women in your town can respond; you choose who joins. A job instead hires someone for a role or task." : "Hire someone for a role or task. For a batch of products with a quantity and delivery date, choose Big order below. Phone numbers stay private until shared."} />
 
       <Card className="mb-[16px]">
         <Label need>What work is it?</Label>
-        <Select value={cat} onChange={setCat} label="Category" placeholder="Choose a kind of work"
-                options={tax.data.map((c) => ({ value: c.key, label: c.name }))} />
+        <CategoryTiles cats={tax.data} value={cat} onPick={setCat}
+                       count={(c) => c.skills.filter((s) => keys.includes(s.key)).length} />
         {category ? (
-          <>
-            <p className="mt-3 text-xs" style={{ color: "var(--ux-muted)" }}>Tap the skills you need — up to 10.</p>
-            <Picks options={[...category.skills].sort((a, b) => Number(b.popular) - Number(a.popular)).map((s) => s.name)}
-                   value={names} multi label="Skills"
-                   onPick={(name) => { const s = category.skills.find((x) => x.name === name); if (s) toggleSkill(s.key); }} />
-          </>
+          <div key={category.key} className="ux-fade mt-2 rounded-[14px] p-3" style={{ background: "var(--ux-surface-2)" }}>
+            <p className="text-xs font-semibold" style={{ color: "var(--ux-ink-2)" }}>{category.name} — tap the skills you need, up to 10</p>
+            <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Skills">
+              {[...category.skills].sort((a, b) => Number(b.popular) - Number(a.popular)).map((sk, i) => (
+                <SkillChip key={sk.key} skill={sk} cat={category} index={i} on={keys.includes(sk.key)} onClick={() => toggleSkill(sk.key)} />
+              ))}
+            </div>
+          </div>
         ) : (
           <p className="mt-2 text-xs" style={{ color: "var(--ux-muted)" }}>Pick a kind of work to see its skills.</p>
         )}
@@ -226,13 +243,13 @@ export default function PostJobPage() {
         )}
 
         <div className="mt-5">
-          <Label need>How many people?</Label>
+          <Label need>{bulk ? "How many makers do you need?" : "How many people?"}</Label>
           <Stepper value={openings} onChange={setOpenings} label="Openings" min={1} presets={[1, 2, 5, 10]} />
         </div>
 
         <div className="mt-5">
-          <Label need>Job title</Label>
-          <Text value={shownTitle} onChange={(v) => { setTitle(v); setTitleTouched(true); }} label="Job title"
+          <Label need>{bulk ? "Order title" : "Job title"}</Label>
+          <Text value={shownTitle} onChange={(v) => { setTitle(v); setTitleTouched(true); }} label={bulk ? "Order title" : "Job title"}
                 placeholder="Filled in from the skills you pick" max={100} />
           {!titleTouched && names.length > 0 && (
             <p className="mt-1.5 text-2xs" style={{ color: "var(--ux-faint)" }}>Written for you from the skills — change any word.</p>
@@ -251,7 +268,7 @@ export default function PostJobPage() {
         <Label>What kind of work</Label>
         <div className="mt-1 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {KINDS.map((k) => (
-            <Choice key={k.key} icon={k.icon} title={k.title} sub={k.sub} on={kind === k.key} onClick={() => setKind(k.key)} />
+            <PictureChoice key={k.key} src={kindPictures[k.key] ?? ""} title={k.title} sub={k.sub} on={kind === k.key} onClick={() => setKind(k.key)} />
           ))}
         </div>
 
@@ -261,17 +278,33 @@ export default function PostJobPage() {
                  onPick={(l) => setMode(WHERE.find((w) => w.label === l)?.key ?? "On-site")} />
         </div>
 
-        <div className="mt-4 max-w-[420px]">
+        {bulk ? <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div><Label need>Town or city</Label><Text value={city} onChange={setCity} label="Order town or city" placeholder="e.g. Hyderabad" max={80}/></div>
+          <div><Label hint="optional">Area or locality</Label><Text value={area} onChange={setArea} label="Order area" placeholder="e.g. Kukatpally" max={80}/></div>
+          <p className="text-xs sm:col-span-2" style={{color:"var(--ux-muted)"}}>Used for nearby orders and matching makers. Enter the pickup/delivery town even when women make the items from home. Keep your full address for private chat.</p>
+        </div> : <div className="mt-4 max-w-[420px]">
           <Label hint="optional">Town or area</Label>
           <Text value={location} onChange={setLocation} label="Town or area" placeholder="e.g. Kukatpally, Hyderabad" max={80} />
-        </div>
+        </div>}
       </Card>
+
+      {bulk && <Card className="mb-[16px] flex flex-col gap-4">
+        <h2 className="text-lg font-bold">What needs to be delivered?</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="text-sm font-semibold">Quantity *<input className="mt-2 min-h-[44px] w-full rounded-xl border px-3" style={{background:"var(--ux-surface)",borderColor:"var(--ux-line-strong)",color:"var(--ux-ink)"}} aria-label="Order quantity" type="number" min={1} max={1000000} step={1} value={quantity} onChange={e=>setQuantity(e.target.value)}/></label>
+          <div><Label need>Unit</Label><Text label="Order unit" value={unit} onChange={setUnit} max={30} placeholder="pieces, packets, sets"/></div>
+          <label className="text-sm font-semibold">Delivery date *<input className="mt-2 min-h-[44px] w-full rounded-xl border px-3" style={{background:"var(--ux-surface)",borderColor:"var(--ux-line-strong)",color:"var(--ux-ink)"}} aria-label="Order delivery date" type="date" min={editing?undefined:isoIn(0)} value={delivery} onChange={e=>setDelivery(e.target.value)}/></label>
+        </div>
+        <div><Label need>Who provides the materials?</Label><Text label="Order materials" value={materials} onChange={setMaterials} max={300} placeholder="e.g. I provide cloth; makers provide thread"/></div>
+        <div><Label need>When and how will makers be paid?</Label><Text label="Order payment terms" value={paymentTerms} onChange={setPaymentTerms} max={500} placeholder="e.g. ₹180 per piece, UPI within 7 days of accepted delivery"/></div>
+        <p className="text-xs" style={{color:"var(--ux-muted)"}}>Agree each maker’s share and acceptance requirements before starting. Applying does not allocate pieces or confirm payment.</p>
+      </Card>}
 
       <Card className="mb-[16px]">
         <Label>Pay</Label>
-        <Picks options={PAYS} value={pay} label="Pay" onPick={(p) => setPay(pay === p ? "" : p)} />
+        <Picks options={bulk ? ["₹100 / piece", "₹180 / piece", "₹500 / set", "To be discussed"] : PAYS} value={pay} label="Pay" onPick={(p) => setPay(pay === p ? "" : p)} />
         <div className="mt-2.5 max-w-[420px]">
-          <Text value={pay} onChange={setPay} label="Pay" placeholder="Or write it: ₹10,000 / month" max={80} />
+          <Text value={pay} onChange={setPay} label="Pay" placeholder={bulk ? "e.g. ₹180 / piece" : "Or write it: ₹10,000 / month"} max={80} />
         </div>
 
         <div className="mt-5">
@@ -305,11 +338,11 @@ export default function PostJobPage() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p role={error ? "alert" : undefined} className="text-xs"
                style={{ color: error ? "var(--ux-danger-ink)" : "var(--ux-muted)" }}>
-              {error || (ready ? "Women with these skills will be told about it." : "Pick at least one skill to post.")}
+              {error || (ready ? bulk ? "Matching makers in this town will be told about it." : "Women with these skills will be told about it." : bulk ? "Add skills, town, quantity, delivery date, materials and payment terms. Applications must close by delivery." : "Pick at least one skill to post.")}
             </p>
             <Btn variant="primary" icon={editing ? "Check" : "Send"} loading={busy} disabled={!ready}
                  onClick={() => void submit()}>
-              {editing ? "Save changes" : "Post the job"}
+              {editing ? "Save changes" : bulk ? "Post the big order" : "Post the job"}
             </Btn>
           </div>
         </Card>

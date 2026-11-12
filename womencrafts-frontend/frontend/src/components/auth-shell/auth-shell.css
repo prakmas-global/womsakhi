@@ -110,7 +110,7 @@
     radial-gradient(40% 50% at 20% 30%, rgba(168, 96, 240, 0.85), transparent 70%),
     radial-gradient(45% 55% at 80% 20%, rgba(240, 0, 120, 0.75), transparent 70%),
     radial-gradient(50% 60% at 60% 85%, rgba(72, 48, 240, 0.9), transparent 70%),
-    conic-gradient(from var(--wsa-spin) at 50% 50%, #2f1f99, #4830f0, #a860f0, #c80066, #4830f0, #2f1f99);
+    conic-gradient(from var(--wsa-spin) at 50% 50%, var(--ws-violet-800), var(--ws-violet-600), var(--ws-orchid), var(--ws-magenta-600), var(--ws-violet-600), var(--ws-violet-800));
   /* Blurred, so the conic's centre never shows as a point — only colour moving. */
   filter: blur(56px) saturate(1.15);
   animation: wsa-spin 28s linear infinite;

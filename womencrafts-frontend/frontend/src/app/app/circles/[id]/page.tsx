@@ -276,6 +276,7 @@ export default function CircleChat({ params }: { params: Promise<{ id: string }>
       </style>
       <div className={`${s.frame} ${s.withInfo}`} data-circle-chat>
         <section className={s.chat} aria-label={`${name} chat`}>
+          <h1 className="sr-only">{name}</h1>
           <header className={s.head}>
             <button type="button" aria-label="Back to circles" onClick={() => router.push("/app/circles")}
                     className="ux-press grid h-10 w-10 shrink-0 place-items-center rounded-full">

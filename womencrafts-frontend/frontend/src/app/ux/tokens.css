@@ -1,7 +1,7 @@
 /*
   NOTE (Oct 2026): the colour VALUES now come from design-system/brand.css —
-  the logo's magenta and violet, one font. The notes below record the older
-  Berry kit these names were first built for; the names and roles still hold.
+  grape wine and muted violet, one font. The notes below describe the original
+  Berry kit restored by this palette; the names and roles still hold.
 
   The redesigned member experience — its own palette.
   Every value sampled from the supplied screens rather than guessed.
@@ -104,7 +104,7 @@
      before, which is how the button on it came to be 4.31:1 — below AA, in the
      sidebar, on every screen. The button is white because no violet clears 4.5:1
      for white text while still separating from the slab it sits on. */
-  --ux-on-brand-2: var(--ws-magenta-100);        /* 5.98:1 on brand-900 */
+  --ux-on-brand-2: #f9edf3;        /* bright secondary copy on deep brand panels */
   --ux-on-brand-track: rgba(0, 0, 0, 0.20);
   --ux-on-brand-fill: var(--ws-magenta-300);     /* 5.13:1 — a graphic, needs 3:1 */
   --ux-on-brand-btn: #ffffff;      /* 10.35:1 against the slab */
@@ -121,6 +121,9 @@
      against white, so every primary button's right-hand gradient stop was
      failing AA and nothing caught it: a gradient has no single background
      colour, so the contrast pass skips it entirely. */
+  --ux-action-start: var(--color-action-start, var(--ws-violet-600));
+  --ux-action-end: var(--color-action-end, var(--ws-magenta-600));
+  --ux-action-gradient: linear-gradient(96deg, var(--ux-action-start), var(--ux-action-end));
   --ux-fill:   var(--ws-magenta-600);       /* 8.57:1 with white */
   --ux-fill-2: var(--ws-magenta-700);       /* 6.27:1 with white */
 
@@ -514,7 +517,7 @@
   --ux-ink-on-brand: var(--ws-on-brand); /* 8.6:1 — both brand fills go light in this theme */
   --ux-brand-700: #ff9cc8;
   --ux-brand-900: #3a1030;
-  --ux-on-brand-2: #ffc2dd;        /* 8.61:1 on the darker slab */
+  --ux-on-brand-2: #f9edf3;        /* bright secondary copy on deep brand panels */
   --ux-on-brand-track: rgba(0, 0, 0, 0.28);
   --ux-on-brand-fill: #ff7ab6;     /* 7.38:1 */
   --ux-on-brand-btn: #ffffff;      /* 14.90:1 */
@@ -794,7 +797,6 @@
 .ux :where(a, button, input, textarea, select, [tabindex]):focus-visible {
   outline: 2px solid var(--ux-brand);
   outline-offset: 3px;
-  border-radius: 6px;
 }
 
 /* A field whose border is drawn by a wrapper (a prefix, an icon beside the
@@ -1606,6 +1608,48 @@
    the subtree around the page being left, and the destination then never
    renders. */
 .ux-swap > * { animation: ux-swap-in 240ms var(--ux-ease-out) both; }
+
+/*
+ * Fixed side columns — one rule for the whole app.
+ *
+ * The left navigation already stays put (it sits outside the scroller). The
+ * right-hand column did not: on most screens it scrolled away with the page
+ * and left an empty strip beside the content — on a dark canvas, a black one.
+ * Find people to hire was the exception, because the shell's own side column
+ * was sticky. Now every right column is: it stays under the top bar while the
+ * middle scrolls, and when it is taller than the window it scrolls inside
+ * itself instead of being cut off.
+ *
+ *   .ux-sticky-col        the column element itself
+ *   .ux-split-lg / -xl    a two-column grid whose LAST child is the side
+ *                         column; pinned from the width the grid splits at
+ *
+ * Below those widths the columns stack and scroll as one page, as before.
+ * The 4px of padding keeps card shadows inside the column's scroll box.
+ * Only the vertical margin is taken back: negative horizontal margins push
+ * the last column beyond the page and create horizontal overflow.
+ */
+.ux-sticky-col, .ux-split-lg > :last-child, .ux-split-xl > :last-child { align-self: start; }
+@media (min-width: 1024px) {
+  .ux-split-lg > :last-child {
+    position: sticky; top: calc(var(--ux-topbar-h, 72px) + 18px);
+    max-height: calc(100dvh - var(--ux-topbar-h, 72px) - 36px);
+    overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+    padding: 4px; margin: -4px 0;
+  }
+}
+@media (min-width: 1280px) {
+  .ux-sticky-col, .ux-split-xl > :last-child {
+    position: sticky; top: calc(var(--ux-topbar-h, 72px) + 18px);
+    max-height: calc(100dvh - var(--ux-topbar-h, 72px) - 36px);
+    overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+    padding: 4px; margin: -4px 0;
+  }
+}
+.ux-sticky-col::-webkit-scrollbar, .ux-split-lg > :last-child::-webkit-scrollbar, .ux-split-xl > :last-child::-webkit-scrollbar { width: 6px; }
+.ux-sticky-col::-webkit-scrollbar-thumb, .ux-split-lg > :last-child::-webkit-scrollbar-thumb, .ux-split-xl > :last-child::-webkit-scrollbar-thumb {
+  background: var(--ux-line-strong); border-radius: 999px;
+}
 @keyframes ux-swap-in { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ux-swap > * { animation: none; } }
 
@@ -1822,7 +1866,7 @@
 .ux-tile-ic { transition: transform var(--ux-t-slow) var(--ux-ease-spring); }
 
 .ux-btn-g { transition: filter var(--ux-t) var(--ux-ease), transform var(--ux-t) var(--ux-ease); }
-.ux-btn-g:hover { filter: brightness(1.09); transform: translateY(-1px); }
+.ux-btn-g:hover { filter: brightness(1.04); transform: translateY(-1px); }
 
 /* A row in a panel or the rail: the ground lifts, nothing moves. */
 .ux-row { border-radius: 10px; transition: background-color var(--ux-t) var(--ux-ease); }
@@ -2872,4 +2916,58 @@
 [dir="rtl"] button,
 [dir="rtl"] a {
   unicode-bidi: plaintext;
+}
+
+/* ── The pictures' ground ──────────────────────────────────────────────────
+   Every pictogram, picture badge and section banner stands on the brand —
+   the same plum → magenta → orchid as Home's hero — so the whole app reads
+   as one product. (It tried one colour per module first; eight hues side by
+   side read as eight apps, and weakened the brand they all sit inside.) The
+   picture says WHICH place; the brand says WHOSE. Built from theme tokens, so
+   a member's own theme recolours all of it. */
+.ux {
+  --ux-pic-ground: linear-gradient(145deg, color-mix(in oklab, var(--ux-fill) 88%, white) 0%, var(--ux-fill) 46%, var(--ux-rib-2) 100%);
+  --ux-banner-ground: linear-gradient(102deg, var(--ux-brand-900) 0%, var(--ux-fill) 62%, var(--ux-rib-2) 118%);
+}
+
+/* The SOS circle's slow ring: enough motion to be found at a glance, slow
+   enough not to alarm. Off for anyone who has asked for less motion. */
+@keyframes ux-sos-ring { 0% { box-shadow: 0 0 0 0 rgba(224, 30, 30, .45); } 70%, 100% { box-shadow: 0 0 0 14px rgba(224, 30, 30, 0); } }
+.ux-sos-ring { animation: ux-sos-ring 2.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .ux-sos-ring { animation: none; } }
+
+/* A page with a hero of its own does not get the section banner on top of it
+   (components/ux/nav/banners.ts). */
+#content:has([data-page-hero], [data-health-hero]) .ux-section-banner { display: none; }
+/* …and its title gets its picture back, in place of the back arrow that
+   stood in for it beside the banner (PlaceMark in components/ux/nav/Place.tsx). */
+#content:has([data-page-hero], [data-health-hero]) .ux-place-banner { display: inline-flex; }
+#content:has([data-page-hero], [data-health-hero]) .ux-place-back { display: none; }
+#content:has([data-page-hero], [data-health-hero]) .ux-place-pic { display: inline-flex; }
+/* A page that draws its own "← Back to …" link (kit/back.tsx) does not also
+   get the round back arrow beside its title — one way back, the labelled
+   one. Unless the page has a hero, where that slot holds its picture. */
+#content:has(.ux-back-inpage):not(:has([data-page-hero], [data-health-hero])) .ux-place-banner { display: none; }
+
+/* A wrong PIN: the dots shake once. */
+@keyframes ux-shake { 0%, 100% { transform: none; } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.ux-shake { animation: ux-shake 360ms var(--ux-ease) 1; }
+@media (prefers-reduced-motion: reduce) { .ux-shake { animation: none; } }
+
+/* My Khata's note colours (components/ux/khata/NotesTab.tsx): soft pastels
+   mixed into the surface — less of them in dark mode, where a light-mode
+   share of yellow reads as olive. */
+.ux {
+  --khata-note-pink: color-mix(in oklab, #f9a8d4 32%, var(--ux-surface));
+  --khata-note-yellow: color-mix(in oklab, #fde68a 42%, var(--ux-surface));
+  --khata-note-green: color-mix(in oklab, #a7f3d0 38%, var(--ux-surface));
+  --khata-note-blue: color-mix(in oklab, #bfdbfe 45%, var(--ux-surface));
+  --khata-note-violet: color-mix(in oklab, #ddd6fe 50%, var(--ux-surface));
+}
+.dark .ux, :is(.ux.dark, .dark .ux) {
+  --khata-note-pink: color-mix(in oklab, #f472b6 18%, var(--ux-surface));
+  --khata-note-yellow: color-mix(in oklab, #facc15 13%, var(--ux-surface));
+  --khata-note-green: color-mix(in oklab, #34d399 15%, var(--ux-surface));
+  --khata-note-blue: color-mix(in oklab, #60a5fa 18%, var(--ux-surface));
+  --khata-note-violet: color-mix(in oklab, #a78bfa 20%, var(--ux-surface));
 }

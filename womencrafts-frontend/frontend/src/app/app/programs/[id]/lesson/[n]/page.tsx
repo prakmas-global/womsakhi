@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +16,7 @@ import { CourseQA } from "@/components/ux/learning/CourseQA";
 import { apiCompleteLesson } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 import { useT } from "@/i18n";
+import { ReadingRoom } from "@/components/ux/learning/ReadingRoom";
 
 /**
  * A YouTube link, as an embed that loads only when she presses play.
@@ -205,10 +207,13 @@ export default function LessonPage({ params }: { params: Promise<{ id: string; n
           <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--ux-faint)" }}>
             Lesson {num} of {lessons.length}{lesson.duration ? ` · ${lesson.duration}` : ""}
           </p>
-          <h1 className="mt-1.5 text-[24px] font-bold leading-tight lg:text-xl" style={{ color: "var(--ux-ink)" }}>{lesson.title}</h1>
+          <div className="mt-1.5 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-[24px] font-bold leading-tight lg:text-xl min-w-0" style={{ color: "var(--ux-ink)" }}>{lesson.title}</h1>
+          </div>
           {lesson.detail && <p className="mt-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>{lesson.detail}</p>}
 
-          {paragraphs.length > 0 && (
+          {lesson.content_type && lesson.content_type !== "lesson" ? <ReadingRoom key={`${lesson.id??`${id}-${num}`}-${lesson.revision??""}`} courseId={id} lessonNumber={num} lesson={lesson} canSave={!owner&&!previewing}/> : paragraphs.length > 0 && (
             <div className="mt-4 space-y-3.5 text-smd leading-relaxed lg:text-sm" style={{ color: "var(--ux-ink-2)" }}>
               {paragraphs.map((p, i) => <p key={i} className="whitespace-pre-line">{p}</p>)}
             </div>

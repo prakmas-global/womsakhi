@@ -17,6 +17,7 @@ import {
   MessageSquareHeart,
   Bot,
   Settings,
+  ListTree,
   ChevronDown,
   Eye,
   EyeOff,
@@ -149,8 +150,10 @@ const NAV: NavItem[] = [
       { label: "Listings", href: "/dashboard/market/listings" },
       { label: "Orders", href: "/dashboard/market/orders" },
       { label: "Reviews", href: "/dashboard/market/reviews" },
+      { label: "Rent & borrow", href: "/dashboard/market/rentals" },
       { label: "Group buys", href: "/dashboard/market/group-buys" },
       { label: "Sellers & licences", href: "/dashboard/market/sellers" },
+      { label: "Shop categories", href: "/dashboard/market/categories" },
     ],
   },
   {
@@ -237,6 +240,14 @@ const NAV: NavItem[] = [
     href: "/dashboard/ai",
     icon: Bot,
     module: "ai",
+  },
+  {
+    // The lists staff control across every module. Open to every staff
+    // member; each list inside is gated by its own module's permissions.
+    label: "Masters",
+    href: "/dashboard/masters",
+    icon: ListTree,
+    module: "dashboard",
   },
   {
     label: "Settings",

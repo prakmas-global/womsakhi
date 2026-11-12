@@ -26,6 +26,11 @@ export interface Listing {
   low_stock: boolean;
   out_of_stock: boolean;
   category: string;
+  /** Filed under the staff-controlled tree (lib/shop-categories-api). */
+  category_key?: string;
+  subcategory_key?: string;
+  /** "category_changed" when her store's category moved and this no longer fits. */
+  paused_reason?: string;
   place: string;
   travels_km: number;
   photo: string;
@@ -301,6 +306,7 @@ export interface StoreSettings {
   tagline: string;
   logo: string;
   cover: string;
+  gallery: string[];
   /** Effective state: false while she has closed it and her back-on day has not come. */
   open: boolean;
   away_reason: string;
@@ -309,11 +315,16 @@ export interface StoreSettings {
   handle: string;
   away_reasons: string[];
   live_listings: number;
+  /** Her store's one category; "" until she chooses it. */
+  category_key?: string;
+  category_name?: string;
+  /** Listings paused because they no longer fit her category. */
+  paused_outside?: number;
 }
 
 export const apiMyStore = (s?: AbortSignal) => get<StoreSettings>("/shop/store", s);
 
-export const apiUpdateStore = (patch: { name?: string; tagline?: string; logo?: string; cover?: string }) =>
+export const apiUpdateStore = (patch: { name?: string; tagline?: string; logo?: string; cover?: string; gallery?: string[] }) =>
   apiClient.put<StoreSettings>("/shop/store", patch).then((r) => r.data);
 
 export const apiSetAvailability = (body: { open: boolean; back_on?: string; away_reason?: string }) =>

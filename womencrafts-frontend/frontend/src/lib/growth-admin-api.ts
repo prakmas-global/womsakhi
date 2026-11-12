@@ -278,6 +278,8 @@ export interface ApplicationRow {
   verified_skills?: { skill: string; title: string; score: number; code: string }[];
   /** Her skills that match the job, as they were when she applied. */
   matching_skills?: { key: string; name: string; level: string; verified: boolean }[];
+  /** Work done: "" | mine (she said so — confirm it) | confirmed. */
+  done?: "" | "mine" | "confirmed";
 }
 
 export const apiGrowthApplications = (params: { opportunity_id?: string; status?: string } = {}) =>

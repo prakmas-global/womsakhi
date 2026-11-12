@@ -7,6 +7,8 @@ import { z } from "zod";
 import { ArrowUpRight, BellOff, Check, Home, Lock, Moon, Plus, Search, Sparkles, Sun, Sunrise, Users, Volume2, X } from "lucide-react";
 
 import { apiFindSkills, type Answers, type Skill, type SkillValue } from "@/lib/onboarding-api";
+import { useWorkTaxonomy } from "@/components/ux/work/pictures";
+import { skillArt } from "@/components/ux/work/skill-art";
 import { websiteUrl } from "@/lib/site";
 import { Art } from "./art";
 import { Busy, ChoiceCard, PictureTile, Pill, SakhiAvatar, ToggleRow } from "./primitives";
@@ -212,6 +214,13 @@ export function SkillsStep({ listen, answers, patch, labels, learnLabels, previe
   const { ref: fieldRef, ...field } = form.register("skill");
 
   const others = (results ?? []).filter((s) => !pickedKeys.has(s.key));
+  // Each skill's picture — the one staff set, else its category's, else the library's.
+  const workCats = useWorkTaxonomy();
+  const pictureOf = (key: string, label: string, group = "", groupLabel = "") => {
+    const cat = workCats.find((c) => c.skills.some((x) => x.key === key)) ?? workCats.find((c) => c.key === group);
+    const own = cat?.skills.find((x) => x.key === key);
+    return skillArt({ key, name: label, image: own?.image, category: cat?.key ?? group, category_name: cat?.name ?? groupLabel }, cat);
+  };
   const heading = q.trim() ? `Matches for “${q.trim()}”` : "Popular with women here";
 
   return (
@@ -233,7 +242,8 @@ export function SkillsStep({ listen, answers, patch, labels, learnLabels, previe
           <p className="wso-label">Your skills <span className="wso-count">{picked.length} of {MAX_SKILLS}</span></p>
           <div className="wso-pills" role="group" aria-label="Your skills">
             {picked.map((s) => (
-              <Pill key={skillKey(s)} pressed onClick={() => choose(s)}>{labelOfSkill(s, labels)}</Pill>
+              <Pill key={skillKey(s)} pressed onClick={() => choose(s)}
+                    img={typeof s === "string" ? pictureOf(s, labelOfSkill(s, labels)) : undefined}>{labelOfSkill(s, labels)}</Pill>
             ))}
           </div>
         </div>
@@ -249,7 +259,8 @@ export function SkillsStep({ listen, answers, patch, labels, learnLabels, previe
         ) : (
           <div className="wso-pills" role="group" aria-label={heading}>
             {others.map((s) => (
-              <Pill key={s.key} pressed={false} disabled={full} onClick={() => choose(s.key)}>{s.label}</Pill>
+              <Pill key={s.key} pressed={false} disabled={full} onClick={() => choose(s.key)}
+                    img={pictureOf(s.key, s.label, s.group, s.group_label)}>{s.label}</Pill>
             ))}
             {!adding && (
               <Pill pressed={false} dashed disabled={full} onClick={() => {

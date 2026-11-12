@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useState } from "react";
 
 import {
@@ -93,7 +94,10 @@ export default function IntakePage() {
         </div>
       }
     >
-      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("intake.askForHelp")}</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>{tr("intake.askForHelp")}</h1>
+      </div>
       <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>{tr("intake.pickAsManyAsAreTrue")}</p>
 
       {/* Any number of them, so on a phone: a grouped list, a checkmark on

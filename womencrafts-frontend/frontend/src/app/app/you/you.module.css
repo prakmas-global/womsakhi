@@ -83,3 +83,7 @@
 :global(.dark) .details blockquote{background:linear-gradient(135deg,var(--ux-surface-2),var(--ux-brand-tint));color:var(--ux-ink)}
 :global(.dark) .help{background:linear-gradient(120deg,var(--ux-surface-2),var(--ux-brand-tint))}
 :global(.dark) .guide:after,:global(.dark) .invite:after{background:linear-gradient(90deg,var(--ux-surface) 0 42%,color-mix(in srgb,var(--ux-surface) 30%,transparent) 72%,transparent)}
+
+/* The promotional journey card fits the shared compact banner. */
+@media(min-width:1024px) { .hero .heroCard { top:16px; bottom:16px; height:auto; } }
+@media(max-width:1023px) { .hero .heroCard { display:none; } }

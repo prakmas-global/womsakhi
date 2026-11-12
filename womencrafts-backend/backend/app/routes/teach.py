@@ -16,14 +16,19 @@ via "course"), which is what Earn shows and what her proof of income counts.
 """
 
 import re
+import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Literal, Optional
 
+from app.core.reading import lesson_key
+from app.core.account_upi import recipient_upi, require_account_upi
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.core import cache
+from app.core import masters
+from app.core.media import MediaRefOptional, media_url
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
@@ -52,10 +57,12 @@ def _enrollments():
 
 
 class LessonIn(BaseModel):
+    id: str = Field(default_factory=lambda: uuid.uuid4().hex, pattern=r"^[a-zA-Z0-9_-]{1,64}$")
+    content_type: Literal["lesson", "article", "book"] = "lesson"
     title: str = Field(min_length=2, max_length=100)
     detail: str = Field("", max_length=300)
     duration: str = Field("", max_length=30)
-    body: str = Field("", max_length=8000)
+    body: str = Field("", max_length=200000)
     video_url: str = Field("", max_length=300)
     #: A free preview: anyone can watch this lesson before joining — her
     #: teaser. At most MAX_PREVIEWS per course.
@@ -83,6 +90,9 @@ class CourseIn(BaseModel):
     price_rupees: int = 0
     upi_id: str = Field("", max_length=300)
     lessons: list[LessonIn] = Field(min_length=1, max_length=40)
+    #: The course's thumbnail: her upload or a library picture ("" = her
+    #: category's picture, which is what every course showed before covers).
+    cover: MediaRefOptional = Field(default=None, max_length=500)
     #: Live in Learn now, or kept as a draft only she can see.
     publish: bool = False
 
@@ -94,19 +104,25 @@ class CourseIn(BaseModel):
     @field_validator("category")
     @classmethod
     def _category(cls, v: str) -> str:
-        if v not in ProgramModel.CATEGORIES:
-            raise ValueError("Choose one of the listed categories")
-        return v
+        # Checked against the course categories master in the route
+        # (app/core/masters.py): a validator cannot read the database.
+        return (v or "").strip()
 
     @model_validator(mode="after")
     def _price(self):
+        if len({l.id for l in self.lessons}) != len(self.lessons):
+            raise ValueError("Each lesson must have a different ID")
+        if sum(len(l.body) for l in self.lessons) > 500000:
+            raise ValueError("Keep the course text under 500,000 characters")
+        if any(l.content_type in {"article", "book"} and not l.body for l in self.lessons):
+            raise ValueError("Add the article or book text before saving")
         if sum(1 for l in self.lessons if l.preview) > MAX_PREVIEWS:
             raise ValueError(f"Choose at most {MAX_PREVIEWS} lessons as free previews")
         if self.price_rupees < 0 or self.price_rupees > MAX_PRICE_RUPEES:
             raise ValueError(f"Set a price between ₹{MIN_PRICE_RUPEES} and ₹{MAX_PRICE_RUPEES:,}, or make it free")
         if 0 < self.price_rupees < MIN_PRICE_RUPEES:
             raise ValueError(f"A paid course costs at least ₹{MIN_PRICE_RUPEES}")
-        if self.price_rupees and not UPI_ID.match(self.upi_id):
+        if self.price_rupees and self.upi_id and not UPI_ID.match(self.upi_id):
             raise ValueError("Add the UPI ID learners should pay, like name@okaxis")
         return self
 
@@ -135,6 +151,7 @@ class CourseRow(BaseModel):
     lesson_count: int
     updated_at: str
     stats: CourseStats
+    cover: str = ""
 
 
 class CourseFull(CourseRow):
@@ -216,18 +233,21 @@ def _row(doc: dict, stats: CourseStats) -> dict:
         "lesson_count": len(doc.get("curriculum") or []),
         "updated_at": _iso(doc.get("updated_at")),
         "stats": stats,
+        "cover": media_url(doc.get("cover") or ""),
     }
 
 
-def _full(doc: dict, stats: CourseStats) -> CourseFull:
+async def _full(doc: dict, stats: CourseStats) -> CourseFull:
     return CourseFull(
         **_row(doc, stats),
         desc=doc.get("desc", ""),
         duration=doc.get("duration", ""),
-        upi_id=doc.get("upi_id", ""),
+        upi_id=await recipient_upi(get_database(),doc.get("owner_id", ""),doc.get("upi_id", "")),
         lessons=[
             {**{k: (m or {}).get(k, "") for k in ("title", "detail", "duration", "body", "video_url")},
-             "preview": bool((m or {}).get("preview"))}
+             "id": (m or {}).get("id") or lesson_key(m or {}),
+             "content_type": (m or {}).get("content_type", "lesson"),
+             "preview": not ProgramModel.is_paid(doc) and bool((m or {}).get("preview"))}
             for m in (doc.get("curriculum") or [])
         ],
     )
@@ -241,7 +261,7 @@ async def _mine(course_id: str, me: dict) -> dict:
 
 
 def _fields(body: CourseIn, me: dict) -> dict:
-    lessons = [l.model_dump() for l in body.lessons]
+    lessons = [{**l.model_dump(), "preview": l.preview and body.price_rupees == 0} for l in body.lessons]
     return {
         "name": body.name,
         "desc": body.desc,
@@ -255,6 +275,7 @@ def _fields(body: CourseIn, me: dict) -> dict:
         "price_minor": body.price_rupees * 100,
         "upi_id": body.upi_id if body.price_rupees else "",
         "curriculum": lessons,
+        "cover": body.cover or "",
         "teacher_name": me.get("full_name") or "A WomSakhi member",
         "updated_at": datetime.now(timezone.utc),
     }
@@ -293,28 +314,37 @@ async def my_courses(me: dict = Depends(require_active_member)):
 
 @router.post("/courses", response_model=CourseFull, status_code=status.HTTP_201_CREATED, summary="Teach a new course")
 async def create_course(body: CourseIn, me: dict = Depends(require_active_member)):
+    body.category = await masters.check("course_categories", body.category, level="child", field="category")
     doc = ProgramModel.create_document(
         name=body.name, desc=body.desc, category=body.category, mode="Online",
         cap=0, status="Active" if body.publish else "Draft",
     )
+    if body.price_rupees:
+        body.upi_id = await require_account_upi(get_database(),me,body.upi_id)
     doc.update(_fields(body, me))
     doc.update(owner_kind=ProgramModel.OWNER_MEMBER, owner_id=str(me["_id"]),
                note="Live" if body.publish else "Draft")
     doc["_id"] = (await _programs().insert_one(doc)).inserted_id
     cache.forget_prefix("catalog:")
-    return _full(doc, CourseStats())
+    return await _full(doc, CourseStats())
 
 
 @router.get("/courses/{course_id}", response_model=CourseFull, summary="One of my courses")
 async def get_course(course_id: str, me: dict = Depends(require_active_member)):
     doc = await _mine(course_id, me)
     stats = await _stats_for([course_id])
-    return _full(doc, stats[course_id])
+    return await _full(doc, stats[course_id])
 
 
 @router.put("/courses/{course_id}", response_model=CourseFull, summary="Save my course")
 async def save_course(course_id: str, body: CourseIn, me: dict = Depends(require_active_member)):
     doc = await _mine(course_id, me)
+    # A course keeps a category staff have since disabled or renamed away from,
+    # as long as she doesn't change it; a new choice must be an active one.
+    if body.category != doc.get("category"):
+        body.category = await masters.check("course_categories", body.category, level="child", field="category")
+    if body.price_rupees:
+        body.upi_id = await require_account_upi(get_database(),me,body.upi_id)
     fields = _fields(body, me)
     # Archived by staff stays archived: she cannot re-publish what they hid.
     if doc.get("status") != "Archived":
@@ -323,7 +353,7 @@ async def save_course(course_id: str, body: CourseIn, me: dict = Depends(require
     fresh = await _programs().find_one_and_update({"_id": doc["_id"]}, {"$set": fields}, return_document=True)
     cache.forget_prefix("catalog:")
     stats = await _stats_for([course_id])
-    return _full(fresh, stats[course_id])
+    return await _full(fresh, stats[course_id])
 
 
 @router.post("/courses/{course_id}/publish", response_model=CourseFull, summary="Put my course live")
@@ -351,7 +381,7 @@ async def _set_live(course_id: str, me: dict, live: bool) -> CourseFull:
     )
     cache.forget_prefix("catalog:")
     stats = await _stats_for([course_id])
-    return _full(fresh, stats[course_id])
+    return await _full(fresh, stats[course_id])
 
 
 # ── her learners, and their payments ────────────────────────────────────────
@@ -409,7 +439,7 @@ async def confirm_payment(enrollment_id: str, me: dict = Depends(require_active_
     fresh = await _enrollments().find_one_and_update(
         {"_id": e["_id"], "status": EnrollmentModel.STATUS_PENDING},
         {"$set": {"status": EnrollmentModel.STATUS_ACTIVE, "payment.status": EnrollmentModel.PAY_PAID,
-                  "payment.amount_minor": amount, "payment.confirmed_at": now,
+                  "payment.amount_minor": amount, "payment.confirmed_at": now, "payment.confirmed_by": str(me["_id"]),
                   "last_activity_at": now, "updated_at": now}},
         return_document=True,
     )

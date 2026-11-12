@@ -128,11 +128,11 @@ export default function TeachPage() {
               <div className="flex flex-col gap-4 p-[16px] lg:flex-row lg:items-center">
                 <span className="hidden h-[72px] w-[96px] shrink-0 overflow-hidden rounded-[12px] lg:block" style={{ background: "var(--ux-tint-violet)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={courseArt(c.category)} alt="" className="h-full w-full object-cover" />
+                  <img src={courseArt(c.category, c.cover)} alt="" className="h-full w-full object-cover" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="truncate text-base font-bold" style={{ color: "var(--ux-ink)" }}>{c.name}</h3>
+                    <h2 className="truncate text-base font-bold" style={{ color: "var(--ux-ink)" }}>{c.name}</h2>
                     {c.status === "Archived"
                       ? <Pill tone="neutral" size="sm">Hidden by our team</Pill>
                       : c.live ? <Pill tone="green" size="sm">Live</Pill> : <Pill tone="neutral" size="sm">Draft</Pill>}

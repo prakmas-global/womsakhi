@@ -75,7 +75,9 @@ async def claim_due(limit: int) -> list[dict]:
         doc = await _db()[OccurrenceModel.collection_name].find_one_and_update(
             {"state": {"$in": [OccurrenceModel.STATE_SCHEDULED,
                                OccurrenceModel.STATE_SNOOZED]},
-             "due_at": {"$lte": now}},
+             "due_at": {"$lte": now},
+             **({"klass": {"$ne": ReminderModel.CLASS_SAFETY}}
+                if settings.ENGINES_LOCAL_WORKER and not settings.is_production else {})},
             {"$set": {"state": OccurrenceModel.STATE_DUE,
                       "lease_owner": WORKER_ID,
                       "lease_expires_at": OccurrenceModel.lease_until(
@@ -265,7 +267,8 @@ async def run_tick() -> dict:
     unheld = await notify.release_held()
     retried = await notify.retry_failed()
     topped = await rem.top_up_horizons()
-    verification = await verification_followups.run_due()
+    verification = ({} if settings.ENGINES_LOCAL_WORKER and not settings.is_production
+                    else await verification_followups.run_due())
 
     return {
         "enabled": True,

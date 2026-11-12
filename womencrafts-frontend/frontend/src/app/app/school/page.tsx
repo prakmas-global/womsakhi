@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 import { useResource } from "@/lib/use-resource";
 import {
@@ -192,8 +193,11 @@ export default function SchoolPage() {
           <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("school.theSchoolYear")}</p>
           {/* `.ux-screen-title` makes this the one 34px large title on a phone;
               the clamp is what desktop keeps. */}
-          <h1 className="ux-screen-title mt-1 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] lg:mt-2"
-              style={{ color: v("--ux-ink") }}>{tr("school.everyDateInOnePlace")}</h1>
+          <div className="mt-1 lg:mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("school.everyDateInOnePlace")}</h1>
+          </div>
           <p className="mt-2 max-w-[56ch] text-sm leading-relaxed lg:mt-1.5" style={{ color: v("--ux-muted") }}>
             Fees, exams, forms, uniforms, the scholarship that has to be renewed or it stops.
             You have been holding all of it. You should not have to.

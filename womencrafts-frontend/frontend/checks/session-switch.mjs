@@ -1,5 +1,5 @@
 /** Verify one browser can safely switch between staff and member sessions. */
-import { APP, launch } from "./_shared.mjs";
+import { APP, launch, codeSignIn, CHECK_STAFF_EMAIL, CHECK_MEMBER_EMAIL } from "./_shared.mjs";
 
 const browser = await launch();
 const page = await browser.newPage();
@@ -36,7 +36,7 @@ try {
   await page.goto(APP, { waitUntil: "domcontentloaded", timeout: 20000 });
   await page.deleteCookie(...await page.cookies());
 
-  const admin = await auth("signin", { email: "admin@womsakhi.com", password: "admin12345" });
+  const admin = { status: 200, data: await codeSignIn(CHECK_STAFF_EMAIL, auth) };
   check(admin.status === 200, "staff sign-in succeeds", String(admin.status));
   const adminSession = await session();
   check(adminSession.data?.user?.audience === "staff", "staff session reports staff audience", adminSession.data?.user?.audience);
@@ -47,7 +47,7 @@ try {
   check(out.status === 200, "sign-out succeeds", String(out.status));
   check((await session()).data?.user === null, "sign-out clears the browser session");
 
-  const member = await auth("signin", { email: "priya.sharma@example.com", password: "Womsakhi!2026" });
+  const member = { status: 200, data: await codeSignIn(CHECK_MEMBER_EMAIL, auth) };
   check(member.status === 200, "member sign-in succeeds", String(member.status));
   const memberSession = await session();
   check(memberSession.data?.user?.audience === "member", "member session reports member audience", memberSession.data?.user?.audience);
@@ -55,7 +55,7 @@ try {
   check((await go("/dashboard")) === "/app", "member is routed away from staff pages", page.url());
 
   await auth("signout");
-  const adminAgain = await auth("signin", { email: "admin@womsakhi.com", password: "admin12345" });
+  const adminAgain = { status: 200, data: await codeSignIn(CHECK_STAFF_EMAIL, auth) };
   check(adminAgain.status === 200, "same browser can switch back to staff", String(adminAgain.status));
   check((await session()).data?.user?.audience === "staff", "replacement cookie belongs to staff");
   check((await go("/dashboard")) === "/dashboard", "switched staff session reaches dashboard", page.url());

@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -44,7 +45,7 @@ export default function CycleSettingsPage() {
   return (
     <HomeShell immersive bare>
       <div className="mx-auto max-w-[1240px] px-5 py-7 lg:px-8">
-        <header className="mb-5"><p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--cy-period-ink)" }}>Personalise Cycle</p><h1 className="ux-screen-title mt-1 text-[34px] font-bold" style={{ color: "var(--ux-ink)" }}>Your goals and privacy</h1><p className="mt-1 text-[14px]" style={{ color: "var(--ux-muted)" }}>You decide what Cycle predicts, stores, and includes in a care summary.</p></header>
+        <header className="mb-5"><p className="text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: "var(--cy-period-ink)" }}>Personalise Cycle</p><div className="mt-1 flex min-w-0 items-center gap-3"><PlaceMark size={44} /><h1 className="ux-screen-title min-w-0 text-[34px] font-bold" style={{ color: "var(--ux-ink)" }}>Your goals and privacy</h1></div><p className="mt-1 text-[14px]" style={{ color: "var(--ux-muted)" }}>You decide what Cycle predicts, stores, and includes in a care summary.</p></header>
         <CycleDesktopNav active="Settings" />
 
         <div className="grid gap-5 lg:grid-cols-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
 import Modal from "../primitives/Modal";
@@ -59,10 +59,18 @@ export default function ConfirmProvider({ children }: { children: React.ReactNod
   const resolver = useRef<((ok: boolean) => void) | null>(null);
 
   const confirm = useCallback<Confirm>((options) => {
+    // A second action cancels the previous question instead of leaving its
+    // caller waiting forever on a promise that no dialog can answer.
+    resolver.current?.(false);
     setPending(options);
     return new Promise<boolean>((resolve) => {
       resolver.current = resolve;
     });
+  }, []);
+
+  useEffect(() => () => {
+    resolver.current?.(false);
+    resolver.current = null;
   }, []);
 
   const settle = useCallback((ok: boolean) => {

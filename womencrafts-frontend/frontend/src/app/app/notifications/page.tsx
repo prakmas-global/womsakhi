@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
@@ -199,10 +200,10 @@ export default function NotificationsPage() {
   return (
     <HomeShell active="/app/notifications" bare>
       <div className={`${styles.page} flex flex-col gap-4`}>
-        <section className={styles.hero}>
+        <section data-banner data-page-hero className={styles.hero}>
           <div className={styles.heroCopy}>
             <p><Link href="/app">Home</Link><Icons.ChevronRight />What is new</p>
-            <h1>Notifications</h1>
+            <div className="mb-2"><PlaceMark size={44} /></div><h1>Notifications</h1>
             <span>Stay updated with what matters to you.</span>
           </div>
           <div className={styles.heroIcon} aria-hidden><Icons.Bell /></div>
@@ -211,7 +212,7 @@ export default function NotificationsPage() {
             <span>Small updates. A brighter you.</span>
           </div>
         </section>
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_274px]">
+        <div className="ux-split-xl grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_274px]">
           <div className="flex min-w-0 flex-col gap-4">
           <header className={styles.controls}>
 
@@ -587,7 +588,7 @@ function Event({
             <Link href={n.href} onClick={readAll}
                   className="ux-press flex min-h-[36px] items-center gap-2 rounded-[12px] px-3.5 text-xs font-bold"
                   style={loud
-                    ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }
+                    ? { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }
                     : { background: "var(--ux-surface)", border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
               {l.label}
               <Icons.ArrowRight className="h-[13px] w-[13px]" />

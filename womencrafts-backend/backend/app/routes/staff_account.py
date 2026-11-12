@@ -16,7 +16,7 @@ from html import escape
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel
 
-from app.core import cache, ratelimit
+from app.core import cache, masters, ratelimit
 from app.core import email as mailer
 from app.core.audit import record
 from app.core.deps import get_current_user
@@ -459,8 +459,8 @@ async def my_tickets(me: dict = Depends(require_staff)):
     summary="Raise a support ticket",
 )
 async def raise_ticket(body: TicketCreate, request: Request, me: dict = Depends(require_staff)):
-    if body.category not in SupportTicketModel.CATEGORIES:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Choose one of the listed categories")
+    # A category from the `support_ticket_categories` master (app/core/masters.py), or a 422.
+    category = await masters.check("support_ticket_categories", body.category, field="category")
 
     count = await _tickets().count_documents({})
     doc = SupportTicketModel.create_document(
@@ -469,7 +469,7 @@ async def raise_ticket(body: TicketCreate, request: Request, me: dict = Depends(
         user_email=me.get("email", ""),
         subject=body.subject,
         message=body.message,
-        category=body.category,
+        category=category,
         priority=body.priority,
         reference=SupportTicketModel.make_reference(count),
     )

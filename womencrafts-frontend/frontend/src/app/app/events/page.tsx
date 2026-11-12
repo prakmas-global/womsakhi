@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
@@ -7,19 +8,19 @@ import { apiCancelEvent, apiRegisterForEvent } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 
 import {
-  Btn, Card, Chip, EmptyState, IconTile,
+  Btn, Card, EmptyState, IconTile,
   Progress, SectionHead, SourceNote, plural
 } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ChipRow, Segments } from "@/components/ux/learning/native";
 import {
-  EVENT_ART as RAW_EVENT_ART, EVENT_KINDS as RAW_EVENT_KINDS, EVENTS as SAMPLE_EVENTS, rupees, type Ev, type EventKind,
+  EVENT_ART as RAW_EVENT_ART, EVENT_KINDS as RAW_EVENT_KINDS, EVENTS as SAMPLE_EVENTS, eventLook, rupees, type Ev, type EventKind,
 } from "@/components/ux/events/data";
 import { useEvents } from "@/components/ux/growth";
+import { PicChip, pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
-import { artFor } from "@/components/ux/media/art";
 
 /**
  * Events — melas, workshops, webinars and meets.
@@ -29,7 +30,9 @@ import { artFor } from "@/components/ux/media/art";
  * same principle: the cost of a decision belongs next to the decision.
  */
 export default function EventsPage() {
-  const EVENT_KINDS = useTranslated(RAW_EVENT_KINDS);
+  // Categories are the staff-controlled master; the old list shows until it loads.
+  const kindPics = useMasterPictures("event_categories", RAW_EVENT_KINDS);
+  const EVENT_KINDS = kindPics.labels;
   const EVENT_ART = useTranslated(RAW_EVENT_ART);
   const tr = useT();
   // Split in the fetcher, not here: reading the clock during render makes the
@@ -71,7 +74,7 @@ export default function EventsPage() {
   // once from the mock fallback and never rebuilt when the real events landed,
   // so the header said "4 coming up" above four events nobody had organised.
   const pool = tab === "You are going" ? going : EVENTS;
-  const shown = kinds.length ? pool.filter((e) => kinds.includes(e.kind)) : pool;
+  const shown = kinds.length ? pool.filter((e) => kinds.some((k) => k.toLowerCase() === (e.kind || "").toLowerCase())) : pool;
 
   return (
     <HomeShell
@@ -83,9 +86,8 @@ export default function EventsPage() {
             <ul className="ux-stagger space-y-3">
               {PAST_EVENTS.map((p) => (
                 <li key={p.id} className="ux-hov flex items-center gap-3">
-                  <IconTile icon={p.kind === "Mela" ? "Store" : "GraduationCap"}
-                            tint={p.kind === "Mela" ? "--ux-tint-pink" : "--ux-tint-violet"}
-                            ink={p.kind === "Mela" ? "--ux-pink" : "--ux-violet"} size={36} />
+                  <IconTile icon={eventLook(p.kind).icon} tint={eventLook(p.kind).tint}
+                            ink={eventLook(p.kind).ink} size={36} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xsm font-medium" style={{ color: "var(--ux-ink)" }}>{p.title}</p>
                     <p className="mt-0.5 text-2xs" style={{ color: "var(--ux-muted)" }}>{p.when}</p>
@@ -121,7 +123,10 @@ export default function EventsPage() {
           header never had. */}
       <div className="mb-6 lg:mb-[20px] lg:flex lg:items-end lg:justify-between lg:gap-4">
         <div>
-          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>Events</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>Events</h1>
+          </div>
           <p className="mt-2 text-xsm lg:mt-1.5" style={{ color: "var(--ux-muted)" }}>
             {going.length} {plural("event", going.length)} you are going to · {EVENTS.length} coming up
           </p>
@@ -143,11 +148,11 @@ export default function EventsPage() {
       <ChipRow className="mb-6 lg:mb-[16px]">
         {/* The key is the server's English kind; only the label is translated.
             Filtering on the translated word matched nothing in Hindi. */}
-        {RAW_EVENT_KINDS.map((k, i) => (
-          <Chip key={k} selected={kinds.includes(k)}
-                onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>
-            {plural(EVENT_KINDS[i] ?? k, 2)}
-          </Chip>
+        {EVENT_KINDS.map((k) => (
+          <PicChip key={k} src={kindPics.pic(k)} selected={kinds.includes(k)}
+                   onClick={() => setKinds(kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k])}>
+            {plural(k, 2)}
+          </PicChip>
         ))}
       </ChipRow>
 
@@ -161,13 +166,14 @@ export default function EventsPage() {
             const on = isGoing(e);
             const busy = place.busyWith === e.id;
             // Its own cover when the organiser added one; otherwise the picture
-            // of what happens there — a mela stall, a workshop, a talk.
+            // of what happens there — a mela stall, a workshop, a talk — and
+            // failing that, its category's.
             const cover = e.art && e.art !== SAMPLE_EVENTS[0]?.art ? e.art : null;
             return (
               <MediaCard
                 key={e.id}
                 href={`/app/events/${e.id}`}
-                image={artFor([e.title, e.kind, e.blurb], "event", cover, e.id)}
+                image={pictureOr(cover, [e.title, e.blurb], kindPics.of(e.kind))}
                 topLeft={{ text: on ? "You are going" : e.kind, tone: on ? "brand" : "light" }}
                 topRight={e.fee_minor > 0 ? { text: rupees(e.fee_minor), tone: "dark" } : { text: "Free", tone: "green" }}
                 overlay={<><Icons.CalendarDays className="h-[13px] w-[13px]" /> {e.day} {e.month} · {e.time}</>}

@@ -62,8 +62,9 @@ async def _member(db, made, name: str):
 async def _shop_with_listing(client, db, made):
     seller, sh = await _member(db, made, "Priya Sharma")
     title = f"Store test kurti {uuid.uuid4().hex[:6]}"
+    assert (await client.put("/shop/store/category", json={"category_key": "clothing"}, headers=sh)).status_code == 200
     got = await client.post("/shop/listings", json={"kind": "product", "title": title, "price_minor": 45000,
-                                                     "stock": 5, "category": "Clothing"}, headers=sh)
+                                                     "stock": 5, "subcategory_key": "kurtas"}, headers=sh)
     assert got.status_code == 201, got.text
     return seller, sh, got.json()["id"], title
 
@@ -142,3 +143,41 @@ async def test_back_on_must_be_a_future_day(api):
     for bad in (_day(0), _day(-2), _day(200), "next week"):
         got = await client.put("/shop/store/availability", json={"open": False, "back_on": bad}, headers=sh)
         assert got.status_code == 422, bad
+
+
+async def test_store_gallery_persists_order_is_public_and_clears(api):
+    client, db, made = api
+    _, owner = await _member(db, made, "Gallery Owner")
+    _, other = await _member(db, made, "Other Owner")
+    gallery = ["media/cover/first.webp", "media/cover/second.webp"]
+    saved = await client.put("/shop/store", json={"cover": "media/cover/banner.webp", "gallery": gallery}, headers=owner)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["cover"].endswith("media/cover/banner.webp")
+    assert [url.rsplit("/", 1)[-1] for url in saved.json()["gallery"]] == ["first.webp", "second.webp"]
+    handle = saved.json()["handle"]
+    public = await client.get(f"/public/shop/{handle}")
+    assert public.status_code == 200
+    assert public.json()["gallery"] == saved.json()["gallery"]
+    assert (await client.get("/shop/store", headers=other)).json()["gallery"] == []
+    # Changing only the gallery must retain the cover and invalidate the public cache.
+    reordered = await client.put("/shop/store", json={"gallery": list(reversed(gallery))}, headers=owner)
+    assert reordered.json()["cover"] == saved.json()["cover"]
+    assert (await client.get(f"/public/shop/{handle}")).json()["gallery"] == reordered.json()["gallery"]
+    await client.put("/shop/store", json={"gallery": []}, headers=owner)
+    assert (await client.get("/shop/store", headers=owner)).json()["gallery"] == []
+    assert (await client.get(f"/public/shop/{handle}")).json()["gallery"] == []
+
+
+async def test_gallery_limit_validation_and_omitted_patch(api):
+    client, db, made = api
+    _, owner = await _member(db, made, "Photo Owner")
+    gallery = [f"media/cover/photo-{i}.webp" for i in range(8)]
+    assert (await client.put("/shop/store", json={"gallery": gallery}, headers=owner)).status_code == 200
+    for bad in ([*gallery, "media/cover/ninth.webp"], [""], ["   "]):
+        response = await client.put("/shop/store", json={"gallery": bad}, headers=owner)
+        assert response.status_code == 422, response.text
+    renamed = await client.put("/shop/store", json={"name": "Photo Shop"}, headers=owner)
+    assert len(renamed.json()["gallery"]) == 8
+    duplicate = await client.put("/shop/store", json={"gallery": [gallery[0], gallery[0]]}, headers=owner)
+    assert duplicate.status_code == 200 and len(duplicate.json()["gallery"]) == 1
+    assert (await client.put("/shop/store", json={"gallery": []})).status_code == 401

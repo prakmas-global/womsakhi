@@ -20,6 +20,9 @@ export interface Opportunity {
   kind: string;
   desc: string;
   location: string;
+  city?: string;
+  area?: string;
+  order_details?: BulkOrderDetails | null;
   mode: string;
   /** Free text, e.g. "₹12,000–₹18,000 / month". Kept because it is the
    *  sentence the buyer wrote; the two fields below are what anything
@@ -61,6 +64,14 @@ export interface Opportunity {
   match?: OpportunityMatch | Record<string, never>;
 }
 
+export interface BulkOrderDetails {
+  quantity: number;
+  unit: string;
+  delivery_date: string;
+  materials: string;
+  payment_terms: string;
+}
+
 export interface OpportunityMatch {
   have: string[];
   missing: string[];
@@ -93,10 +104,13 @@ export interface Application {
   applied_on: string;
   /** Her matching skills, as they were sent with the application. */
   skills?: { key: string; name: string; level: string; verified: boolean }[];
+  /** Work done: "" | mine (she said so) | confirmed (the poster confirmed it). */
+  done?: "" | "mine" | "confirmed";
 }
 
 export interface OpportunityQuery {
   q?: string; kind?: string; mode?: string;
+  city?: string; area?: string;
   /** Category key from the work masters. */
   category?: string;
   /** Skill keys; sent comma-separated. */
@@ -273,6 +287,8 @@ export interface CatalogProgramRow {
   /** "" | pending | active | completed | withdrawn — her enrolment. */
   my_status: string;
   is_mine: boolean;
+  /** Its thumbnail; "" = none (screens show its category's picture). */
+  cover?: string;
 }
 
 export const apiMyPrograms = (s?: AbortSignal) => get<Enrollment[]>("/me/programs", s);
@@ -283,6 +299,10 @@ export const apiCatalogProgram = (id: string, s?: AbortSignal) =>
 
 /** One item of a course's curriculum, as the server keeps it. */
 export interface ApiLesson {
+  id?: string;
+  content_type?: "lesson" | "article" | "book";
+  revision?: string;
+  reading_offset?: number;
   title: string;
   detail: string;
   duration: string;
@@ -302,6 +322,7 @@ export interface ApiLesson {
  * used a constant instead.
  */
 export interface ApiProgramDetail {
+  resume_lesson?: number;
   id: string;
   name: string;
   category: string;

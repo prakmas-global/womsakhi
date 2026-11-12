@@ -1,4 +1,7 @@
 import { apiClient } from "./api";
+import { khataKey } from "./khata-api";
+
+const notebookOptions = (signal?: AbortSignal) => ({ signal, headers: khataKey() ? { "X-Khata-Key": khataKey() } : {} });
 
 /**
  * Goals, and the one request the Earn screen opens with.
@@ -9,7 +12,7 @@ import { apiClient } from "./api";
  */
 
 const get = <T>(url: string, signal?: AbortSignal) =>
-  apiClient.get<T>(url, { signal }).then((r) => r.data);
+  apiClient.get<T>(url, url.startsWith("/me/money") ? notebookOptions(signal) : { signal }).then((r) => r.data);
 
 export interface Goal {
   id: string;
@@ -111,6 +114,10 @@ export interface Commitment {
   tint: string;
   ink: string;
   paid: boolean;
+  payment_entry_id?: string;
+  paid_on?: string;
+  recorded_minor?: number | null;
+  legacy_paid?: boolean;
 }
 
 export interface Incoming {
@@ -141,15 +148,15 @@ export const apiBudget = (s?: AbortSignal) => get<Budget>("/me/money", s);
 export const apiAddCommitment = (body: {
   what: string; minor: number; due?: string | null; if_missed?: string;
   weight?: Weight; icon?: string; tint?: string; ink?: string;
-}) => apiClient.post<Commitment>("/me/money/commitments", body).then((r) => r.data);
+}) => apiClient.post<Commitment>("/me/money/commitments", body, notebookOptions()).then((r) => r.data);
 
 export const apiEditCommitment = (id: string, body: Partial<{
   what: string; minor: number; due: string | null; if_missed: string;
   weight: Weight; paid: boolean;
-}>) => apiClient.patch<Commitment>(`/me/money/commitments/${id}`, body).then((r) => r.data);
+}>) => apiClient.patch<Commitment>(`/me/money/commitments/${id}`, body, notebookOptions()).then((r) => r.data);
 
 export const apiDeleteCommitment = (id: string) =>
-  apiClient.delete(`/me/money/commitments/${id}`).then((r) => r.data);
+  apiClient.delete(`/me/money/commitments/${id}`, notebookOptions()).then((r) => r.data);
 
 export const WEIGHT_LABEL: Record<Weight, string> = {
   "cannot-wait": "Cannot wait",
@@ -163,3 +170,12 @@ export const WEIGHT_LOOK: Record<Weight, { tint: string; ink: string }> = {
   "should-pay": { tint: "--ux-tint-amber", ink: "--ux-amber-ink" },
   "can-move": { tint: "--ux-surface-2", ink: "--ux-muted" },
 };
+
+
+/** Planned bills and actual expenses are separate until a payment is recorded. */
+export const apiCommitments = (signal?: AbortSignal) =>
+  apiClient.get<Commitment[]>("/me/money/commitments", notebookOptions(signal)).then((r) => r.data);
+export const apiRecordBillPayment = (id: string, on: string) =>
+  apiClient.post(`/me/money/commitments/${id}/payment`, { on }, notebookOptions()).then((r) => r.data);
+export const apiUndoBillPayment = (id: string) =>
+  apiClient.delete(`/me/money/commitments/${id}/payment`, notebookOptions()).then((r) => r.data);

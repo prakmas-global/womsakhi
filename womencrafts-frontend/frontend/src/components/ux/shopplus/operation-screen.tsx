@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { FormEvent, useCallback, useState } from "react";
 
 import Input, { Textarea } from "@/design-system/primitives/Input";
@@ -119,7 +120,10 @@ export function OperationScreen({ config }: { config: OperationScreenConfig }) {
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className={EYEBROW}>{config.eyebrow}</p>
-            <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]" style={{ color: v("--ux-ink") }}>{config.title}</h1>
+            <div className="mt-2 flex min-w-0 items-center gap-3">
+              <PlaceMark size={44} />
+              <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0" style={{ color: v("--ux-ink") }}>{config.title}</h1>
+            </div>
             <p className="mt-2 max-w-[62ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>{config.lede}</p>
           </div>
           <Btn icon={open ? "X" : "Plus"} onClick={() => setOpen((x) => !x)}>{open ? "Close" : config.createLabel}</Btn>

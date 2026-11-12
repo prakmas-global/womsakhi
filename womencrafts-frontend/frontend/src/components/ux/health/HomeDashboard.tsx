@@ -1,5 +1,6 @@
 "use client";
 
+import { SectionPictures } from "@/components/ux/nav/Hub";
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -468,6 +469,14 @@ export function HomeDashboard() {
             </section>
           )}
 
+          {/* The rest of Health & Wellness as pictures in its colour. The cards
+              above are this section's own picture grid (with a stat and a
+              one-tap log each), so what they already show is left out here. */}
+          <SectionPictures id="wellness" title="More in Health & Wellness" className=""
+                           exclude={hidden("banner") ? [] : cards.map((c) => c.href)} />
+
+          <Cols
+            main={<>
               {!hidden("tips") && (
                 <section className={css.tip} aria-label="Tip of the day">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -1,5 +1,7 @@
 "use client";
 
+import type { InputHTMLAttributes } from "react";
+
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form";
 
 import Input, { Textarea } from "../primitives/Input";
@@ -59,6 +61,7 @@ function TextField({
   placeholder,
   type = "text",
   className,
+  autoComplete, inputMode, maxLength, min, max, step, disabled,
 }: {
   label?: string;
   icon?: React.ElementType;
@@ -67,6 +70,9 @@ function TextField({
   placeholder?: string;
   type?: string;
   className?: string;
+  autoComplete?: string;
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  maxLength?: number; min?: number | string; max?: number | string; step?: number | string; disabled?: boolean;
 }) {
   const field = useFieldContext<string>();
   return (
@@ -76,6 +82,7 @@ function TextField({
       required={required}
       hint={hint}
       type={type}
+      autoComplete={autoComplete} inputMode={inputMode} maxLength={maxLength} min={min} max={max} step={step} disabled={disabled}
       className={className}
       placeholder={placeholder}
       name={field.name}
@@ -127,6 +134,7 @@ function SelectField({
   options,
   placeholder,
   className,
+  hint, disabled,
 }: {
   label?: string;
   icon?: React.ElementType;
@@ -134,6 +142,7 @@ function SelectField({
   options: (string | { value: string; label: string })[];
   placeholder?: string;
   className?: string;
+  hint?: string; disabled?: boolean;
 }) {
   const field = useFieldContext<string>();
   return (
@@ -144,6 +153,8 @@ function SelectField({
       options={options}
       placeholder={placeholder}
       className={className}
+      name={field.name} hint={hint} disabled={disabled}
+      onBlur={field.handleBlur} error={useFieldError()}
       value={field.state.value ?? ""}
       onChange={(e) => field.handleChange(e.target.value)}
     />

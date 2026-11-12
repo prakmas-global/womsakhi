@@ -56,7 +56,9 @@ export default async function OpenShopPage({
   let shop: PublicShop | null = null;
   try {
     const res = await fetch(`${apiBase()}/public/shop/${encodeURIComponent(handle)}`, {
-      next: { revalidate: 60 },
+      // The API caches public shops and invalidates that cache after a store edit.
+      // A second Next cache would keep a saved cover or gallery stale.
+      cache: "no-store",
       signal: AbortSignal.timeout(6000),
     });
     if (res.ok) shop = (await res.json()) as PublicShop;

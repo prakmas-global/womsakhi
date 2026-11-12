@@ -118,6 +118,7 @@ async def raise_intent_for_occurrence(occ: dict) -> str | None:
         bucket=f"{occ['_id']}:{occ.get('snooze_count', 0)}",
         payload={**(rule.get("payload") or {}),
                  "series": rule.get("title_key", ""),
+                 "snooze_count": occ.get("snooze_count", 0),
                  "definition_id": occ["definition_id"]},
         occurrence_id=str(occ["_id"]),
         domain_module=rule.get("domain", {}).get("module", ""))
@@ -125,7 +126,32 @@ async def raise_intent_for_occurrence(occ: dict) -> str | None:
 
 # ── 2. deciding ─────────────────────────────────────────────────────────────
 
+async def _occurrence_current(intent: dict) -> bool:
+    """Held messages and retries must respect edits, pause, stop and snooze."""
+    if not intent.get("occurrence_id"):
+        return True
+    occ = await _db()[OccurrenceModel.collection_name].find_one({"_id": _oid(intent["occurrence_id"])})
+    if not occ or occ.get("state") != OccurrenceModel.STATE_DUE:
+        return False
+    if occ.get("snooze_count", 0) != (intent.get("payload") or {}).get("snooze_count", 0):
+        return False
+    rule = await _db()[ReminderModel.collection_name].find_one({"_id": _oid(occ["definition_id"])})
+    if not rule or rule.get("state") != ReminderModel.STATE_SCHEDULED or rule.get("version", 1) != occ.get("schedule_version", 1):
+        return False
+    interval = (rule.get("schedule") or {}).get("interval_minutes", 0)
+    if interval:
+        due = occ["due_at"].replace(tzinfo=timezone.utc) if occ["due_at"].tzinfo is None else occ["due_at"]
+        if due + timedelta(minutes=interval) <= datetime.now(timezone.utc):
+            return False  # an old water break must not arrive alongside the next one
+    return True
+
+
 async def _decide_and_act(intent_id: str, intent: dict) -> None:
+    if not await _occurrence_current(intent):
+        await _db()[IntentModel.collection_name].update_one({"_id": _oid(intent_id)}, {"$set": {
+            "state": IntentModel.STATE_SUPPRESSED, "held_reason": "stale_reminder",
+            "updated_at": datetime.now(timezone.utc)}})
+        return
     verdict = await policy.evaluate(intent)
     await policy.record(intent_id, intent["user_id"], verdict)
     now = datetime.now(timezone.utc)
@@ -161,6 +187,10 @@ async def dispatch(intent_id: str, intent: dict, channels: list[str]) -> int:
     left no trace.
     """
     from app.engines.channels import send   # late: adapters import settings
+
+    from app.core.config import settings
+    if settings.ENGINES_LOCAL_WORKER and not settings.is_production:
+        channels = [channel for channel in channels if channel in ("inapp", "push")]
 
     sent = 0
     for channel in channels:
@@ -305,7 +335,7 @@ async def retry_failed() -> int:
             continue
         # The state is rechecked here, not just at raise time: an order
         # cancelled during the backoff must not still be chased.
-        if intent.get("state") in (IntentModel.STATE_SUPPRESSED,
+        if not await _occurrence_current(intent) or intent.get("state") in (IntentModel.STATE_SUPPRESSED,
                                    IntentModel.STATE_EXPIRED):
             await _db()[DeliveryModel.collection_name].update_one(
                 {"_id": row["_id"]},
@@ -363,7 +393,7 @@ async def write_inbox(intent: dict, *, title: str, desc: str) -> None:
         body=desc,
         ntype=_inbox_type(intent.get("category", "reminders")),
         # Tapping it goes to the list she can act on, not to a dead end.
-        href="/app/reminders",
+        href="/app/health/reminders/water" if intent.get("template_key") == "rem.preset.water" else "/app/reminders",
     )
     doc.update({
         "intent_id": str(intent.get("_id", "")),
@@ -404,25 +434,31 @@ async def record_action(*, occurrence_id: str, user_id: str, action: str,
     from app.engines import reminders as rem
     from app.models.notify import ReceiptModel
 
-    try:
-        await _db()[ReceiptModel.collection_name].insert_one(
-            ReceiptModel.create_document(occurrence_id=occurrence_id,
-                                         user_id=user_id, action=action,
-                                         via=via, detail=detail))
-    except DuplicateKeyError:
-        return True     # already recorded; the second tap is not an error
-
-    if action == ReceiptModel.DONE:
-        return await rem.complete(occurrence_id, user_id=user_id, via=via)
-    if action == ReceiptModel.LATER:
-        return await rem.snooze(occurrence_id, user_id=user_id,
-                                minutes=int((detail or {}).get("minutes", 60)))
-    if action == ReceiptModel.SKIP:
-        return await rem.complete(occurrence_id, user_id=user_id, via=via)
+    occ = await _db()[OccurrenceModel.collection_name].find_one(
+        {"_id": _oid(occurrence_id), "user_id": user_id})
+    if not occ or action not in (ReceiptModel.DONE, ReceiptModel.LATER, ReceiptModel.SKIP, ReceiptModel.STOP):
+        return False
     if action == ReceiptModel.STOP:
-        occ = await _db()[OccurrenceModel.collection_name].find_one(
-            {"_id": _oid(occurrence_id), "user_id": user_id})
-        if not occ:
+        ok = await rem.stop_series(occ["definition_id"], user_id=user_id)
+    elif occ.get("state") == OccurrenceModel.STATE_COMPLETED:
+        return action in (ReceiptModel.DONE, ReceiptModel.SKIP)
+    elif occ.get("state") in (OccurrenceModel.STATE_CANCELLED, OccurrenceModel.STATE_EXPIRED):
+        return False
+    else:
+        rule = await _db()[ReminderModel.collection_name].find_one({"_id": _oid(occ["definition_id"])})
+        if not rule or rule.get("state") != ReminderModel.STATE_SCHEDULED or rule.get("version", 1) != occ.get("schedule_version", 1):
             return False
-        return await rem.stop_series(occ["definition_id"], user_id=user_id)
-    return True
+    if action == ReceiptModel.LATER:
+        if occ.get("state") == OccurrenceModel.STATE_SNOOZED:
+            return True  # retrying the same tap must not postpone it again
+        ok = await rem.snooze(occurrence_id, user_id=user_id,
+                              minutes=int((detail or {}).get("minutes", 60)))
+    elif action in (ReceiptModel.DONE, ReceiptModel.SKIP):
+        ok = await rem.complete(occurrence_id, user_id=user_id, via=via)
+    if ok:
+        # One latest receipt per occurrence, matching the existing unique index.
+        # A later Done must still work after she previously chose Later.
+        await _db()[ReceiptModel.collection_name].update_one(
+            {"occurrence_id": occurrence_id}, {"$set": ReceiptModel.create_document(
+                occurrence_id=occurrence_id, user_id=user_id, action=action, via=via, detail=detail)}, upsert=True)
+    return ok

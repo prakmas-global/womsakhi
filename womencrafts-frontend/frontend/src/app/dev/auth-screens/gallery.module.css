@@ -19,7 +19,7 @@
   max-width: 1400px; margin: 0 auto 28px; padding-bottom: 22px; border-bottom: 1px solid var(--line);
 }
 .eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--berry); }
-.title { margin: 0; font-family: var(--gal-serif), Georgia, serif; font-size: clamp(30px, 5vw, 44px); font-weight: 700; color: var(--plum); line-height: 1.1; }
+.title { margin: 0; font-family: var(--wsa-sans), ui-sans-serif, system-ui, sans-serif; font-size: clamp(30px, 5vw, 44px); font-weight: 700; color: var(--plum); line-height: 1.1; }
 .sub { margin: 8px 0 0; font-size: 15px; color: var(--muted); max-width: 60ch; }
 .sub code, .groupHead code, .meta small { font-family: ui-monospace, Menlo, monospace; }
 .sub code { font-size: 13px; background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; }
@@ -35,7 +35,7 @@
 
 .group { max-width: 1400px; margin: 0 auto 40px; }
 .groupHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 14px; margin-bottom: 4px; }
-.groupHead h2 { margin: 0; font-family: var(--gal-serif), Georgia, serif; font-size: 24px; font-weight: 700; color: var(--plum); }
+.groupHead h2 { margin: 0; font-family: var(--wsa-sans), ui-sans-serif, system-ui, sans-serif; font-size: 24px; font-weight: 700; color: var(--plum); }
 .groupHead code { font-size: 13px; color: var(--muted); }
 .note { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
 

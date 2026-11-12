@@ -109,7 +109,7 @@ function Frame({ size, children, label, className = "", style }: {
 
 const btnPrimary = "ux-press ux-btn-g inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 font-bold";
 const btnQuiet = "ux-press ux-hov inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 font-semibold";
-const primaryStyle = { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" };
+const primaryStyle = { background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" };
 const quietStyle = { background: "var(--ux-surface-2)", border: "1px solid var(--ux-line)", color: "var(--ux-ink)" };
 
 /* ── First steps ──────────────────────────────────────────────────────── */

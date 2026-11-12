@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -120,10 +121,13 @@ export default function ShowingPage() {
 
         <header>
           <p className={EYEBROW}>{tr("vaultShowing.showingSomeone")}</p>
-          <h1 className="ux-screen-title mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>
-            &ldquo;Here, look&rdquo;
-          </h1>
+          <div className="mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>
+              &ldquo;Here, look&rdquo;
+            </h1>
+          </div>
           <p className="mt-1.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: v("--ux-muted") }}>
             Sometimes someone at home wants to see what you are doing on your phone. This is a screen
             you can hand over. You choose what is on it, and what is on it is true — you are not
@@ -141,7 +145,7 @@ export default function ShowingPage() {
           </Card>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-5">
+        <div className="ux-split-lg grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-5">
 
           {/* Left: the switches */}
           <div className="flex flex-col gap-4">

@@ -3,7 +3,8 @@
 import { memo, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
-import { artFor } from "@/components/ux/media/art";
+import { listingPicture } from "@/components/ux/shop/categories";
+import type { ShopCategory } from "@/lib/shop-categories-api";
 
 import type { Listing, ShopOrder, ShopSummary } from "@/lib/shop-api";
 import { validateImage } from "@/lib/uploads-api";
@@ -114,7 +115,7 @@ export const OrderCard = memo(function OrderCard({ o, onAdvance, busy }: {
         {o.next_state && (
           <button type="button" onClick={() => onAdvance(o)} disabled={busy}
                   className="ux-press flex min-h-[38px] shrink-0 items-center rounded-[12px] px-4 text-xs font-bold disabled:opacity-60 max-lg:min-h-[44px] max-lg:w-full max-lg:justify-center max-lg:text-[15px]"
-                  style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                  style={{ background: "var(--ux-action-gradient)",
                            color: "var(--ux-on-brand)" }}>
             {busy ? "…" : LABEL[o.state] ?? `Mark ${o.next_state.toLowerCase()}`}
           </button>
@@ -162,9 +163,11 @@ const LABEL: Record<string, string> = {
 /** Same as `OrderCard`: the listing comes back out, so the parent's four
  *  handlers can be stable and the memo can actually hit. */
 export const ListingCard = memo(function ListingCard({
-  l, onPhoto, onStock, onPause, onShare, onDelete, busy,
+  l, onPhoto, onStock, onPause, onShare, onDelete, busy, categories,
 }: {
   l: Listing;
+  /** The shop category tree, so a listing without a photo shows its sub-category's picture. */
+  categories?: ShopCategory[] | null;
   onPhoto: (l: Listing, file: File) => void;
   onStock: (l: Listing, next: number) => void;
   onPause: (l: Listing) => void;
@@ -224,7 +227,7 @@ export const ListingCard = memo(function ListingCard({
                 her own on top of it. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img loading="lazy" decoding="async" alt=""
-                 src={artFor([l.title, l.category, l.kind], l.kind === "service" ? "service" : "product", null, l.id)}
+                 src={listingPicture({ ...l, photo: "" }, categories)}
                  className="absolute inset-0 h-full w-full object-cover opacity-60" />
             <button type="button" data-over={over}
                     onClick={() => file.current?.click()}
@@ -394,7 +397,7 @@ export const Storefront = memo(function Storefront(
                 </p>
               </div>
               <span className="ms-auto self-center shrink-0 rounded-[8px] px-3 py-2 text-2xs font-extrabold"
-                    style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                    style={{ background: "var(--ux-action-gradient)",
                              color: "var(--ux-on-brand)" }}>
                 {l.kind === "service" ? "Book" : "Buy"}
               </span>

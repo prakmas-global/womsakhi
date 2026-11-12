@@ -10,6 +10,8 @@ import {
   Badge, Card, EmptyState, ErrorState, Input, Menu, MenuItem, Modal, NoResults, Select, SkeletonTable,
   StatCard, Switch, useConfirm, useToast,
 } from "@/design-system";
+import { PicturePicker, PictureThumb } from "@/components/admin/PicturePicker";
+import { categoryArt, skillArt } from "@/components/ux/work/skill-art";
 import { memberError } from "@/lib/member-api";
 import {
   apiAdminAddWorkCategory, apiAdminAddWorkSkill, apiAdminEditWorkCategory, apiAdminEditWorkSkill,
@@ -45,6 +47,8 @@ export default function WorkSkillsPage() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [name, setName] = useState("");
   const [popular, setPopular] = useState(false);
+  /** An upload, a library picture, or "" for the automatic one. */
+  const [image, setImage] = useState("");
   const [moveTo, setMoveTo] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -89,6 +93,7 @@ export default function WorkSkillsPage() {
 
   const open = (d: Dialog) => {
     setName(d?.kind === "rename-category" ? d.cat.name : d?.kind === "rename-skill" ? d.skill.name : "");
+    setImage(d?.kind === "rename-category" ? d.cat.image ?? "" : d?.kind === "rename-skill" ? d.skill.image ?? "" : "");
     setPopular(false);
     setMoveTo("");
     setDialog(d);
@@ -107,16 +112,16 @@ export default function WorkSkillsPage() {
     if (dialog.kind === "add-category") {
       setBusy(true);
       try {
-        const made = await apiAdminAddWorkCategory(n);
+        const made = await apiAdminAddWorkCategory(n, image);
         toast.success("Category added"); setDialog(null); await load(); setSelected(made.key);
       } catch (e) { toast.error("Could not add the category", { description: memberError(e) }); }
       finally { setBusy(false); }
     } else if (dialog.kind === "rename-category") {
-      await run(() => apiAdminEditWorkCategory(dialog.cat.key, { name: n }), "Category renamed", "Could not rename the category");
+      await run(() => apiAdminEditWorkCategory(dialog.cat.key, { name: n, image }), "Category saved", "Could not save the category");
     } else if (dialog.kind === "add-skill" && current) {
-      await run(() => apiAdminAddWorkSkill(current.key, n, popular), "Skill added", "Could not add the skill");
+      await run(() => apiAdminAddWorkSkill(current.key, n, popular, image), "Skill added", "Could not add the skill");
     } else if (dialog.kind === "rename-skill") {
-      await run(() => apiAdminEditWorkSkill(dialog.skill.key, { name: n }), "Skill renamed", "Could not rename the skill");
+      await run(() => apiAdminEditWorkSkill(dialog.skill.key, { name: n, image }), "Skill saved", "Could not save the skill");
     }
   };
 
@@ -165,9 +170,9 @@ export default function WorkSkillsPage() {
 
   const dialogTitle = !dialog ? "" : {
     "add-category": "Add a category",
-    "rename-category": "Rename category",
+    "rename-category": "Edit category",
     "add-skill": `Add a skill to ${current?.name ?? ""}`,
-    "rename-skill": "Rename skill",
+    "rename-skill": "Edit skill",
     "move-skill": "Move to another category",
   }[dialog.kind];
 
@@ -216,13 +221,16 @@ export default function WorkSkillsPage() {
                   return (
                     <li key={c.key}
                         className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 ${on ? "border-violet-300 bg-violet-tint" : "border-line"} ${c.active ? "" : "opacity-60"}`}>
-                      <button className="min-w-0 flex-1 text-left" onClick={() => setSelected(c.key)} aria-pressed={on}>
+                      <button className="flex min-w-0 flex-1 items-center gap-2.5 text-left" onClick={() => setSelected(c.key)} aria-pressed={on}>
+                        <PictureThumb src={categoryArt(c)} size="sm" dim={!c.active} />
+                        <span className="min-w-0">
                         <p className="truncate text-sm font-semibold text-ink">{c.name}</p>
                         <p className="text-xs text-ink-subtle">{live} skill{live === 1 ? "" : "s"} · {c.members} listed</p>
+                        </span>
                       </button>
                       {!c.active && <Badge tone="slate">Retired</Badge>}
                       <Menu trigger={<span className="btn btn-sm btn-ghost" aria-label={`Actions for ${c.name}`}><MoreHorizontal className="h-4 w-4" /></span>}>
-                        <MenuItem icon={Pencil} onClick={() => open({ kind: "rename-category", cat: c })}>Rename</MenuItem>
+                        <MenuItem icon={Pencil} onClick={() => open({ kind: "rename-category", cat: c })}>Edit name &amp; picture</MenuItem>
                         {i > 0 && <MenuItem icon={ArrowUp} onClick={() => void moveCategory(c, -1)}>Move up</MenuItem>}
                         {i < shownCats.length - 1 && <MenuItem icon={ArrowDown} onClick={() => void moveCategory(c, 1)}>Move down</MenuItem>}
                         {c.active
@@ -239,11 +247,14 @@ export default function WorkSkillsPage() {
                 {current && (
                   <>
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                      <div>
+                      <div className="flex items-center gap-3">
+                        <PictureThumb src={categoryArt(current)} dim={!current.active} />
+                        <div>
                         <h2 className="text-base font-bold text-ink">{current.name}</h2>
                         <p className="text-xs text-ink-subtle">
                           {current.active ? "Offered to members" : "Retired — not offered"} · {current.skills.length} skill{current.skills.length === 1 ? "" : "s"}
                         </p>
+                        </div>
                       </div>
                       <button className="btn btn-outline btn-sm" onClick={() => open({ kind: "add-skill" })}><Plus className="h-4 w-4" /> Add skill</button>
                     </div>
@@ -265,8 +276,13 @@ export default function WorkSkillsPage() {
                             {skills.map((s) => (
                               <tr key={s.key} className={`border-b border-line last:border-0 ${s.active ? "" : "opacity-60"}`}>
                                 <td className="px-3 py-3">
-                                  <p className="text-sm font-semibold text-ink">{s.name}</p>
-                                  <p className="text-2xs text-ink-subtle">{s.key}</p>
+                                  <div className="flex items-center gap-2.5">
+                                    <PictureThumb src={skillArt(s, current)} size="sm" dim={!s.active} />
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-semibold text-ink">{s.name}</p>
+                                      <p className="text-2xs text-ink-subtle">{s.key}</p>
+                                    </div>
+                                  </div>
                                 </td>
                                 <td className="px-3 py-3">
                                   <button className="btn btn-sm btn-ghost" disabled={busy}
@@ -279,7 +295,7 @@ export default function WorkSkillsPage() {
                                 <td className="px-3 py-3"><Badge tone={s.active ? "emerald" : "slate"}>{s.active ? "Active" : "Retired"}</Badge></td>
                                 <td className="px-3 py-3 text-right">
                                   <Menu trigger={<span className="btn btn-sm btn-ghost" aria-label={`Actions for ${s.name}`}><MoreHorizontal className="h-4 w-4" /></span>}>
-                                    <MenuItem icon={Pencil} onClick={() => open({ kind: "rename-skill", skill: s })}>Rename</MenuItem>
+                                    <MenuItem icon={Pencil} onClick={() => open({ kind: "rename-skill", skill: s })}>Edit name &amp; picture</MenuItem>
                                     <MenuItem icon={FolderInput} onClick={() => open({ kind: "move-skill", skill: s })}>Move to another category</MenuItem>
                                     <MenuItem icon={s.popular ? StarOff : Star} onClick={() => void togglePopular(s)}>{s.popular ? "Unmark popular" : "Mark popular"}</MenuItem>
                                     {s.active
@@ -316,6 +332,16 @@ export default function WorkSkillsPage() {
                      placeholder={dialog?.kind === "add-category" || dialog?.kind === "rename-category" ? "Tailoring & fashion" : "Blouse stitching"} />
               {dialog?.kind === "add-skill" && (
                 <Switch label="Popular" description="Shown first, before she searches." checked={popular} onChange={setPopular} />
+              )}
+              {dialog && (
+                <PicturePicker label="Picture" value={image} onChange={setImage}
+                               hint={dialog.kind === "add-category" || dialog.kind === "rename-category"
+                                 ? "Shown on the kind-of-work tiles in My work profile and Find people."
+                                 : "Shown on her skill card and on the cards people hiring see. Automatic uses the category's picture first."}
+                               auto={dialog.kind === "add-category" || dialog.kind === "rename-category"
+                                 ? categoryArt({ key: dialog.kind === "rename-category" ? dialog.cat.key : name, name,
+                                                 skills: dialog.kind === "rename-category" ? dialog.cat.skills : [] })
+                                 : skillArt({ key: dialog.kind === "rename-skill" ? dialog.skill.key : name, name }, current)} />
               )}
               {(dialog?.kind === "rename-category" || dialog?.kind === "rename-skill") && (
                 <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">The key stays the same, so every member who listed it keeps it under the new name.</p>

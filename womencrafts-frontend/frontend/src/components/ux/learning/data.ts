@@ -9,6 +9,8 @@
 export interface Course {
   id: string; title: string; lessons: number; level: string;
   rating: string; count: string; pct?: number; thumb: string;
+  /** The teacher chose this picture — screens must not swap in the category's. */
+  ownCover?: boolean;
   tag?: "Bestseller" | "New" | "Popular" | "Trending";
   category: string; hours?: string; author?: string;
   /** Who teaches it: "WomSakhi team" or the member's name. */

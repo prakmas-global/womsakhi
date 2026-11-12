@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
-
 import { HomeShell } from "@/components/ux/home/HomeShell";
-import { Card, I, IconTile, v } from "@/components/ux/kit";
+import { v } from "@/components/ux/kit";
 import { useNavLabel } from "@/components/ux/use-nav-label";
-import { SECTIONS, type NavNode, type Section } from "@/components/ux/nav-tree";
-import { ListGroup, ListRow } from "@/components/ux/mobile/ListRow";
+import { SECTIONS, type Section } from "@/components/ux/nav-tree";
+import { PlaceBadge, PlaceTile } from "./Place";
 
 /**
  * A section's landing page, which IS its navigation.
@@ -63,7 +61,7 @@ export function Hub({ id }: { id: string }) {
         others are unchanged until there is.
       */}
       {art ? (
-        <section className="ux-sq relative isolate mb-4 overflow-hidden rounded-[18px]"
+        <section data-banner className="ux-sq relative isolate mb-4 overflow-hidden rounded-[18px]"
                  style={{ border: `1px solid ${v("--ux-band-edge")}`,
                           background: v("--ux-band-learn") }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -73,7 +71,7 @@ export function Hub({ id }: { id: string }) {
                style={{ maskImage: "linear-gradient(to right, transparent 0%, #000 16%)",
                         WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 16%)" }} />
           <div className="relative flex items-start gap-3.5 p-5 sm:p-7 lg:max-w-[56%] lg:py-8">
-            <IconTile icon={section.icon} tint="--ux-brand-tint-2" ink="--ux-brand" size={44} radius={13} />
+            <PlaceBadge node={section} size={48} />
             <div className="min-w-0">
               <h1 className="text-[clamp(1.6rem,2.6vw,2.1rem)] font-extrabold leading-[1.1] tracking-[-0.03em]"
                   style={{ color: v("--ux-band-ink") }}>
@@ -92,11 +90,9 @@ export function Hub({ id }: { id: string }) {
         </section>
       ) : (
         <header className="mb-5 flex items-start gap-3.5">
-          {/* The tile is decoration beside a 30px title on a 390px screen, and
-              it costs the title 60px of the width it needs. It stays from `lg`. */}
-          <div className="hidden lg:block">
-            <IconTile icon={section.icon} tint="--ux-brand-tint-2" ink="--ux-brand" size={46} radius={14} />
-          </div>
+          {/* The section's picture in its colour: the first thing that says
+              where she is, before a word of the title is read. */}
+          <PlaceBadge node={section} size={52} />
           <div className="min-w-0">
             <h1 className="ux-screen-title text-3xl font-extrabold leading-tight tracking-[-0.025em]"
                 style={{ color: v("--ux-ink") }}>
@@ -113,79 +109,74 @@ export function Hub({ id }: { id: string }) {
       )}
 
         {/*
-          ── The phone ───────────────────────────────────────────────────────
-          The grid below is `auto-fit, minmax(268px, 1fr)`, which at 390px is one
-          column — and one column of bordered cards with a gutter between every
-          one of them is a web list, not a phone screen. Worse, each card's
-          second level was a wrap of 11px pills: under the 12px floor, and on
-          the Circle hub they wrapped onto three rows.
+          ── Pictures first ──────────────────────────────────────────────────
+          Every place is a picture tile with its name under it: a photo where
+          one plainly shows the thing, its icon on the module's colour where
+          none does (components/ux/nav/places.ts). A woman who cannot read the
+          names finds her way by the pictures and the colour; one who can
+          reads them as before.
 
-          As grouped lists the destination and everything under it are one card
-          with hairlines inside, every row 52px and every label 15px. It is the
-          same two levels the comment above argues for — just drawn the way a
-          phone draws them.
+          The section's own places come first as big tiles, two to a row on a
+          phone. The screens under each follow as smaller tiles in a group of
+          their own — still two levels, never a third to drill through.
         */}
-        <div className="space-y-5 lg:hidden">
-          {kids.map((c) => <HubList key={c.id} node={c} />)}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          {kids.map((c, i) => (
+            <div key={c.id} className="ux-rise min-w-0" style={{ ["--i" as string]: Math.min(i, 12) }}>
+              <PlaceTile node={c} />
+            </div>
+          ))}
         </div>
 
-        <div className="hidden items-start gap-3.5 lg:grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(268px, 1fr))" }}>
-          {kids.map((c) => <HubCard key={c.id} node={c} />)}
-        </div>
+        {kids.filter((c) => (c.children ?? []).some((k) => !k.unlisted)).map((c) => (
+          <section key={c.id} className="mt-7" aria-labelledby={`hub-${c.id}`}>
+            <h2 id={`hub-${c.id}`} className="mb-3 flex items-center gap-2.5 text-base font-bold" style={{ color: v("--ux-ink") }}>
+              <PlaceBadge node={c} size={30} />
+              {nav.label(c)}
+            </h2>
+            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 xl:grid-cols-6">
+              {(c.children ?? []).filter((k) => !k.unlisted).map((k) => (
+                <PlaceTile key={k.id} node={k} size="sm" />
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </HomeShell>
   );
 }
 
-/** One destination and the screens under it, as a grouped list. */
-function HubList({ node }: { node: NavNode }) {
+/**
+ * A section's places as pictures, for the top of its dashboard.
+ *
+ * The dashboards (Learn, Work, Earn, Community, Health, Help, You) are pages
+ * of their own rather than `Hub`, so they never showed the section's map as
+ * pictures — only the rail did, as words. This is that map: every place in
+ * the section as a tile, in the section's colour, three to a row on a phone.
+ */
+export function SectionPictures({ id, title, className = "mb-6", exclude = [] }: {
+  id: string; title?: string; className?: string;
+  /** Hrefs the page already shows as pictures of its own (Health's bento), left out here. */
+  exclude?: string[];
+}) {
   const nav = useNavLabel();
-  const kids = (node.children ?? []).filter((c) => !c.unlisted);
+  const section = SECTIONS.find((s) => s.id === id);
+  if (!section) return null;
+  const kids = (section.children ?? []).filter((c) => !c.unlisted && !exclude.includes(c.href));
+  if (!kids.length) return null;
   return (
-    <ListGroup>
-      <ListRow href={node.href} icon={node.icon} title={nav.label(node)} subtitle={nav.note(node)} />
-      {kids.map((k) => (
-        <ListRow key={k.id} href={k.href} icon={k.icon} title={nav.label(k)} subtitle={nav.note(k)} />
-      ))}
-    </ListGroup>
-  );
-}
-
-function HubCard({ node }: { node: NavNode }) {
-  const nav = useNavLabel();
-  const kids = (node.children ?? []).filter((c) => !c.unlisted);
-  return (
-    <Card pad={18} className="flex flex-col">
-      <Link href={node.href} className="ux-sq flex items-start gap-3">
-        <IconTile icon={node.icon} tint="--ux-brand-tint-2" ink="--ux-brand" size={42} radius={12} />
-        <span className="min-w-0 flex-1">
-          <span className="block text-xsm font-bold" style={{ color: v("--ux-ink") }}>
-            {nav.label(node)}
-          </span>
-          {nav.note(node) && (
-            <span className="mt-1 block text-xs leading-snug" style={{ color: v("--ux-muted") }}>
-              {nav.note(node)}
-            </span>
-          )}
-        </span>
-        <I name="ChevronRight" className="mt-2.5 h-[15px] w-[15px] shrink-0" style={{ color: v("--ux-faint") }} />
-      </Link>
-
-      {kids.length > 0 && (
-        /* Listed here rather than made into a third level to drill through:
-           a nested menu is where a woman mistakes its back for the phone's. */
-        <ul className="mt-3 flex flex-wrap gap-1.5 border-t pt-3" style={{ borderColor: v("--ux-line") }}>
-          {kids.map((k) => (
-            <li key={k.id}>
-              <Link href={k.href}
-                    className="ux-press ux-sq flex min-h-[32px] items-center rounded-full px-2.5 text-2xs font-semibold"
-                    style={{ background: v("--ux-surface-2"), color: v("--ux-ink-2") }}>
-                {nav.label(k)}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
+    <section aria-labelledby={`places-${id}`} className={className}>
+      <h2 id={`places-${id}`} className="mb-3 flex items-center gap-2.5 text-base font-bold" style={{ color: v("--ux-ink") }}>
+        <PlaceBadge node={section} size={30} />
+        {title ?? `Everything in ${nav.label(section)}`}
+      </h2>
+      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 xl:grid-cols-6">
+        {kids.map((c, i) => (
+          <div key={c.id} className="ux-rise min-w-0" style={{ ["--i" as string]: Math.min(i, 12) }}>
+            <PlaceTile node={c} size="sm" />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

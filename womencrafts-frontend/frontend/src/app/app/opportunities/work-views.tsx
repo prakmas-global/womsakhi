@@ -7,7 +7,7 @@ import { Btn, Card, IconTile, v } from "@/components/ux/kit";
 import { payLabel, type Job } from "@/components/ux/work/data";
 import { matchFor } from "@/services/job-match";
 import { MediaCard, Fact } from "@/components/ux/media/MediaCard";
-import { artFor } from "@/components/ux/media/art";
+import { jobPicture, useWorkTaxonomy } from "@/components/ux/work/pictures";
 import { FitLine, PostedBy } from "@/components/ux/work/parts";
 import { useT } from "@/i18n";
 
@@ -70,6 +70,7 @@ export function JobCard({ job, saved, onSave }: {
   job: Job; saved: boolean; onSave: () => void;
 }) {
   const tr = useT();
+  const workCats = useWorkTaxonomy();
   // Her work-profile skills against this listing's skill keys, from the
   // server. `matchFor` returns pct null when there is nothing to compare,
   // and the fit line and badge are then left out rather than shown as zero.
@@ -79,7 +80,7 @@ export function JobCard({ job, saved, onSave }: {
   return (
     <MediaCard
       href={`/app/opportunities/${job.id}`}
-      image={artFor([job.title, job.skills.join(" "), job.categoryName], "job", undefined, job.id)}
+      image={jobPicture(job, workCats)}
       alt={job.title}
       topLeft={{ text: kind, tone: "light" }}
       topRight={{ text: payLabel(job), tone: "dark" }}

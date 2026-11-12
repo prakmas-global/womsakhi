@@ -37,7 +37,7 @@ const scale = (prefix: string, steps: (string | number)[], usage: string): Token
 export const TOKEN_GROUPS: TokenGroup[] = [
   {
     id: "brand",
-    title: "Brand — magenta",
+    title: "Brand — grape wine",
     description:
       "The primary identity colour. 600 backs every primary button and active nav item; 50/100 are the tinted chip backgrounds.",
     render: "color",
@@ -45,7 +45,7 @@ export const TOKEN_GROUPS: TokenGroup[] = [
   },
   {
     id: "violet",
-    title: "Violet — royal purple",
+    title: "Violet — muted grape",
     description:
       "The secondary accent. Used for secondary buttons, alternate chart series and icon circles that shouldn't compete with brand magenta.",
     render: "color",

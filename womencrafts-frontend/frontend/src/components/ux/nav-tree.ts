@@ -86,6 +86,8 @@ export interface Section extends NavNode {
 export const SECTIONS: Section[] = [
     { tab: true, id: "home", label: "Home", k: "ch.mode.home", icon: "Home", href: "/app", note: "What needs you today",
       children: [
+        { id: "onboarding", label: "Set up your app", icon: "Sparkles", href: "/app/onboarding", unlisted: true },
+        { id: "confirm-phone", label: "Confirm your mobile", icon: "Smartphone", href: "/app/phone", unlisted: true },
         { id: "discover", label: "Chosen for you", k: "ch.discover", icon: "Sparkles", href: "/app/discover", note: "Because of something you did",
           children: [
             { id: "explore", label: "Everything there is", k: "ch.explore", icon: "Telescope", href: "/app/explore", note: "All of it, grouped by what it is for", },
@@ -126,7 +128,7 @@ export const SECTIONS: Section[] = [
         { id: "work-profile", label: "My work profile", icon: "IdCard", href: "/app/work/profile", note: "Your skills, and who can find you", },
         { id: "work-find", label: "Find people to hire", icon: "UserSearch", href: "/app/work/find", note: "By skill — only women who opted in", },
         { id: "work-post", label: "Post a job", icon: "Plus", href: "/app/work/post", note: "Find the right women for your work", },
-        { id: "work-posts", label: "My job posts", icon: "ClipboardList", href: "/app/work/posts", note: "Who applied, and what you decided", },
+        { id: "work-posts", label: "My posts & applicants", icon: "ClipboardList", href: "/app/work/posts", note: "Who applied, and what you decided", },
         { id: "verified", label: "Did they pay her?", k: "ch.verified", icon: "BadgeCheck", href: "/app/verified", note: "Before you take the work", },
         { id: "applications", label: "My applications", k: "ch.applications", icon: "ClipboardList", href: "/app/applications", note: "Where each one stands",
           children: [
@@ -180,21 +182,31 @@ export const SECTIONS: Section[] = [
         { id: "checkout", label: "Paying for an order", k: "ch.checkout", icon: "CreditCard", href: "/app/checkout", note: "What you are buying, and how you pay", unlisted: true, },
           ],
         },
-        { id: "books", label: "Who owes you money", k: "ch.books", icon: "BookOpen", href: "/app/books", note: "And proof of what you earn",
+        // Verified women renting their things to each other (routes/rentals.py).
+        { id: "rent", label: "Rent & borrow", icon: "KeyRound", href: "/app/rent", note: "Rent out what you own, borrow what you need",
           children: [
-            { id: "books-proof", label: "Proof you earn", k: "ch.books.proof", icon: "Receipt", href: "/app/books/proof", note: "A statement a landlord will take", },
-            { id: "books-season", label: "My busy months", k: "ch.books-season", icon: "TrendingUp", href: "/app/books/season", note: "When the money comes", },
+            { id: "rent-mine", label: "My things for rent", icon: "Package", href: "/app/rent/mine", note: "What you rent out, and who asked", },
+            { id: "rent-bookings", label: "My rentals", icon: "CalendarRange", href: "/app/rent/bookings", note: "Every booking, step by step", },
+            { id: "rent-new", label: "Rent something out", icon: "Plus", href: "/app/rent/new", note: "Photos, a price a day, a deposit", unlisted: true, },
           ],
         },
-        { id: "money", label: "My money", k: "ch.money", icon: "PiggyBank", href: "/app/money", note: "Is there enough for what cannot wait",
+        { id: "money", label: "My Money", k: "ch.money", icon: "NotebookPen", href: "/app/money", note: "Received, spent, upcoming bills and notes",
           children: [
-            { id: "payments", label: "What you paid", k: "ch.payments", icon: "Receipt", href: "/app/payments", note: "Every rupee out", },
-          ],
-        },
-        { id: "wallet", label: "My wallet", k: "ch.wallet", icon: "Wallet", href: "/app/wallet", note: "Your balance, and taking it out",
-          children: [
-            { id: "wallet-statement", label: "My statement", k: "ch.wallet-statement", icon: "FileText", href: "/app/wallet/statement", note: "Every entry, printable", },
-            { id: "wallet-withdraw", label: "Take money out", k: "ch.wallet-withdraw", icon: "Landmark", href: "/app/wallet/withdraw", note: "To your bank", },
+            { id: "books", label: "Customer dues", k: "ch.books", icon: "BookOpen", href: "/app/books", note: "Outstanding payments, upcoming work and receipts",
+              children: [
+                { id: "books-proof", label: "Business income summary", k: "ch.books.proof", icon: "Receipt", href: "/app/books/proof", note: "Summary of recorded customer receipts", },
+                { id: "books-season", label: "My busy months", k: "ch.books-season", icon: "TrendingUp", href: "/app/books/season", note: "When the money comes", },
+              ],
+            },
+            { id: "khata", label: "Money notebook", icon: "NotebookPen", href: "/app/khata", unlisted: true },
+            { id: "khata-chits", label: "My chits", icon: "Coins", href: "/app/khata/chits", note: "Your contribution records", },
+            { id: "wallet", label: "Old Wallet link", unlisted: true, icon: "Wallet", href: "/app/wallet", note: "Platform credit balance and activity",
+              children: [
+                { id: "wallet-statement", label: "Old statement link", unlisted: true, icon: "FileText", href: "/app/wallet/statement", note: "Platform credit records and CSV export", },
+                { id: "wallet-withdraw", label: "Bank payouts — future release", k: "ch.wallet-withdraw", icon: "Landmark", href: "/app/wallet/withdraw", note: "Not available in this release", unlisted: true, },
+              ],
+            },
+            { id: "payments", label: "My Payments", k: "ch.payments", icon: "Receipt", href: "/app/payments", note: "Direct UPI payments and recipient confirmation", },
           ],
         },
         { id: "vault", label: "My locker", k: "ch.vault", icon: "Lock", href: "/app/vault", note: "Money kept aside, and quiet",
@@ -207,6 +219,7 @@ export const SECTIONS: Section[] = [
         },
         { id: "haq", label: "What you are owed", k: "ch.haq", icon: "Landmark", href: "/app/haq", note: "Government money in your name",
           children: [
+            { id: "support-fund-legacy", label: "What you are owed", icon: "Landmark", href: "/app/support-fund", unlisted: true },
             { id: "haq-papers", label: "My papers", k: "ch.haq.papers", icon: "FileText", href: "/app/haq/papers", note: "Held once, reused everywhere", },
             { id: "haq-recover", label: "What you can recover", k: "ch.haq.recover", icon: "Undo2", href: "/app/haq/recover", note: "Money you were wrongly removed from", },
           ],
@@ -218,6 +231,7 @@ export const SECTIONS: Section[] = [
        bottom bar keep their place; the old /app/circle home redirects here. */
     { tab: true, id: "circle", label: "Community", k: "ch.mode.circle", icon: "UsersRound", href: "/app/community", note: "Friends, posts and groups",
       children: [
+        { id: "circle-legacy", label: "Community", icon: "UsersRound", href: "/app/circle", unlisted: true },
         { id: "community-friends", label: "Friends", icon: "UserPlus", href: "/app/community/friends", note: "Requests and people you may know",
           children: [
             { id: "community-person", label: "Profile", icon: "User", href: "/app/community/u", note: "A member's page", unlisted: true },
@@ -288,7 +302,9 @@ export const SECTIONS: Section[] = [
         },
         { id: "pregnancy", label: "Pregnancy", icon: "Baby", href: "/app/health/pregnancy", note: "Week by week", },
         { id: "health-records", label: "Health Records", icon: "FileHeart", href: "/app/health/records", note: "Safe in one place", unlisted: true, },
-        { id: "health-reminders", label: "Appointments & Reminders", icon: "CalendarClock", href: "/app/health/reminders", note: "Never miss one", },
+        { id: "health-reminders", label: "Appointments & Reminders", icon: "CalendarClock", href: "/app/health/reminders", note: "Never miss one", children: [
+          { id: "health-water-reminders", label: "Water reminders", icon: "Droplet", href: "/app/health/reminders/water", note: "Water breaks that fit your day" },
+        ] },
         { id: "health-mentors", label: "Mentor Connect", icon: "Users", href: "/app/health/mentors", note: "Women who've been there", },
         { id: "health-doctors", label: "Doctor Consultation", icon: "Stethoscope", href: "/app/health/doctors", note: "Talk to a doctor", },
       ],
@@ -305,6 +321,7 @@ export const SECTIONS: Section[] = [
         { id: "health", label: "Health", k: "ch.health", icon: "HeartPulse", href: "/app/health", note: "What is free, and what is due",
           children: [
             { id: "health-strength", label: "Staying strong", k: "ch.health.strength", icon: "HeartPulse", href: "/app/health/strength", note: "What is free at a government centre", },
+            { id: "cover-legacy", label: "Health cover", icon: "ShieldCheck", href: "/app/cover", unlisted: true },
             { id: "health-cover", label: "Health cover", k: "ch.health-cover", icon: "ShieldCheck", href: "/app/health/cover", note: "What you are entitled to", },
             { id: "health-change", label: "Menopause", k: "ch.health.change", icon: "Sun", href: "/app/health/change", note: "And working through it", },
           ],
@@ -332,7 +349,7 @@ export const SECTIONS: Section[] = [
             { id: "settings-delivery", label: "How messages reach you", k: "ch.settings-delivery", icon: "Send", href: "/app/settings/delivery", note: "Which ways, and how often", },
             { id: "settings-appearance", label: "How it looks", k: "ch.settings-appearance", icon: "Palette", href: "/app/settings/appearance", note: "Light, dark, bigger text", },
             { id: "settings-voice", label: "Reading aloud", k: "ch.settings-voice", icon: "Volume2", href: "/app/settings/voice", note: "Speed and voice", },
-            { id: "settings-payments", label: "How you get paid", k: "ch.settings-payments", icon: "Wallet", href: "/app/settings/payments", note: "Bank and UPI", },
+            { id: "settings-payments", label: "How you get paid", k: "ch.settings-payments", icon: "Wallet", href: "/app/settings/payments", note: "One UPI for your whole account", },
             { id: "settings-security", label: "Keeping it safe", k: "ch.settings-security", icon: "Lock", href: "/app/settings/security", note: "PIN and sign-in", },
             { id: "settings-offline", label: "When there is no signal", k: "ch.settings-offline", icon: "WifiOff", href: "/app/settings/offline", note: "What still works", },
           ],

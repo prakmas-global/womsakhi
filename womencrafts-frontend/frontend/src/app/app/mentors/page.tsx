@@ -1,5 +1,7 @@
 "use client";
 
+import { Sheet } from "@/components/ux/kit/sheet";
+import { Label, Text } from "@/components/ux/kit/form";
 import { useCallback, useMemo, useState } from "react";
 import * as Icons from "@/components/ux/icons";
 
@@ -14,13 +16,13 @@ import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ActionRow, ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
 import { MENTOR_ART as RAW_MENTOR_ART, rupees } from "@/components/ux/mentors/data";
 import { useMentors } from "@/components/ux/live";
+import { PicChip, pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 import { useMentorSessions } from "@/components/ux/growth";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
 import { toast } from "@/components/ux/mobile/Toast";
 import { SkillBadges } from "@/components/ux/SkillBadges";
 import { MediaCard, MediaGrid, Fact } from "@/components/ux/media/MediaCard";
-import { artFor } from "@/components/ux/media/art";
 
 /** An uploaded photo — not the generated initials image, not a stock avatar drawing. */
 const isRealPhoto = (src?: string) => !!src && !src.startsWith("data:") && !src.includes("/ux/art/avatar-");
@@ -51,10 +53,20 @@ export default function MentorsPage() {
     being compared with the mentors' English words, so a topic no mentor
     offered led to an empty list, and in Hindi every chip did.
   */
-  const EXPERTISE = useMemo(() => rank(MENTORS.flatMap((m) => m.expertise)).slice(0, 12), [MENTORS]);
+  // …in the order staff set in Masters → Mentor topics, then any other a
+  // mentor carries, most common first.
+  const topicPics = useMasterPictures("mentor_topics");
+  const topicOrder = topicPics.labels;
+  const EXPERTISE = useMemo(() => {
+    const present = rank(MENTORS.flatMap((m) => m.expertise));
+    const first = topicOrder.filter((t) => present.includes(t));
+    return [...first, ...present.filter((t) => !first.includes(t))].slice(0, 12);
+  }, [MENTORS, topicOrder]);
   const LANGUAGES = useMemo(() => rank(MENTORS.flatMap((m) => m.languages)), [MENTORS]);
   const [withdrawing, setWithdrawing] = useState("");
   const [paying, setPaying] = useState("");
+  const [proofId, setProofId] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
   const [tab, setTab] = useState("Find a mentor");
   const [skills, setSkills] = useState<string[]>([]);
   const [langs, setLangs] = useState<string[]>([]);
@@ -190,7 +202,7 @@ export default function MentorsPage() {
 
             <ChipRow label={tr("mentors.whatYouNeedHelpWith")} pad={16}>
               {EXPERTISE.map((e) => (
-                <Chip key={e} selected={skills.includes(e)} onClick={() => toggle(e, skills, setSkills)}>{e}</Chip>
+                <PicChip key={e} src={topicPics.pic(e)} selected={skills.includes(e)} onClick={() => toggle(e, skills, setSkills)}>{e}</PicChip>
               ))}
             </ChipRow>
 
@@ -221,7 +233,7 @@ export default function MentorsPage() {
                   <MediaCard
                     key={m.id}
                     href={`/app/mentors/${m.id}`}
-                    image={artFor([...m.expertise, m.headline], "mentor", real ? m.photo : null, m.id)}
+                    image={pictureOr(real ? m.photo : null, [...m.expertise, m.headline], topicPics.of(m.expertise[0] ?? ""))}
                     alt={real ? m.name : ""}
                     topLeft={m.is_mine ? { text: "You", tone: "brand" } : m.requested ? { text: tr("mentors.youAsked"), tone: "light" } : (m.rating_count ?? 0) > 0 ? { text: `★ ${m.rating.toFixed(1)}`, tone: "light" } : { text: "New mentor", tone: "light" }}
                     topRight={m.free_first ? { text: "Free", tone: "green" } : { text: `${rupees(m.fee_minor)} / session`, tone: "dark" }}
@@ -324,12 +336,7 @@ export default function MentorsPage() {
                         Pay {rupees(s.priceMinor ?? 0)} to {s.upiId}
                       </ActionBtn>
                       <Btn variant="primary" size="sm" icon="CheckCircle2" loading={paying === s.id}
-                           onClick={async () => {
-                             setPaying(s.id);
-                             try { await apiMentorSessionPaid(s.id); refetchSessions(); toast("We told her you paid", { tone: "success" }); }
-                             catch { toast("That did not reach her. Try again.", { tone: "error" }); }
-                             finally { setPaying(""); }
-                           }}>I&apos;ve paid</Btn>
+                           onClick={() => { setProofId(s.id); setPaymentReference(""); }}>Submit payment reference</Btn>
                     </>
                   )}
                   {s.state === "Upcoming" && s.paymentStatus === "claimed" && (
@@ -373,6 +380,15 @@ export default function MentorsPage() {
           ))}
         </div>
       )}
+      {proofId && <Sheet open onClose={() => { if (!paying) setProofId(""); }} title="Submit payment reference" description="Pay the mentor using her UPI ID first. Copy the transaction reference from your UPI app. She must check receipt before the payment is confirmed.">
+        <form className="space-y-4" onSubmit={async event => {
+          event.preventDefault(); if (paying || !paymentReference.trim()) return;
+          setPaying(proofId);
+          try { await apiMentorSessionPaid(proofId, paymentReference.trim()); refetchSessions(); setProofId(""); toast("Reference submitted — waiting for recipient confirmation", { tone: "success" }); }
+          catch { toast("Your reference could not be submitted. Try again; do not pay again.", { tone: "error" }); }
+          finally { setPaying(""); }
+        }}><div><Label need>UPI transaction reference</Label><Text label="UPI transaction reference" name="payment_reference" value={paymentReference} onChange={setPaymentReference} required max={40} disabled={Boolean(paying)} placeholder="Reference from your UPI app" /></div><Btn type="submit" loading={Boolean(paying)} disabled={!paymentReference.trim() || Boolean(paying)}>Submit reference</Btn></form>
+      </Sheet>}
     </HomeShell>
   );
 }

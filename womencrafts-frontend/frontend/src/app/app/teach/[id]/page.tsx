@@ -57,6 +57,7 @@ export default function ManageCoursePage({ params }: { params: Promise<{ id: str
         name: course.name, desc: course.desc, category: course.category, duration: course.duration,
         price_rupees: Math.round(course.price_minor / 100), upi_id: course.upi_id,
         lessons: course.lessons.length ? course.lessons : [{ title: "", detail: "", duration: "", body: "", video_url: "", preview: false }],
+        cover: course.cover ?? "",
         publish: course.live,
       });
       setPaid(course.price_minor > 0);

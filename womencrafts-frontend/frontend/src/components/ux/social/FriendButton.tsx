@@ -1,5 +1,7 @@
 "use client";
 
+import { useConfirm } from "@/design-system/feedback/ConfirmProvider";
+
 import { useState } from "react";
 
 import { Btn } from "@/components/ux/kit";
@@ -22,6 +24,7 @@ export function FriendButton({ userId, relation, name, size = "sm", full, onChan
   full?: boolean;
   onChange?: (r: Relation) => void;
 }) {
+  const confirm = useConfirm();
   const [rel, setRel] = useState<Relation>(relation);
   const [busy, setBusy] = useState(false);
 
@@ -43,7 +46,7 @@ export function FriendButton({ userId, relation, name, size = "sm", full, onChan
   if (rel === "friends") {
     return (
       <Btn size={size} full={full} variant="soft" icon="UserCheck" loading={busy}
-           onClick={() => { if (window.confirm(`Remove ${name} from your friends?`)) run(() => apiUnfriend(userId)); }}>
+           onClick={async () => { if (await confirm({ title: `Remove ${name} from your friends?`, confirmLabel: "Remove friend", danger: true })) await run(() => apiUnfriend(userId), "Friend removed"); }}>
         Friends
       </Btn>
     );

@@ -21,10 +21,12 @@ the block, and is null when the label cannot be read rather than guessed at.
 
 from datetime import date, datetime, timedelta, timezone
 import re
+from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from bson import ObjectId
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.rbac import require_active_member
 from app.db.mongodb import get_database
@@ -76,7 +78,7 @@ def _hour(label: str) -> float | None:
         h += 12
     elif ap == "a" and h == 12:
         h = 0
-    if not 0 <= h <= 23:
+    if not 0 <= h <= 23 or not 0 <= mins <= 59:
         return None
     return h + mins / 60
 
@@ -98,19 +100,27 @@ def _duration_hours(text: str) -> float:
 @router.get("", summary="Everything already on her calendar this week")
 async def my_week(
     start: str | None = Query(None, description="ISO date of the Sunday to start from"),
+    view: Literal["week", "month"] = "week",
+    tz: str = "Asia/Kolkata",
     me: dict = Depends(require_active_member),
 ):
     db = get_database()
     uid = str(me["_id"])
 
+    try:
+        local_today = datetime.now(ZoneInfo(tz)).date()
+    except (ValueError, ZoneInfoNotFoundError):
+        raise HTTPException(422, "Choose a valid timezone")
     # The week she asked for, or the one containing today. Sunday-first, to
     # match the grid the screen draws.
     try:
-        anchor = date.fromisoformat(start) if start else datetime.now(timezone.utc).date()
+        anchor = date.fromisoformat(start) if start else local_today
     except ValueError:
-        anchor = datetime.now(timezone.utc).date()
+        raise HTTPException(422, "Date must be in YYYY-MM-DD format")
+    if view == "month":
+        anchor = anchor.replace(day=1)
     first = anchor - timedelta(days=(anchor.weekday() + 1) % 7)
-    days = [first + timedelta(days=i) for i in range(7)]
+    days = [first + timedelta(days=i) for i in range(42 if view == "month" else 7)]
     keys = {d.isoformat() for d in days}
 
     items: list[dict] = []
@@ -135,7 +145,7 @@ async def my_week(
             "icon": "UserRound" if b.get("with_whom") else "GraduationCap",
             "where": b.get("mode", ""),
             "with_whom": b.get("with_whom", ""),
-            "href": "/app/bookings",
+            "href": f"/app/bookings/{b.get('_id', '')}",
         })
 
     # Events she actually registered for. Browsing one is not attending it,
@@ -150,7 +160,7 @@ async def my_week(
                 oids.append(ObjectId(r))
             except Exception:
                 continue
-        async for e in db[EventModel.collection_name].find({"_id": {"$in": oids}, "date": {"$in": list(keys)}}):
+        async for e in db[EventModel.collection_name].find({"_id": {"$in": oids}, "date": {"$in": list(keys)}, "status": {"$ne": "cancelled"}}):
             label = e.get("time", "")
             cat = _EVENT_CATEGORY.get(str(e.get("category", "")).lower(), "community")
             items.append({
@@ -170,7 +180,7 @@ async def my_week(
 
     items.sort(key=lambda i: (i["date"], i["hour"] if i["hour"] is not None else 99))
 
-    today = datetime.now(timezone.utc).date().isoformat()
+    today = local_today.isoformat()
     return {
         "start": first.isoformat(),
         "days": [

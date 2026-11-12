@@ -8,7 +8,11 @@
 
 const A = (n: string) => `/ux/art/${n}.webp`;
 
-export type EventKind = "Mela" | "Workshop" | "Webinar" | "Meet";
+/**
+ * An event's category: a label from the staff-controlled `event_categories`
+ * master (backend app/core/masters.py), stored on the event as it is shown.
+ */
+export type EventKind = string;
 
 export type Ev = {
   id: string;
@@ -70,7 +74,24 @@ export const EVENTS: Ev[] = [
     fee_minor: 0, spots: 80, taken: 47, going: false },
 ];
 
-export const EVENT_KINDS: EventKind[] = ["Mela", "Workshop", "Webinar", "Meet"];
+/** The master's starting values: shown until the server answers, and if it can't. */
+export const EVENT_KINDS: EventKind[] = ["Workshop", "Mela", "Webinar", "Meet-up", "Talk", "Training"];
+
+/**
+ * How a category looks. Read off its name, so a category staff add later still
+ * gets a sensible icon and colour instead of a blank tile.
+ */
+export function eventLook(kind: string): { icon: string; tint: string; ink: string; tone: "pink" | "blue" | "green" | "brand" | "orange" } {
+  const k = (kind || "").toLowerCase();
+  if (/mela|fair|bazaar|market|exhibit/.test(k)) return { icon: "Store", tint: "--ux-tint-pink", ink: "--ux-pink", tone: "pink" };
+  if (/webinar|talk|online|live/.test(k)) return { icon: "Video", tint: "--ux-tint-blue", ink: "--ux-blue", tone: "blue" };
+  if (/meet|gather|circle|social/.test(k)) return { icon: "Users", tint: "--ux-tint-green", ink: "--ux-green", tone: "green" };
+  if (/workshop|training|class|course/.test(k)) return { icon: "Presentation", tint: "--ux-tint-violet", ink: "--ux-violet", tone: "brand" };
+  return { icon: "CalendarDays", tint: "--ux-tint-orange", ink: "--ux-orange", tone: "orange" };
+}
+
+/** A mela is a day selling at a stall; anything else is a session she attends. */
+export const isMela = (kind: string) => /mela|fair|bazaar|market|exhibit/i.test(kind || "");
 
 export const EVENT_ART = { empty: A("empty-open-notebook-pen"), hero: A("scene-women-celebrating") };
 

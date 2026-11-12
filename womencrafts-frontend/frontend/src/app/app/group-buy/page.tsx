@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useState } from "react";
 
 import { apiJoinBuy, apiLeaveBuy, apiWatchBuy } from "@/lib/entitlements-api";
@@ -117,7 +118,10 @@ export default function GroupBuyPage() {
         </div>
       }
     >
-      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("groupbuy.buyTogether")}</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>{tr("groupbuy.buyTogether")}</h1>
+      </div>
       <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>
         {open.length} open now. You pay nothing unless enough women join and the order goes ahead.
       </p>

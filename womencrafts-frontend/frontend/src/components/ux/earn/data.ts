@@ -78,14 +78,8 @@ export const discountPct = (l: SellerListing) =>
 
 /* ── The wizard's vocabulary ──────────────────────────────────────────────── */
 
-export const CATEGORIES: { id: string; label: string; subs: string[] }[] = [
-  { id: "clothing",  label: "Clothing and stitching", subs: ["Kurtas and suits", "Sarees", "Blouses", "Children's clothes", "Alterations"] },
-  { id: "home",      label: "Home and décor",         subs: ["Cushion covers", "Bed linen", "Curtains", "Wall hangings"] },
-  { id: "food",      label: "Food from home",         subs: ["Pickles and papad", "Snacks", "Tiffin service", "Baking"] },
-  { id: "beauty",    label: "Beauty and mehendi",     subs: ["Mehendi", "Threading and facial", "Bridal packages"] },
-  { id: "teaching",  label: "Teaching and classes",   subs: ["Tuition", "Craft classes", "Music and dance"] },
-  { id: "care",      label: "Care and help",          subs: ["Childcare", "Elder care", "House help"] },
-];
+/* Shop categories are no longer listed here: staff control them, and the
+   screens read them from GET /shop/categories (lib/shop-categories-api). */
 
 /** Two-word claims a buyer can check. Not adjectives about her. */
 export const HIGHLIGHTS = [

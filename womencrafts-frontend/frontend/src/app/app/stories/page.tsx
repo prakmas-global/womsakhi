@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
@@ -160,7 +161,10 @@ export default function LocalPage() {
           segmented control where the desktop has tabs. */}
       <div className="mb-6 flex flex-col gap-4 lg:mb-[20px] lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("stories.nearYou")}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>{tr("stories.nearYou")}</h1>
+          </div>
           <p className="mt-1.5 flex items-center gap-1.5 text-xsm" style={{ color: "var(--ux-muted)" }}>
             <Icons.MapPin className="h-4 w-4" />
             {city ? `${city} · ` : ""}{STORIES.length} {plural("story", STORIES.length)} from women on WomSakhi

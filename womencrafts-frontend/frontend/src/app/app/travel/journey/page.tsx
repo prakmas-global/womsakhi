@@ -351,7 +351,7 @@ export default function JourneyPage() {
                   className="min-h-[40px] rounded-full px-3.5 text-xsm font-medium transition"
                   style={{
                     background: on ? v("--ux-brand") : v("--ux-surface-2"),
-                    color: on ? "#fff" : v("--ux-ink"),
+                    color: on ? v("--ux-on-brand") : v("--ux-ink"),
                   }}
                 >
                   {tr("journey.inMinutes", { minutes: m })}

@@ -421,7 +421,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
                       title={t("searchPalette.speakInsteadOfTyping")}
                       className="ux-press grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[12px] max-[620px]:h-[34px] max-[620px]:w-[34px] max-[620px]:rounded-full"
                       style={hearing
-                        ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                        ? { background: "var(--ux-action-gradient)",
                             color: "var(--ux-on-brand)" }
                         : { background: "var(--ux-tint-violet)", color: "var(--ux-violet-ink)" }}>
                 <Icons.Mic className="h-[17px] w-[17px]" />
@@ -462,7 +462,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
                       onClick={() => { if (prefix) setRaw(q); setScope(s.id); setCursor(0); inputRef.current?.focus(); }}
                       className="ux-press flex min-h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold"
                       style={on
-                        ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                        ? { background: "var(--ux-action-gradient)",
                             border: "1px solid transparent", color: "var(--ux-on-brand)" }
                         : { border: "1px solid var(--ux-line)", color: "var(--ux-ink-2)" }}>
                 {s.key && <kbd className="text-2xs font-extrabold opacity-75">{s.key}</kbd>}
@@ -595,7 +595,7 @@ function Answer({ a, onGo }: { a: ApiSearchAnswer; onGo: () => void }) {
       {a.action && (
         <button type="button" onClick={onGo}
                 className="ux-press mt-3 rounded-[8px] px-3 py-2 text-xs font-bold"
-                style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                style={{ background: "var(--ux-action-gradient)",
                          color: "var(--ux-on-brand)" }}>
           {a.action}
         </button>

@@ -484,7 +484,7 @@ async def home(me: dict = Depends(require_active_member)):
         _block(
             "opportunities",
             list_opportunities(q="", kind="", mode="", saved=False, pay_min_minor=0,
-                               period="", sort="recent", me=me),
+                               period="", sort="recent", category="", skills="", for_me=False, me=me),
             [], missing,
         ),
         _block("events", list_events(category="", mode="", mine=True, past=False, me=me),

@@ -623,7 +623,7 @@ export function SendButton({
       className="ux-press grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full disabled:opacity-40
                  lg:h-[38px] lg:w-[38px] lg:rounded-[12px]"
       style={{
-        background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+        background: "var(--ux-action-gradient)",
         color: "var(--ux-on-brand)",
       }}
     >

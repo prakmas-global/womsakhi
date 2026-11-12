@@ -42,55 +42,43 @@ export const API = (
 // real browser against someone else's running app.
 export const APP = process.env.APP_URL || `http://localhost:${process.env.PORT || 3100}`;
 
+/** Use explicitly configured development test accounts; never send real email
+ * or rely on the removed password endpoints during an automated audit. */
+export const CHECK_MEMBER_EMAIL = process.env.CHECK_MEMBER_EMAIL || "priya.sharma@example.com";
+export const CHECK_STAFF_EMAIL = process.env.CHECK_STAFF_EMAIL || "admin.audit@example.com";
+export const CHECK_LOGIN_CODE = process.env.CHECK_LOGIN_CODE || "";
+
+export async function codeSignIn(email, call = async (path, body) => {
+  const response = await fetch(`${API}/auth/${path}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  return { status: response.status, data: await response.json() };
+}) {
+  if (!/^\d{6}$/.test(CHECK_LOGIN_CODE)) {
+    throw new Error("Set CHECK_LOGIN_CODE and configure the same TEST_LOGIN_CODE and TEST_LOGIN_EMAILS on an isolated development API. Staff checks also require TEST_LOGIN_ALLOW_STAFF=true there.");
+  }
+  const started = await call("start", { email });
+  if (started.status !== 200 || started.data?.mode !== "signin") {
+    throw new Error(`Check account ${email} cannot start sign-in (HTTP ${started.status}). Provision it in the isolated audit database first.`);
+  }
+  const verified = await call("verify", { email, code: CHECK_LOGIN_CODE });
+  if (verified.status !== 200 || !verified.data?.access_token) {
+    throw new Error(`Check account ${email} cannot finish sign-in (HTTP ${verified.status}). Check its fixed-code and staff test-login settings.`);
+  }
+  return verified.data;
+}
+
 export async function staffToken() {
-  const r = await fetch(`${API}/auth/signin`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "admin@womsakhi.com", password: "admin12345" }),
-  }).then((x) => x.json());
-  return r.access_token || r.token;
+  return (await codeSignIn(CHECK_STAFF_EMAIL)).access_token;
 }
 
-/** A verified member, created on the fly — seeded members have no usable password. */
-export async function memberToken(staff) {
-  const H = { "Content-Type": "application/json", Authorization: `Bearer ${staff}` };
-  const email = `check.${Date.now()}@example.com`, pw = "TestMember!2345";
-  const su = await fetch(`${API}/auth/signup`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      full_name: "Check Member",
-      email,
-      password: pw,
-      country: "IN",
-      phone: "+919876543210",
-    }),
-  }).then((r) => r.json()).catch(() => null);
-  const id = su?.user?.id || su?.user?._id;
-  if (id) await fetch(`${API}/verification/${id}/approve`, {
-    method: "POST", headers: H, body: JSON.stringify({ note: "checks" }) }).catch(() => {});
-  const tok = await fetch(`${API}/auth/signin`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password: pw }),
-  }).then((r) => r.json()).then((j) => j.access_token || j.token).catch(() => null);
-  if (tok) await fetch(`${API}/theme/onboarding/finish`, {
-    method: "POST", headers: { Authorization: `Bearer ${tok}` } }).catch(() => {});
-  return tok;
+/** Audit accounts are provisioned ahead of time in the isolated database. */
+export async function memberToken() {
+  return seededMemberToken();
 }
 
-/**
- * Sign in as a member who HAS data.
- *
- * `memberToken()` signs up a fresh account, which is right for testing what a
- * new member sees — and useless for testing whether a screen renders rows,
- * because a new member has none. Measuring "did seeding work?" against a
- * brand-new account reported every screen as still empty when the data was
- * there all along.
- */
 export async function seededMemberToken() {
-  const r = await fetch(`${API}/auth/signin`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "priya.sharma@example.com", password: "Womsakhi!2026" }),
-  }).then((x) => x.json()).catch(() => null);
-  return r?.access_token || r?.token || null;
+  return (await codeSignIn(CHECK_MEMBER_EMAIL)).access_token;
 }
 
 export const launch = () =>
@@ -181,10 +169,19 @@ export const measureContrast = (page) => page.evaluate(() => {
    */
   const resolveBg = (el) => {
     const layers = [];
+    const textBox = el.getBoundingClientRect();
+    const x = textBox.left + textBox.width / 2, y = textBox.top + textBox.height / 2;
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       const cs = getComputedStyle(n);
       const bi = cs.backgroundImage;
       if (bi && bi !== "none") return null;
+      // Photo-card captions sit over a positioned sibling <img>, not a CSS
+      // background. Its pixels cannot be inferred from the ancestor's color.
+      for (const photo of n.querySelectorAll(":scope > img, :scope > picture > img, :scope > span > img, :scope > div > img")) {
+        const box = photo.getBoundingClientRect();
+        if (box.width && box.height &&
+            x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) return null;
+      }
       const bg = cs.backgroundColor;
       if (!bg || /rgba\(0, 0, 0, 0\)|^transparent$/.test(bg)) continue;
       layers.push(bg);

@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
@@ -113,8 +114,11 @@ export default function QuietHoursPage() {
             <Icons.ChevronRight className="h-[13px] w-[13px]" />
             <span style={{ color: "var(--ux-ink-2)" }}>{tr("settingsQuiethours.quietHours")}</span>
           </p>
-          <h1 className="text-[clamp(1.375rem,3vw,1.875rem)] font-extrabold leading-[1.12] tracking-[-0.03em]"
-              style={{ color: "var(--ux-ink)", textWrap: "balance" }}>{tr("settingsQuiethours.yourPhoneSleepsWhenYouDo")}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="text-[clamp(1.375rem,3vw,1.875rem)] font-extrabold leading-[1.12] tracking-[-0.03em] min-w-0"
+                style={{ color: "var(--ux-ink)", textWrap: "balance" }}>{tr("settingsQuiethours.yourPhoneSleepsWhenYouDo")}</h1>
+          </div>
           <p className="mt-2.5 max-w-[58ch] text-sm leading-relaxed" style={{ color: "var(--ux-ink-2)" }}>
             Pick the hours you do not want to be disturbed. Everything that arrives while you sleep
             waits for you in Notifications — nothing is lost, it just waits until morning.
@@ -139,7 +143,7 @@ export default function QuietHoursPage() {
                   onChange={(v) => set({ quiet_hours: v })} />
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_342px]">
+        <div className="ux-split-lg grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_342px]">
           <Dial p={p} set={set} marks={marks} inside={inside} span={span} caught={caught} />
 
           <div className="flex flex-col gap-5">
@@ -154,7 +158,7 @@ export default function QuietHoursPage() {
         <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap lg:items-center">
           <button type="button" onClick={save} disabled={saving}
                   className="ux-press flex min-h-[46px] items-center gap-2 rounded-[12px] px-6 text-sm font-bold disabled:opacity-60 max-lg:min-h-[50px] max-lg:w-full max-lg:justify-center max-lg:rounded-[14px] max-lg:text-[17px]"
-                  style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                  style={{ background: "var(--ux-action-gradient)",
                            color: "var(--ux-on-brand)" }}>
             {saving ? "Saving…" : "Save quiet hours"}
           </button>
@@ -443,7 +447,7 @@ function Nights({ days, onChange }: { days: boolean[]; onChange: (d: boolean[]) 
                   onClick={() => onChange(days.map((v, j) => (j === i ? !v : v)))}
                   className="ux-press min-h-[42px] min-w-[46px] rounded-[12px] px-3 text-xsm font-bold"
                   style={days[i]
-                    ? { background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))",
+                    ? { background: "var(--ux-action-gradient)",
                         border: "1px solid transparent", color: "var(--ux-on-brand)" }
                     : { border: "1px solid var(--ux-line-strong)", color: "var(--ux-ink-2)" }}>
             {d}
@@ -533,9 +537,9 @@ function Switch({
             className={`ux-press ux-tap-exempt flex shrink-0 items-center lg:my-0 lg:py-0 ${small ? "-my-[9px] py-[9px]" : "-my-[7px] py-[7px]"}`}>
       <span className="flex items-center rounded-full p-[3px] transition-colors"
             style={{ width: w, height: h,
-                     background: on ? "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))" : "var(--ux-track)" }}>
+                     background: on ? "var(--ux-action-gradient)" : "var(--ux-track)" }}>
         <i className="block rounded-full transition-transform"
-           style={{ width: k, height: k, background: "var(--ux-surface)",
+           style={{ width: k, height: k, background: on ? "var(--ux-on-brand)" : "var(--ux-surface)",
                     transform: on ? `translateX(${w - k - 6}px)` : "none" }} />
       </span>
     </button>

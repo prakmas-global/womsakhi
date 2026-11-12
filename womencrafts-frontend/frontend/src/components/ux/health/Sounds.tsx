@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { toast } from "@/components/ux/mobile/Toast";
 import { Btn } from "@/components/ux/kit";
 import { Chips, HUE, I, Panel, type Hue } from "./kit";
 
@@ -125,7 +126,7 @@ function start(id: SoundId, volume: number): Engine {
       master.gain.cancelScheduledValues(now);
       master.gain.setValueAtTime(master.gain.value, now);
       master.gain.linearRampToValueAtTime(0, now + FADE);
-      window.setTimeout(() => { sources.forEach((s) => { try { s.stop(); } catch { /* already stopped */ } }); void ctx.close(); }, FADE * 1000 + 50);
+      window.setTimeout(() => { sources.forEach((s) => { try { s.stop(); } catch { /* A stopped audio source needs no further cleanup. */ } }); void ctx.close(); }, FADE * 1000 + 50);
     },
   };
 }
@@ -157,6 +158,8 @@ export function Sounds({ hue, title, sub, defaultTimer = "30" }: { hue: Hue; tit
     } catch {
       engine.current = null;
       setPlaying(null);
+      setLeft(0);
+      toast("Could not play this sound. Check that audio is allowed and try again.", { tone: "error" });
     }
   };
 

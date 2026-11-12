@@ -141,61 +141,26 @@ export default function RangoliDesigns() {
   const mine = made.map((id) => designOf(id)!).filter((d) => d && fits(d));
 
   return (
-    <HomeShell active="/app/health/games">
-      <Back to="/app/health/games" label="Back to Games & Stress Relief" className="mb-3" fixed />
-      <ScreenHead title="Rangoli designs"
-                  sub={`${LIBRARY_SIZE} designs to choose from, all drawn right here in the app. Pick one and start colouring.`} />
-
-      <div className="flex flex-col gap-8" data-rangoli-gallery>
-        {ready && started.length > 0 && (
-          <section aria-labelledby="rg-continue">
-            <Head id="rg-continue" title="Continue colouring" sub="Your colouring is kept on this phone, just as you left it." />
-            <Grid>
-              {started.slice(0, 8).map(({ id, fills }) => {
-                const d = designOf(id)!;
-                return <Card onPrepare={setPrep} key={id} d={d} fills={fills} href={`${BASE}/${id}`} />;
-              })}
-            </Grid>
-          </section>
-        )}
-
-        <div role="group" aria-label="Show designs that are" className="flex flex-wrap items-center gap-2">
-          <span className="me-1 text-sm font-bold" style={{ color: "var(--ux-ink-2)" }}>Show</span>
-          {LEVELS.map((l) => (
-            <button key={l} type="button" aria-pressed={level === l} onClick={() => pickLevel(l)}
-                    className="ux-press min-h-[38px] rounded-full border-[1.5px] px-3.5 text-[13px] font-bold"
-                    style={level === l ? { borderColor: "var(--ux-brand)", background: "var(--ux-tint-pink)", color: "var(--ux-ink)" }
-                                       : { borderColor: "var(--ux-line-strong)", background: "var(--ux-surface)", color: "var(--ux-ink-2)" }}>
-              {l === "All" ? "All designs" : l}
-            </button>
-          ))}
-          <span className="ms-auto text-xs" style={{ color: "var(--ux-muted)" }}>Easy: up to 30 pieces · Calm: up to 60 · Detailed: more</span>
-        </div>
-
-        <section aria-labelledby="rg-featured">
-          <Head id="rg-featured" title="Favourite designs" sub="Classic patterns, from a simple bloom to a pulli kolam." />
-          {featured.length ? (
-            <Grid>{featured.map((d) => <Card onPrepare={setPrep} key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
-          ) : <p className="text-sm" style={{ color: "var(--ux-muted)" }}>No {level.toLowerCase()} designs here. Try another level.</p>}
-        </section>
-
-        {mine.length > 0 && (
-          <section aria-labelledby="rg-mine">
-            <Head id="rg-mine" title="Designs you made" sub="New designs you made earlier — still here to colour." />
-            <Grid>{mine.map((d) => <Card onPrepare={setPrep} key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
-          </section>
-        )}
-
-        <section aria-labelledby="rg-app">
-          <Head id="rg-app" title="More designs to colour"
-                sub={`${matching.length} ${level === "All" ? "" : `${level.toLowerCase()} `}designs drawn by the app, each one different.`} />
-          <Grid>{app.map((d) => <Card onPrepare={setPrep} key={d.id} d={d} fills={progress[d.id] ?? {}} href={`${BASE}/${d.id}`} />)}</Grid>
-          {!app.length && <p className="text-sm" style={{ color: "var(--ux-muted)" }}>None of these is {level.toLowerCase()} — pick another level.</p>}
-          {left > 0 && (
-            <div className="mt-4 flex justify-center">
-              <Btn variant="outline" icon="Plus" onClick={more}>Show {Math.min(PAGE, left)} more · {left} left</Btn>
-            </div>
-          )}
+    <GameFrame title="Colour the rangoli" sub="Pick a colour, then tap the petals. There is no wrong way."
+               game="rangoli" result={() => ({ score: Object.keys(fills).length, scoreLabel: `${Object.keys(fills).length} petals coloured` })}
+               feel={feel} setFeel={setFeel} again={() => { setHistory([]); keep({}); }}>
+      <div className="ux-split-lg grid gap-[16px] lg:grid-cols-[minmax(0,1fr)_300px]">
+        <section className={`${s.stage} p-3 sm:p-5`}>
+          <svg viewBox="-210 -210 420 420" className={s.paper} role="img" aria-label="A rangoli to colour">
+            <rect x="-210" y="-210" width="420" height="420" rx="24" fill="#fffaf3" />
+            {SEGMENTS.map((g) => {
+              const common = {
+                className: s.seg, fill: fills[g.id] ?? BLANK, stroke: LINE, strokeWidth: 1.5,
+                onClick: () => paint(g.id),
+              };
+              return g.circle
+                ? <circle key={g.id} cx={g.circle.cx} cy={g.circle.cy} r={g.circle.r} {...common} />
+                : <path key={g.id} d={g.d} transform={`rotate(${g.rot ?? 0})`} {...common} />;
+            })}
+          </svg>
+          <p className="mt-2 text-center text-xs tabular-nums" style={{ color: "var(--ux-muted)" }}>
+            {filled} of {SEGMENTS.length} pieces coloured
+          </p>
         </section>
 
         {ready && saved.length > 0 && (

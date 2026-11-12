@@ -57,5 +57,5 @@ export function pop() {
 
 /** A light buzz on phones that have one. */
 export function buzz(ms = 30) {
-  try { navigator.vibrate?.(ms); } catch { /* not supported */ }
+  try { navigator.vibrate?.(ms); } catch { /* Haptics are optional; visual game feedback is still shown. */ }
 }

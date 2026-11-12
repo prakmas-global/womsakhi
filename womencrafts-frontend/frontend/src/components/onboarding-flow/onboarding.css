@@ -225,6 +225,8 @@ html:has(body .wso-app), body:has(.wso-app) { background: var(--wso-cream); }
 .wso-pill > span { overflow-wrap: anywhere; }
 .wso-pill[aria-pressed="true"] { background: var(--wso-berry); border-color: var(--wso-berry); color: var(--wso-on-berry); }
 .wso-pill-check { width: 15px; height: 15px; }
+.wso-pill.has-img { padding-inline-start: 5px; }
+.wso-pill-img { width: 32px; height: 32px; flex: none; border-radius: 999px; object-fit: cover; }
 .wso-pill.is-dashed { border-style: dashed; border-color: var(--wso-berry); color: var(--wso-berry); }
 .wso-pill.is-dashed > span { display: inline-flex; align-items: center; gap: 4px; }
 .wso-pill-plus { width: 16px; height: 16px; }

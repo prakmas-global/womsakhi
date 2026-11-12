@@ -179,7 +179,7 @@ export default function ProfilePreview() {
 
       {/* Two columns from `lg` only. At 390px a fixed 320px column left the
           other one 14px wide. */}
-      <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="ux-split-lg grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-[16px]">
           <Card>
             <SectionHead title={tr("profilePreview.whatSheHasDone")} />

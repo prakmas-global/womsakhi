@@ -69,6 +69,8 @@
 .path:nth-child(3)>span { background:var(--ux-tint-green); color:var(--ux-green-ink); }
 .path:nth-child(4)>span { background:var(--ux-tint-orange); color:var(--ux-pink-ink); }
 .path svg { width:24px; height:24px; }
+.path>span { overflow:hidden; }
+.path>span img { width:100%; height:100%; object-fit:cover; }
 .path div { min-width:0; }
 .path h3 { font-size:var(--dash-fs-sm, 12px); }
 .path p,.path small { display:block; margin:2px 0 0; color:var(--ux-muted); font-size:var(--dash-fs-sm, 12px); line-height:1.25; }

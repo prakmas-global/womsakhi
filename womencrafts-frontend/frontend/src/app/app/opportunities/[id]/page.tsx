@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { use, useState } from "react";
 
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -10,7 +11,7 @@ import { useAction } from "@/lib/use-action";
 import { useAttemptKey } from "@/lib/idempotency";
 import { useJob, useJobs } from "@/components/ux/growth";
 import { matchFor } from "@/services/job-match";
-import { artFor } from "@/components/ux/media/art";
+import { jobPicture, useWorkTaxonomy } from "@/components/ux/work/pictures";
 import { FitLine, PostedBy } from "@/components/ux/work/parts";
 import { Picks } from "@/components/ux/kit/form";
 import { WORK_ART as RAW_WORK_ART, payLabel } from "@/components/ux/work/data";
@@ -49,6 +50,7 @@ const APPLY_LINES = [
 ];
 
 export default function OpportunityDetail({ params }: { params: Promise<{ id: string }> }) {
+  const workCats = useWorkTaxonomy();
   const WORK_ART = useTranslated(RAW_WORK_ART);
   const tr = useT();
   const { id } = use(params);
@@ -269,13 +271,13 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
         {/* The work itself, big — the same picture as its card in Find work. */}
         <div className="relative h-[180px] w-full overflow-hidden sm:h-[230px]" style={{ background: v("--ux-surface-2") }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={artFor([job.title, job.skills.join(" "), job.categoryName], "job", undefined, job.id)} alt={job.title}
+          <img src={jobPicture(job, workCats)} alt={job.title}
                className="h-full w-full object-cover" />
           <span aria-hidden className="absolute inset-0"
                 style={{ background: "linear-gradient(180deg, rgba(16,6,24,.15), rgba(16,6,24,0) 40%, rgba(16,6,24,.5))" }} />
           <span className="absolute start-4 top-4 rounded-full px-3 py-1 text-xs font-bold shadow-sm"
                 style={{ background: "rgba(255,255,255,.92)", color: "#2a1a24" }}>
-            {job.kind === "Order" ? "Order to make" : job.kind}
+            {job.kind === "Order" ? "Big order" : job.kind}
           </span>
           <span className="absolute end-4 top-4 rounded-full px-3 py-1 text-xs font-bold shadow-sm"
                 style={{ background: "rgba(24,10,34,.8)", color: "#fff" }}>{payLabel(job)}</span>
@@ -283,6 +285,7 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
         <div className="flex flex-wrap items-start gap-4 p-5">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
+              <PlaceMark size={44} />
               <h1 className="ux-screen-title text-2xl font-extrabold leading-tight tracking-[-0.02em]"
                   style={{ color: v("--ux-ink") }}>
                 {job.title}
@@ -346,6 +349,11 @@ export default function OpportunityDetail({ params }: { params: Promise<{ id: st
 
         <Block icon="ClipboardList" title={tr("jobdetail.keyDetails")} tint="--ux-tint-blue" ink="--ux-blue-ink">
           <KeyDetails job={job} />
+          {job.orderDetails && <dl className="mt-4 grid gap-3 border-t pt-4 text-sm" style={{borderColor:v("--ux-line")}}>
+            <div><dt className="font-bold">Quantity & delivery</dt><dd>{job.orderDetails.quantity.toLocaleString("en-IN")} {job.orderDetails.unit} · by {new Date(`${job.orderDetails.delivery_date}T12:00:00`).toLocaleDateString("en-IN")}</dd></div>
+            <div><dt className="font-bold">Materials</dt><dd>{job.orderDetails.materials}</dd></div>
+            <div><dt className="font-bold">Payment terms</dt><dd>{job.orderDetails.payment_terms}</dd></div>
+          </dl>}
         </Block>
 
         <Block icon="UsersRound" title={tr("jobdetail.whoCanApply")} tint="--ux-tint-pink" ink="--ux-pink-ink">

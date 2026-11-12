@@ -1,4 +1,5 @@
 "use client";
+import { AccountUpiEditor } from "@/components/ux/payments/AccountUpiEditor";
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -13,6 +14,8 @@ import {
   type IncomingRequest, type MentorInput, type MentorProfile,
 } from "@/lib/mentoring-api";
 import { rupees } from "@/lib/teach-api";
+import { useMaster } from "@/lib/masters-api";
+import { PicChip, useMasterPictures } from "@/components/ux/media/MasterPictures";
 import { useAction } from "@/lib/use-action";
 import { useResource } from "@/lib/use-resource";
 
@@ -25,6 +28,7 @@ import { useResource } from "@/lib/use-resource";
  * learner see how to join.
  */
 
+/** What the list shipped with; staff edit the `languages` master. */
 const LANGUAGES = ["Hindi", "English", "Marathi", "Tamil", "Telugu", "Bengali", "Gujarati", "Kannada", "Malayalam", "Urdu", "Punjabi", "Odia"];
 const UPI_ID = /^[A-Za-z0-9._-]{2,256}@[A-Za-z][A-Za-z0-9]{1,63}$/;
 
@@ -34,6 +38,7 @@ const UPI_ID = /^[A-Za-z0-9._-]{2,256}@[A-Za-z][A-Za-z0-9]{1,63}$/;
   sentences built from what she has already picked, which she can tap, edit,
   or replace with her own.
 */
+/** What shows until the "mentor_topics" master loads. */
 const TOPICS = [
   "Getting started", "Pricing", "Finding customers", "Online selling", "Savings", "Bookkeeping",
   "Tailoring", "Mehendi", "Beauty", "Cooking and tiffin", "Baking", "Digital marketing",
@@ -105,7 +110,7 @@ function problemsFor(f: MentorInput, paid: boolean): Record<string, string> {
   if (!f.languages.length) p.languages = "Choose at least one language.";
   if (paid) {
     if (f.price_rupees < 10) p.price = "A paid session costs at least ₹10.";
-    if (!UPI_ID.test(f.upi_id.trim())) p.upi = "Add the UPI ID learners should pay, like name@okaxis.";
+    if (!UPI_ID.test(f.upi_id.trim())) p.upi = "Save your account UPI below before offering paid sessions.";
   }
   return p;
 }
@@ -117,20 +122,34 @@ function MentorForm({ value, onChange, paid, onPaid, problems }: {
   value: MentorInput; onChange: (v: MentorInput) => void; paid: boolean; onPaid: (b: boolean) => void; problems: Record<string, string>;
 }) {
   const set = <K extends keyof MentorInput>(k: K) => (v: MentorInput[K]) => onChange({ ...value, [k]: v });
-  const [skill, setSkill] = useState("");
+  // Languages are the `languages` master staff edit; one already on her
+  // profile stays shown even if staff have since disabled it.
+  const langMaster = useMaster("languages", LANGUAGES);
+  const languageOptions = [...langMaster.labels, ...value.languages.filter((l) => !langMaster.labels.includes(l))];
   const toggleTopic = (t: string) => {
     if (value.expertise.includes(t)) set("expertise")(value.expertise.filter((x) => x !== t));
     else if (value.expertise.length < 8) set("expertise")([...value.expertise, t]);
   };
-  const addSkill = () => {
-    const t = skill.trim();
-    if (t && !value.expertise.some((e) => e.toLowerCase() === t.toLowerCase()) && value.expertise.length < 8) {
-      set("expertise")([...value.expertise, t]);
-    }
-    setSkill("");
-  };
-  // Her own topics stay on the list alongside the usual ones.
-  const topics = [...TOPICS, ...value.expertise.filter((e) => !TOPICS.includes(e))];
+  // Staff control what mentors can help with (Masters → Mentor topics); the
+  // server checks it. Each group shows its topics, or itself when it has none.
+  const topicPics = useMasterPictures("mentor_topics", TOPICS);
+  const topicItems = topicPics.items;
+  // Topics as picture chips: she recognises the work before she reads the word.
+  const topicPicks = (options: string[], label: string) => (
+    <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={label}>
+      {options.map((o) => (
+        <PicChip key={o} src={topicPics.pic(o)} selected={value.expertise.includes(o)} onClick={() => toggleTopic(o)}>{o}</PicChip>
+      ))}
+    </div>
+  );
+  // Groups with no topics under them are themselves the choice; they share one
+  // row. Groups with topics get a row each, under their name.
+  const single = topicItems.filter((g) => !g.children?.length).map((g) => g.label);
+  const groups = topicItems.filter((g) => g.children?.length)
+    .map((g) => ({ label: g.label, options: (g.children ?? []).map((c) => c.label) }));
+  const known = new Set([...single, ...groups.flatMap((g) => g.options)]);
+  // A topic already on her profile that staff have since retired stays tickable.
+  const hers = value.expertise.filter((e) => !known.has(e));
   const headlines = headlineIdeas(value);
   const stories = storyIdeas(value);
   return (
@@ -140,19 +159,29 @@ function MentorForm({ value, onChange, paid, onPaid, problems }: {
         <div className="space-y-4">
           <div>
             <Label need hint="tap all that fit, up to 8">What you help with</Label>
-            <Picks options={topics} value={value.expertise} onPick={toggleTopic} multi label="What you help with" />
-            <More label="Something else? Add your own">
-              <div className="flex gap-2">
-                <Text value={skill} onChange={setSkill} label="Add a topic" max={40} placeholder="e.g. Pickles, Embroidery" />
-                <Btn variant="soft" icon="Plus" onClick={addSkill}>Add</Btn>
-              </div>
-            </More>
+            <div className="space-y-3">
+              {hers.length > 0 && topicPicks(hers, "Your topics")}
+              {single.length > 0 && topicPicks(single, "Topics")}
+              {groups.map((g) => (
+                <div key={g.label}>
+                  <p className="mb-1.5 flex items-center gap-2 text-xs font-bold" style={{ color: "var(--ux-muted)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={topicPics.pic(g.label)} alt="" className="h-5 w-5 rounded-[6px] object-cover" />
+                    {g.label}
+                  </p>
+                  {topicPicks(g.options, g.label)}
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs" style={{ color: "var(--ux-muted)" }}>
+              Missing a topic? Tell us from <a href="/app/feedback" className="font-semibold underline">Tell us</a> and the team can add it.
+            </p>
             <Err>{problems.expertise}</Err>
           </div>
           <div>
             <Label need>Languages you speak</Label>
             <div className="flex flex-wrap gap-1.5">
-              {LANGUAGES.map((l) => {
+              {languageOptions.map((l) => {
                 const on = value.languages.includes(l);
                 return (
                   <button key={l} type="button" aria-pressed={on}
@@ -236,8 +265,7 @@ function MentorForm({ value, onChange, paid, onPaid, problems }: {
               <Err>{problems.price}</Err>
             </div>
             <div>
-              <Label need>Your UPI ID</Label>
-              <Text value={value.upi_id} onChange={set("upi_id")} label="UPI ID" max={120} placeholder="name@okaxis" />
+              <AccountUpiEditor onSaved={set("upi_id")}/>
               <Err>{problems.upi}</Err>
             </div>
           </div>

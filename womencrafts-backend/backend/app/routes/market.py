@@ -326,7 +326,10 @@ async def browse(
     if kind in (ListingModel.KIND_PRODUCT, ListingModel.KIND_SERVICE):
         query["kind"] = kind
     if category:
-        query["category"] = category
+        # A key from the staff-controlled tree (a category or a sub-category),
+        # or an old free-text name.
+        query["$and"] = query.get("$and", []) + [{"$or": [
+            {"category_key": category}, {"subcategory_key": category}, {"category": category}]}]
     if q and q.strip():
         query.update(mongosafe.any_of(q, ["title", "desc", "category", "place"]))
 

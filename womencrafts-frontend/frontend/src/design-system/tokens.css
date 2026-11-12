@@ -94,29 +94,29 @@
   --text-4xlm: 2.75rem;
 
   /* ---- Brand — magenta / cerise (primary actions, section titles) ---- */
-  --color-brand-50: #fff0f7;
-  --color-brand-100: #ffe3f0;
-  --color-brand-200: #ffc2dd;
-  --color-brand-300: #ff8fc0;
-  --color-brand-400: #f74a9b;
-  --color-brand-500: #f00078;
-  --color-brand-600: #c80066;
-  --color-brand-700: #a3005a;
-  --color-brand-800: #7d0047;
-  --color-brand-900: #560032;
-  --color-brand: #c80066;
+  --color-brand-50: #f9f0f3;
+  --color-brand-100: #f3dad7;
+  --color-brand-200: #e8b7c6;
+  --color-brand-300: #d49caf;
+  --color-brand-400: #bb7892;
+  --color-brand-500: #a55168;
+  --color-brand-600: #742a4f;
+  --color-brand-700: #62223f;
+  --color-brand-800: #521e38;
+  --color-brand-900: #351424;
+  --color-brand: #742a4f;
 
   /* ---- Violet — royal purple (secondary actions, icon circles) ---- */
-  --color-violet-50: #f4f2ff;
-  --color-violet-100: #efecff;
-  --color-violet-200: #d9d2ff;
-  --color-violet-300: #b3a6ff;
-  --color-violet-400: #8a77fa;
-  --color-violet-500: #6048f0;
-  --color-violet-600: #4830f0;
-  --color-violet-700: #3d27c9;
-  --color-violet-800: #2f1f99;
-  --color-violet-900: #21166b;
+  --color-violet-50: #f7f1fb;
+  --color-violet-100: #eee2f4;
+  --color-violet-200: #dbc5e6;
+  --color-violet-300: #c3a0d4;
+  --color-violet-400: #a375b8;
+  --color-violet-500: #89559e;
+  --color-violet-600: #6f35a5;
+  --color-violet-700: #5d2d8b;
+  --color-violet-800: #4b246f;
+  --color-violet-900: #34194d;
 
   /* ---- Ink — deep indigo / navy (display headings, body titles) ---- */
   --color-ink-50: #eeecf5;
@@ -129,7 +129,7 @@
   --color-ink-700: #251551;
   --color-ink-800: #1d1140;
   --color-ink-900: #150c30;
-  --color-ink: #1b1238;
+  --color-ink: #29141f;
 
   /* ---- Text scale ----------------------------------------------------
      Four steps for text, in decreasing emphasis. These replace the raw
@@ -152,9 +152,9 @@
      `ink-faint` is not for text a person has to read. If you are about to
      use it on a sentence, use `ink-subtle`.
      ------------------------------------------------------------------ */
-  --color-ink-muted: #3a2f55;
-  --color-ink-subtle: #5f5873;
-  --color-ink-faint: #8a839b;
+  --color-ink-muted: #4d3543;
+  --color-ink-subtle: #6c6065;
+  --color-ink-faint: #8a7881;
 
   /* ---- Status badges -------------------------------------------------
      Semantic, not themed: green means good and red means stop whatever
@@ -186,15 +186,15 @@
 
   /* Brand text on a brand tint — `text-brand-600` on `bg-brand-50` was
      4.22:1, just under. Pair these two, never brand-600 on brand-50. */
-  --color-brand-tint: #fff0f7;
-  --color-brand-ink: #a3005a;
+  --color-brand-tint: #f9f0f3;
+  --color-brand-ink: #62223f;
 
   /* Keyboard focus outline. Only the no-theme fallback — the theme engine
      replaces it with that theme's brand ink, which is already solved for
      contrast against every surface it can land on. */
-  --color-focus: #c80066;
-  --color-violet-tint: #f4f2ff;
-  --color-violet-ink: #3d27c9;
+  --color-focus: #742a4f;
+  --color-violet-tint: #f7f1fb;
+  --color-violet-ink: #5d2d8b;
 
   /* ---- Surfaces & lines ----------------------------------------------
      These existed as CSS variables but were never registered as Tailwind
@@ -213,12 +213,12 @@
      Values here are only the no-theme fallback; the real ones are derived
      per theme in `theme-engine/surfaces.ts`.
      ------------------------------------------------------------------ */
-  --color-canvas: #fbf9fd;
+  --color-canvas: #fcf8f7;
   --color-surface: #ffffff;
-  --color-surface-hover: #f5f2fa;
-  --color-surface-inset: #f5f2fa;
-  --color-line: #ece7f3;
-  --color-line-strong: #dcd4e8;
+  --color-surface-hover: #f7efef;
+  --color-surface-inset: #f7efef;
+  --color-line: #eadde1;
+  --color-line-strong: #d7c3cc;
 
   /* ---- Learned conventions -------------------------------------------
      A rating star is gold and a favourite heart is red everywhere; those
@@ -284,14 +284,14 @@
   --wc-sidebar-width: 253px;
 
   /* Page canvas. Kept a step deeper than --surface so panels lift off it. */
-  --background: #fbf9fd;
-  --foreground: #1b1238;
+  --background: #fcf8f7;
+  --foreground: #29141f;
 
   /* Panel colour. Warm bone rather than pure white — softer on the eye.
      Every white surface in the app resolves to this one token. */
   --surface: #ffffff;
-  --surface-hover: #f5f2fa; /* hover / active step on a surface */
-  --surface-inset: #f5f2fa; /* pressed wells, inputs */
+  --surface-hover: #f7efef; /* hover / active step on a surface */
+  --surface-inset: #f7efef; /* pressed wells, inputs */
 
   /* Radii — the app's rounding scale */
   --wc-radius-sm: 0.6rem;

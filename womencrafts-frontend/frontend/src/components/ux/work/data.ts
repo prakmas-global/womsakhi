@@ -8,12 +8,15 @@
  * it and a "₹6 – 9 LPA" label cannot be sorted.
  */
 
+import type { BulkOrderDetails } from "@/lib/growth-api";
+
 const A = (n: string) => `/ux/art/${n}.webp`;
 
 export type WorkKind = "Job" | "Freelance" | "Order" | "Internship";
 export type WorkMode = "Remote" | "Hybrid" | "On-site";
 
 export type Job = {
+  orderDetails?: BulkOrderDetails | null;
   id: string;
   title: string;
   org: string;
@@ -65,6 +68,11 @@ export type Job = {
   /** She posted it herself. */
   isMine?: boolean;
   categoryName?: string;
+  /** Work masters: the category key and skill keys — they choose its picture (work/pictures.tsx). */
+  category?: string;
+  skillKeys?: string[];
+  /** Its own photo, when the poster added one. */
+  cover?: string;
 };
 
 export const JOBS: Job[] = [

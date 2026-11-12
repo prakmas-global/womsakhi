@@ -1,5 +1,6 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { artFor } from "@/components/ux/media/art";
 import { useCallback, useMemo, useState } from "react";
 
@@ -11,54 +12,20 @@ import { apiApply, apiOpportunities, type Opportunity } from "@/lib/growth-api";
 import { useAction } from "@/lib/use-action";
 import { useResource } from "@/lib/use-resource";
 import { useT } from "@/i18n";
+import { apiMyWorkProfile, type WorkProfile } from "@/lib/work-api";
 
-/**
- * Big orders, and the wait for the money.
- *
- * ── What this screen used to do, and why it had to stop ─────────────────────
- * It rendered three invented contracts from `@/components/ux/eight/data` and a
- * "Join the group bid" button whose entire implementation was
- * `setBid([...b, c.id])`. A woman was told *"You are in. 14 women are bidding
- * together"* — and no request was made, nobody was told, and it was gone on
- * reload. That is the worst class of bug this product can ship: a confirmation
- * for something that did not happen, on a decision about her income.
- *
- * ── What it does now ────────────────────────────────────────────────────────
- * Every row is a real row: `GET /growth/opportunities?kind=Craft order` — the
- * bulk orders staff have actually placed — and the button is
- * `POST /growth/opportunities/{id}/apply`, which writes an `applications`
- * document, increments the listing's applicant count and notifies her. Whether
- * she has applied comes back from the server on `applied`, so a reload tells
- * the truth rather than a `useState` that survived the render.
- *
- * ── What was deleted rather than wired, and why ─────────────────────────────
- * The cash timeline — "you buy cloth, you deliver, they pay in 90 days", drawn
- * to scale — was the best thing on this screen and it was made of nothing. The
- * server records no payment term, no contract value and no materials cost, so
- * every mark on that bar was computed from a fixture: `materials` was literally
- * `value × 0.3`. A bar drawn to scale from invented numbers is more dangerous
- * than no bar, because it *looks* measured. What the buyer actually wrote about
- * payment is shown instead, in the buyer's own words, unparsed.
- *
- * If the timeline is to come back — and the research says it should; when the
- * US federal government accelerated payments to small suppliers, employment at
- * those suppliers went up — the opportunity needs `pays_in_days` and a value,
- * and staff need somewhere to type them. That is a backend change, not a
- * component.
- */
+/** Bulk product requests. Nearby is an explicit town/area match, not GPS distance. */
 export default function ContractsPage() {
   const tr = useT();
 
-  /**
-   * Bulk orders only.
-   *
-   * `kind` is one of five the server knows, and "Craft order" is its name for
-   * the thing this screen is about: a confirmed order split across several
-   * women. Filtering server-side rather than fetching everything and dropping
-   * most of it — she is on a phone.
-   */
+  const profile = useResource<WorkProfile|null>(useCallback(sig=>apiMyWorkProfile(sig),[]),null);
+  const [cityDraft,setCityDraft]=useState<string|null>(null);
+  const [areaDraft,setAreaDraft]=useState("");
+  const [chosen,setChosen]=useState<{city:string;area:string}|null>(null);
+  const city=chosen?.city ?? profile.data?.city ?? "";
+  const area=chosen?.area ?? "";
   const { data: orders, source, error, refetch } = useResource<Opportunity[]>(
-    useCallback((s: AbortSignal) => apiOpportunities(s, { kind: "Craft order" }), []),
+    useCallback((sig: AbortSignal) => city.trim() ? apiOpportunities(sig, { kind: "Craft order",city:city.trim(),area:area.trim() }) : Promise.resolve([]), [city,area]),
     [],
   );
 
@@ -87,7 +54,7 @@ export default function ContractsPage() {
     },
   );
 
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const today = useMemo(() => new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Kolkata"}), []);
   const open = useMemo(
     () => orders.filter((o) => o.status === "open" && (!o.deadline || o.deadline >= today)),
     [orders, today],
@@ -103,14 +70,34 @@ export default function ContractsPage() {
 
         <header>
           <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] lg:text-2xs" style={{ color: v("--ux-brand") }}>{tr("contracts.bigOrders")}</p>
-          <h1 className="ux-screen-title mt-1 lg:mt-2 text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em]"
-              style={{ color: v("--ux-ink") }}>{tr("contracts.ordersTooBigForOneWoman")}</h1>
+          <div className="mt-1 lg:mt-2 flex min-w-0 items-center gap-3">
+            <PlaceMark size={44} />
+            <h1 className="ux-screen-title text-[clamp(1.5rem,3.2vw,2.125rem)] font-extrabold leading-[1.1] tracking-[-0.035em] min-w-0"
+                style={{ color: v("--ux-ink") }}>{tr("contracts.ordersTooBigForOneWoman")}</h1>
+          </div>
           <p className="mt-2 max-w-[58ch] text-[15px] leading-snug lg:mt-1.5 lg:text-sm lg:leading-relaxed" style={{ color: v("--ux-muted") }}>
             One buyer wants hundreds of pieces, and several of you make them between you. Everything
-            below is an order a real buyer has placed with us. When you apply, that buyer sees your
-            name — so apply only for work you can actually take on.
+            below is a buyer’s request for products, not a job vacancy. Apply to discuss your share;
+            the buyer chooses the makers and agrees the work before it starts.
           </p>
         </header>
+
+        <div className="flex flex-wrap gap-2">
+          <Btn href="/app/work/post?kind=Craft%20order" icon="Plus">Post a big order</Btn>
+          <Btn href="/app/work/posts" variant="outline" icon="ClipboardList">My posts & applicants</Btn>
+          <Btn href="/app/applications" variant="ghost">My applications</Btn>
+        </div>
+        <Card>
+          <h2 className="text-base font-bold">Orders near you</h2>
+          <p className="mt-1 text-sm" style={{color:v("--ux-muted")}}>Starts with the town in your work profile. Choose an area to narrow it down. This matches place names, not kilometre distance; orders without a matching location stay out.</p>
+          <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={event=>{event.preventDefault();setChosen({city:(cityDraft??city).trim(),area:areaDraft.trim()});}}>
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-semibold">Town or city<input aria-label="Nearby town or city" required maxLength={80} value={cityDraft??city} onChange={e=>setCityDraft(e.target.value)} placeholder="e.g. Hyderabad" className="min-h-[44px] min-w-0 rounded-xl border px-3" style={{background:v("--ux-surface"),borderColor:v("--ux-line-strong"),color:v("--ux-ink")}}/></label>
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm font-semibold">Area (optional)<input aria-label="Nearby area" maxLength={80} value={areaDraft} onChange={e=>setAreaDraft(e.target.value)} placeholder="e.g. Kukatpally" className="min-h-[44px] min-w-0 rounded-xl border px-3" style={{background:v("--ux-surface"),borderColor:v("--ux-line-strong"),color:v("--ux-ink")}}/></label>
+            <button type="submit" className="min-h-[44px] rounded-xl px-4 text-sm font-bold" style={{background:v("--ux-fill"),color:"white"}}>Show nearby orders</button>
+          </form>
+          <p className="mt-3 text-sm" role="status">{city.trim()?`Showing ${area?`${area}, `:""}${city} only.`:"Choose your town to see nearby orders."}</p>
+          {profile.error&&<p className="mt-2 text-sm" role="alert">Your work-profile town could not load. Enter it above or <button onClick={()=>profile.refetch()} className="underline">try again</button>.</p>}
+        </Card>
 
         {note && (
           <Card pad={16} style={{ background: v("--ux-tint-green"), borderColor: "transparent" }}>
@@ -161,8 +148,8 @@ export default function ContractsPage() {
           ) : open.length === 0 && !error ? (
             <EmptyState
               icon="Briefcase"
-              title={tr("contracts.noBigOrdersOpenRightNow")}
-              body={tr("contracts.bulkOrdersComeInBurstsA")}
+              title={city.trim()?"No open orders in this location":"Choose a town to get started"}
+              body="Try another area in your town, check back later, or post an order you need help making."
               action={<Btn href="/app/opportunities" icon="Search">{tr("contracts.seeAllTheWork")}</Btn>}
             />
           ) : (
@@ -359,6 +346,12 @@ function OrderCard({ o, closed, busy, onApply }: {
         ))}
       </div>
 
+      {o.order_details && <dl className="mx-4 mt-4 grid gap-3 rounded-xl p-4 text-sm lg:mx-5" style={{background:v("--ux-surface-2")}}>
+        <div><dt className="font-semibold">Quantity & delivery</dt><dd>{o.order_details.quantity.toLocaleString("en-IN")} {o.order_details.unit} · by {new Date(`${o.order_details.delivery_date}T12:00:00`).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</dd></div>
+        <div><dt className="font-semibold">Materials</dt><dd>{o.order_details.materials}</dd></div>
+        <div><dt className="font-semibold">Payment terms</dt><dd>{o.order_details.payment_terms}</dd></div>
+      </dl>}
+
       {o.skills.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5 px-4 lg:px-5">
           {o.skills.map((s) => <Tag key={s} tone="brand" size="sm">{s}</Tag>)}
@@ -393,7 +386,7 @@ function OrderCard({ o, closed, busy, onApply }: {
       )}
 
       <div className="mt-4 flex flex-col gap-2 border-t px-4 py-4 lg:flex-row lg:flex-wrap lg:px-5" style={{ borderColor: v("--ux-line") }}>
-        {o.applied ? (
+        {o.is_mine ? <Btn href={`/app/work/posts?job=${o.id}`} icon="Users">Manage applicants</Btn> : o.applied ? (
           <Btn className="ux-action-primary" variant="outline" icon="Check" href="/app/applications">
             {tr("contracts.youAppliedSeeIt")}
           </Btn>

@@ -24,6 +24,7 @@ she pays them directly; 0 means free.
 from __future__ import annotations
 
 from datetime import date as Date, datetime, timedelta, timezone
+import re
 from typing import Literal, Optional
 
 from bson import ObjectId
@@ -31,7 +32,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 from pymongo.errors import DuplicateKeyError
 
-from app.core import mongosafe
+from app.core import masters, mongosafe
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.media import MediaRefOptional, media_url
@@ -51,6 +52,8 @@ DAYS_AHEAD = 30
 OPEN_LIMIT = 3      # live consultations a member may hold at once
 DAILY_LIMIT = 5     # bookings a day
 
+#: The specialities the app shipped with. The list staff edit is the
+#: `doctor_specialities` master (app/core/masters.py); this tuple only seeds it.
 SPECIALITIES = ("Gynaecologist", "Fertility specialist", "General physician", "Paediatrician", "Nutritionist",
                 "Counsellor", "Endocrinologist", "Dermatologist", "Physiotherapist", "Other")
 MODES = ("Video", "Phone", "Clinic")
@@ -94,10 +97,11 @@ class Hours(BaseModel):
 
 class DoctorUpsert(BaseModel):
     name: str = Field(..., min_length=2, max_length=80)
-    speciality: Literal["Gynaecologist", "Fertility specialist", "General physician", "Paediatrician", "Nutritionist",
-                        "Counsellor", "Endocrinologist", "Dermatologist", "Physiotherapist", "Other"]
+    #: A label from the `doctor_specialities` master (app/core/masters.py), checked on save.
+    speciality: str = Field(..., min_length=1, max_length=80)
     qualifications: str = Field("", max_length=120)
     registration_no: str = Field("", max_length=40)
+    #: Labels from the `languages` master, checked on save.
     languages: list[str] = Field(default_factory=list, max_length=10)
     experience_years: int = Field(0, ge=0, le=60)
     fee_minor: int = Field(0, ge=0, le=10_000_00)
@@ -261,7 +265,7 @@ async def _active_doctor(doctor_id: str) -> dict:
 
 @router.get("", response_model=list[DoctorOut], summary="Doctors I can consult")
 async def list_doctors(
-    speciality: str = Query("", max_length=40),
+    speciality: str = Query("", max_length=80),
     language: str = Query("", max_length=30),
     mode: str = Query("", max_length=10),
     q: str = Query("", max_length=60),
@@ -269,7 +273,8 @@ async def list_doctors(
 ):
     query: dict = {"active": True}
     if speciality:
-        query["speciality"] = speciality
+        # Any label in the master, matched without regard to case ("?speciality=gynaecologist").
+        query["speciality"] = {"$regex": f"^{re.escape(speciality.strip())}$", "$options": "i"}
     if language:
         query["languages"] = language
     if mode:
@@ -492,9 +497,31 @@ async def admin_list(q: str = Query("", max_length=60)):
     return [_doctor_out(d, done=done.get(str(d["_id"]), 0)) for d in docs]
 
 
+async def _vetted(body: "DoctorUpsert", current: Optional[dict] = None) -> "DoctorUpsert":
+    """
+    Speciality and languages as the masters spell them, or a 422 naming the
+    choices. What the doctor already has passes unchecked, so disabling an
+    item never blocks editing a doctor who uses it.
+    """
+    current = current or {}
+    if body.speciality.strip().lower() != (current.get("speciality") or "").strip().lower():
+        body.speciality = await masters.check("doctor_specialities", body.speciality, field="speciality")
+    else:
+        body.speciality = current["speciality"]
+    have = {c.lower(): c for c in (current.get("languages") or [])}
+    out: list[str] = []
+    for lang in body.languages:
+        c = have.get(lang.strip().lower()) or await masters.check("languages", lang, field="language")
+        if c not in out:
+            out.append(c)
+    body.languages = out
+    return body
+
+
 @admin_router.post("", response_model=DoctorOut, status_code=status.HTTP_201_CREATED, summary="Add a doctor",
                    dependencies=[Depends(require_permission("appointments.create"))])
 async def admin_add(body: DoctorUpsert, request: Request, me: dict = Depends(get_current_user)):
+    body = await _vetted(body)
     now = datetime.now(timezone.utc)
     doc = {**body.model_dump(), "availability": [h.model_dump() for h in body.availability],
            "verified_at": now, "verified_by": str(me["_id"]), "created_at": now, "updated_at": now}
@@ -506,6 +533,7 @@ async def admin_add(body: DoctorUpsert, request: Request, me: dict = Depends(get
 @admin_router.put("/{doctor_id}", response_model=DoctorOut, summary="Edit a doctor",
                   dependencies=[Depends(require_permission("appointments.edit"))])
 async def admin_edit(doctor_id: str, body: DoctorUpsert, request: Request, me: dict = Depends(get_current_user)):
+    body = await _vetted(body, await _db()[DOCTORS].find_one({"_id": _oid(doctor_id)}, {"speciality": 1, "languages": 1}))
     sets = {**body.model_dump(), "availability": [h.model_dump() for h in body.availability],
             "updated_at": datetime.now(timezone.utc)}
     doc = await _db()[DOCTORS].find_one_and_update({"_id": _oid(doctor_id)}, {"$set": sets}, return_document=True)

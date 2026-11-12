@@ -24,7 +24,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.core import cache
+from app.core import cache, masters
+from app.core.account_upi import recipient_upi, require_account_upi
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
@@ -94,7 +95,7 @@ class MentorIn(BaseModel):
     def _price(self):
         if 0 < self.price_rupees < 10:
             raise ValueError("A paid session costs at least ₹10")
-        if self.price_rupees and not UPI_ID.match(self.upi_id):
+        if self.price_rupees and self.upi_id and not UPI_ID.match(self.upi_id):
             raise ValueError("Add the UPI ID learners should pay, like name@okaxis")
         return self
 
@@ -116,7 +117,7 @@ class MentorProfile(BaseModel):
     sessions_done: int
 
 
-def _profile(doc: dict) -> MentorProfile:
+async def _profile(doc: dict) -> MentorProfile:
     return MentorProfile(
         id=str(doc["_id"]),
         live=doc.get("status") == "active",
@@ -126,7 +127,7 @@ def _profile(doc: dict) -> MentorProfile:
         location=doc.get("location", ""), availability=doc.get("availability", ""),
         session_mode=doc.get("session_mode") or "Video call",
         session_minutes=int(doc.get("session_minutes") or 30),
-        price_minor=int(doc.get("price_minor") or 0), upi_id=doc.get("upi_id", ""),
+        price_minor=int(doc.get("price_minor") or 0), upi_id=await recipient_upi(get_database(),doc.get("owner_id", ""),doc.get("upi_id", "")),
         sessions_done=int(doc.get("sessions_done") or 0),
     )
 
@@ -138,11 +139,31 @@ async def _my_mentor(me: dict) -> dict | None:
 @router.get("/mentoring/me", response_model=MentorProfile | None, summary="My mentor profile")
 async def get_my_profile(me: dict = Depends(require_active_member)):
     doc = await _my_mentor(me)
-    return _profile(doc) if doc else None
+    return await _profile(doc) if doc else None
 
 
 @router.put("/mentoring/me", response_model=MentorProfile, summary="Become a mentor, or update my profile")
 async def save_my_profile(body: MentorIn, me: dict = Depends(require_active_member)):
+    # Languages as the `languages` master spells them (app/core/masters.py), or a
+    # 422. Ones already on her profile pass, so a language staff later disable
+    # never blocks her from saving the rest.
+    had = await _my_mentor(me)
+    have = {c.lower(): c for c in ((had or {}).get("languages") or [])}
+    langs: list[str] = []
+    for lang in body.languages:
+        c = have.get(lang.lower()) or await masters.check("languages", lang, field="language")
+        if c not in langs:
+            langs.append(c)
+    body.languages = langs
+    # What she helps with comes from the mentor topics master (a topic or a
+    # topic group). A tag already on her profile stays even if staff have since
+    # disabled it; a new one must be active.
+    before = await _my_mentor(me)
+    kept = {t.lower() for t in ((before or {}).get("expertise") or [])}
+    body.expertise = [t if t.lower() in kept else await masters.check("mentor_topics", t, field="topic")
+                      for t in body.expertise]
+    if body.price_rupees:
+        body.upi_id = await require_account_upi(get_database(),me,body.upi_id)
     now = datetime.now(timezone.utc)
     fields = {
         "name": me.get("full_name") or "A WomSakhi member",
@@ -168,7 +189,7 @@ async def save_my_profile(body: MentorIn, me: dict = Depends(require_active_memb
         doc.update(owner_kind="member", owner_id=str(me["_id"]))
         doc["_id"] = (await _mentors().insert_one(doc)).inserted_id
     cache.forget("growth:mentors")
-    return _profile(doc)
+    return await _profile(doc)
 
 
 async def _set_live(me: dict, live: bool) -> MentorProfile:
@@ -183,7 +204,7 @@ async def _set_live(me: dict, live: bool) -> MentorProfile:
         return_document=True,
     )
     cache.forget("growth:mentors")
-    return _profile(doc)
+    return await _profile(doc)
 
 
 @router.post("/mentoring/me/pause", response_model=MentorProfile, summary="Stop taking requests for now")
@@ -312,7 +333,7 @@ async def payment_received(request_id: str, me: dict = Depends(require_active_me
     now = datetime.now(timezone.utc)
     doc = await _requests().find_one_and_update(
         {"_id": doc["_id"], "payment.status": {"$in": ["awaiting", "claimed"]}},
-        {"$set": {"payment.status": "paid", "payment.confirmed_at": now, "updated_at": now}},
+        {"$set": {"payment.status": "paid", "payment.confirmed_at": now, "payment.confirmed_by": str(me["_id"]), "updated_at": now}},
         return_document=True,
     )
     if not doc:
@@ -370,7 +391,7 @@ async def my_services(me: dict = Depends(require_active_member)):
 
     live_listings = await db["shop_listings"].count_documents({"user_id": uid, "status": "live", "hidden": {"$ne": True}})
     open_orders = await db["shop_orders"].count_documents({"seller_id": uid, "state": {"$in": ["New", "Making", "Ready"]}})
-    payout = await db[PayoutAccountModel.collection_name].count_documents({"user_id": uid})
+    payout = bool(await recipient_upi(db,uid)) or await db[PayoutAccountModel.collection_name].count_documents({"user_id": uid})
     courses = await db[ProgramModel.collection_name].find({"owner_id": uid}, {"status": 1, "price_minor": 1}).to_list(200)
     from app.routes.catalog import OPEN_PROGRAM_STATUSES
     live_courses = [c for c in courses if c.get("status") in OPEN_PROGRAM_STATUSES]

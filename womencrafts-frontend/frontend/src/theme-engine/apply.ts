@@ -1,8 +1,8 @@
-import { STEPS, darkVariant, generateScale, readableOn } from "./palette";
+import { STEPS, darkVariant, generateScale, readableOn, whiteTextFill } from "./palette";
 import { categoricalVariables } from "./categorical";
 import { surfaceVariables } from "./surfaces";
 import { DEFAULT_TOKEN_NAMES, type ColorMode, type ThemeChoice, type TokenNames } from "./types";
-import { DEFAULT_THEME } from "./presets";
+import { DEFAULT_THEME, DEFAULT_PRIMARY_SCALE, DEFAULT_SECONDARY_SCALE } from "./presets";
 
 /**
  * The brand preset is defined by the brand, not by what was saved: a cookie or
@@ -37,7 +37,9 @@ export function themeToVariables(
     [theme.primary, names.primary],
     [theme.secondary, names.secondary],
   ] as const) {
-    const light = generateScale(seed);
+    const light = theme.id === DEFAULT_THEME.id
+      ? (prefix === names.primary ? DEFAULT_PRIMARY_SCALE : DEFAULT_SECONDARY_SCALE)
+      : generateScale(seed);
     const scale = mode === "dark" ? darkVariant(light) : light;
     for (const step of STEPS) {
       vars[`${prefix}-${step}`] = scale[step];
@@ -50,6 +52,10 @@ export function themeToVariables(
     vars[`${prefix}-contrast`] = readableOn(scale[600]);
   }
 
+  vars["--color-action-start"] = whiteTextFill(theme.secondary);
+  vars["--color-action-end"] = whiteTextFill(theme.primary);
+  vars["--color-action-contrast"] = "#ffffff";
+
   // The rest of the look and feel — canvas, panels, borders, shadows, focus
   // rings, scrollbars, chart furniture — all derived from the same hues. Without
   // this the app is themed accents inside an unthemed shell.
@@ -59,6 +65,12 @@ export function themeToVariables(
   // Generated so they can never collide with each other or with the brand.
   Object.assign(vars, categoricalVariables(theme.primary, mode));
 
+  // Surface generation replaces pale scale steps with dark-mode wells.
+  // Pick foregrounds only after those final background values are known.
+  for (const prefix of [names.primary, names.secondary]) {
+    for (const step of STEPS) vars[`${prefix}-${step}-contrast`] = readableOn(vars[`${prefix}-${step}`]);
+    vars[`${prefix}-contrast`] = vars[`${prefix}-600-contrast`];
+  }
   return vars;
 }
 
@@ -82,10 +94,14 @@ export function clearTheme(target?: HTMLElement, names: TokenNames = DEFAULT_TOK
   if (typeof document === "undefined") return;
   const el = target ?? document.documentElement;
   for (const prefix of [names.primary, names.secondary]) {
-    for (const step of STEPS) el.style.removeProperty(`${prefix}-${step}`);
+    for (const step of STEPS) {
+      el.style.removeProperty(`${prefix}-${step}`);
+      el.style.removeProperty(`${prefix}-${step}-contrast`);
+    }
     el.style.removeProperty(prefix);
     el.style.removeProperty(`${prefix}-contrast`);
   }
+  for (const key of ["--color-action-start", "--color-action-end", "--color-action-contrast"]) el.style.removeProperty(key);
   for (const key of Object.keys(surfaceVariables("#000000", "#000000", "light"))) {
     el.style.removeProperty(key);
   }

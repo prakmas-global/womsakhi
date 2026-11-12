@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useI18n, useT } from "@/i18n";
 import type { MessageKey } from "@/i18n";
 import { Btn, Card, I, IconTile, Pill, v } from "@/components/ux/kit";
 import {
-  ALL_TIMES, PRESETS, QUICK_TIMES, WEEKDAYS, presetFor, spokenTime,
-  type ReminderPreset,
+  ALL_TIMES, INTERVALS, PRESETS, QUICK_TIMES, WEEKDAYS, presetFor, spokenTime,
+  type DraftReminder,
 } from "@/components/ux/reminders/data";
 import {
-  apiEditReminder, apiNextOccurrences, apiSuggestTime,
+  apiEditReminder, apiNextOccurrences, apiSuggestTime, apiPreviewReminder, apiActOnOccurrence, apiSetReminderState,
   type Occurrence, type Reminder,
 } from "@/lib/engines-api";
+
+import { draftFor, scheduleFor } from "@/components/ux/reminders/schedule";
+import { apiErrorMessage } from "@/lib/api";
+import { ReminderModal } from "./reminder-modal";
 
 const k = (s: string) => s as MessageKey;
 
@@ -27,9 +31,10 @@ const k = (s: string) => s as MessageKey;
  * wrong weekday index looks perfectly correct as a sentence.
  */
 export function ReminderRow({
-  reminder, onStop, onChanged, busy,
+  reminder, onStop, onChanged, busy, waterOnly = false,
 }: {
   reminder: Reminder;
+  waterOnly?: boolean;
   onStop: (id: string) => void | Promise<void>;
   /** Re-read the list after an edit, so the row shows what the server now has. */
   onChanged: () => void;
@@ -41,6 +46,9 @@ export function ReminderRow({
   const [next, setNext] = useState<Occurrence[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState<DraftReminder>(() => draftFor(reminder));
+  const [actionError, setActionError] = useState("");
+  const [acting, setActing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
 
@@ -55,15 +63,17 @@ export function ReminderRow({
 
   const preset = presetFor(reminder.title_key);
   const s = reminder.schedule;
+  const healthReminder = reminder.title_key === "reminders.healthDue";
 
   const when =
+    s.interval_minutes ? `${tr("rem.everyMinutes", { minutes: s.interval_minutes })} · ${spokenTime(s.local_time, tr)} – ${spokenTime(s.end_time || "21:00", tr)}${s.days.length ? ` · ${s.days.map(d => tr(k(WEEKDAYS[d]?.key))).join(", ")}` : ""}` :
     s.type === "once" && s.at
       ? formatDate(s.at, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
       : s.type === "recurring" && s.days.length > 0
         ? `${s.days.map((d) => tr(k(WEEKDAYS[d]?.key ?? "rem.day.mon"))).join(", ")} · ${spokenTime(s.local_time, tr)}`
         : s.type === "event_relative"
           ? tr("rem.beforeIt", { minutes: Math.abs(s.offset_minutes) })
-          : spokenTime(s.local_time, tr);
+          : `${tr("rem.everyDay")} · ${spokenTime(s.local_time, tr)}`;
 
   /*
     One tint for every row, and one colour for every icon.
@@ -84,9 +94,10 @@ export function ReminderRow({
         />
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold leading-tight" style={{ color: v("--ux-ink") }}>
-            {tr(k(reminder.title_key))}
+            {healthReminder ? "Health reminder" : tr(k(reminder.title_key))}
           </h3>
           <p className="mt-0.5 text-xsm" style={{ color: v("--ux-muted") }}>{when}</p>
+          {reminder.state !== "scheduled" && <p className="mt-1 text-xs font-semibold" style={{ color: v("--ux-muted") }}>{reminder.state === "paused" ? tr("rem.paused") : reminder.state}</p>}
 
           {/*
             Where it came from. REM-UC-009: three weeks later she cannot be
@@ -103,7 +114,7 @@ export function ReminderRow({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Btn size="sm" variant="ghost" className="min-h-[44px]" icon={open ? "ChevronUp" : "CalendarDays"}
-             onClick={() => setOpen((o) => !o)}>
+             onClick={() => { setNext(null); setFailed(false); setOpen((o) => !o); }}>
           {open ? tr("rem.hideDates") : tr("rem.showDates")}
         </Btn>
         {/*
@@ -116,19 +127,40 @@ export function ReminderRow({
           Only offered for a repeat: a one-off's instant is the reminder, and
           "move it" there is a different question than "what time of day".
         */}
-        {s.type === "recurring" && (
+        {reminder.klass !== "user" && s.type === "recurring" && (
           <Btn size="sm" variant="ghost" className="min-h-[44px]" icon="Clock" disabled={busy || editing}
                onClick={() => setEditing((e) => !e)}>
             {tr("rem.changeTime")}
           </Btn>
         )}
-        <Btn size="sm" variant="ghost" className="min-h-[44px]" icon="CircleSlash"
+        {reminder.klass === "user" && preset && ["scheduled", "paused"].includes(reminder.state) && <>
+          <Btn size="sm" variant="ghost" icon="Pencil" disabled={busy || acting} onClick={() => { setEditDraft(draftFor(reminder)); setActionError(""); setEditing(true); }}>{tr("rem.editReminder")}</Btn>
+          {s.type === "recurring" && <Btn size="sm" variant="ghost" icon={reminder.state === "paused" ? "Play" : "Pause"} disabled={busy || acting} onClick={async () => {
+            setActing(true); setActionError("");
+            try { if(!await apiSetReminderState(reminder.id, reminder.state === "paused" ? "scheduled" : "paused")) throw new Error("Reminder could not be updated"); setNext(null); onChanged(); }
+            catch(error) { setActionError(apiErrorMessage(error)); } finally { setActing(false); }
+          }}>{tr(reminder.state === "paused" ? "rem.resume" : "rem.pause")}</Btn>}
+        </>}
+        {healthReminder && <Btn href="/app/health/reminders" size="sm" variant="ghost" icon="Heart">Manage health reminder</Btn>}
+        {!healthReminder && <Btn size="sm" variant="ghost" className="min-h-[44px]" icon="CircleSlash"
              onClick={() => onStop(reminder.id)} disabled={busy || saving}>
           {tr("rem.stopSeries")}
-        </Btn>
+        </Btn>}
       </div>
 
-      {editing && (
+      {actionError && <p role="alert" className="mt-3 text-sm" style={{ color: v("--ux-danger-ink") }}>{actionError}</p>}
+      {!healthReminder && reminder.due_occurrence && <div className="mt-3 space-y-2 rounded-xl border p-3" style={{ borderColor: v("--ux-line") }}><p className="text-sm font-semibold">{tr("rem.dueNow")}</p><DueActions busy={busy || acting} snoozeMinutes={15} onAct={async action => {
+        setActing(true); setActionError("");
+        try { if(!await apiActOnOccurrence(reminder.due_occurrence!.id, action, { minutes: 15 })) throw new Error("This occurrence is no longer available. Refresh your reminders."); setNext(null); onChanged(); }
+        catch(error) { setActionError(apiErrorMessage(error)); } finally { setActing(false); }
+      }} /></div>}
+      <ReminderModal open={editing && reminder.klass === "user"} onClose={() => { setEditing(false); setActionError(""); }} busy={saving} title={tr("rem.editReminder")}><ReminderComposer waterOnly={waterOnly} bare draft={editDraft} setDraft={setEditDraft} saving={saving} onSave={async () => {
+        if(saving || !editDraft.preset) return; setSaving(true); setActionError("");
+        const { schedule_type, ...fields } = scheduleFor(editDraft);
+        try { if(!await apiEditReminder(reminder.id, { title_key: editDraft.preset.key, tz: Intl.DateTimeFormat().resolvedOptions().timeZone, schedule: { ...fields, at: fields.at ?? null, type: schedule_type } })) throw new Error("Reminder could not be saved"); setEditing(false); setNext(null); onChanged(); }
+        catch(error) { setActionError(apiErrorMessage(error)); } finally { setSaving(false); }
+      }} />{actionError && <p role="alert" className="mt-3 text-sm">{actionError}</p>}</ReminderModal>
+      {editing && reminder.klass !== "user" && (
         <div className="mt-3 rounded-xl px-3 py-2.5" style={{ background: v("--ux-surface") }}>
           <p className="text-2xs" style={{ color: v("--ux-muted") }}>{tr("rem.pickANewTime")}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -187,7 +219,7 @@ export function ReminderRow({
           ) : (
             <ol className="space-y-1">
               {next.map((o) => (
-                <li key={o.id} className="flex items-center gap-2 text-xsm"
+                <li key={o.id || o.due_at} className="flex items-center gap-2 text-xsm"
                     style={{ color: v("--ux-ink-2") }}>
                   <I name="Dot" className="h-4 w-4" style={{ color: v("--ux-brand") }} />
                   {formatDate(o.due_at, {
@@ -221,8 +253,9 @@ const ROW_SURFACE: React.CSSProperties = {
  * a woman who stops being reminded about her iron tablet.
  */
 export function DueActions({
-  onAct, busy,
+  onAct, busy, snoozeMinutes = 60,
 }: {
+  snoozeMinutes?: number;
   onAct: (action: "done" | "snooze" | "skip" | "stop") => void | Promise<void>;
   busy: boolean;
 }) {
@@ -233,10 +266,10 @@ export function DueActions({
         {tr("rem.done")}
       </Btn>
       <Btn size="sm" variant="soft" icon="Clock" onClick={() => onAct("snooze")} disabled={busy}>
-        {tr("rem.later")}
+        {tr("rem.snoozeMinutes", { minutes: snoozeMinutes })}
       </Btn>
       <Btn size="sm" variant="outline" icon="Pause" onClick={() => onAct("skip")} disabled={busy}>
-        {tr("rem.skipToday")}
+        {tr("rem.skipOccurrence")}
       </Btn>
       <Btn size="sm" variant="ghost" icon="CircleSlash" onClick={() => onAct("stop")} disabled={busy}>
         {tr("rem.stop")}
@@ -262,14 +295,7 @@ export function DueActions({
  * her screen that the system does not honour — which is the same lie as the
  * one that made a "daily" reminder never fire at all.
  */
-export type Repeat = "once" | "everyDay" | "someDays";
-
-export interface DraftReminder {
-  preset: ReminderPreset | null;
-  repeat: Repeat;
-  time: string;
-  days: number[];
-}
+export type { DraftReminder } from "@/components/ux/reminders/data";
 
 /**
  * Picture, then time, then how often. In that order, on one screen.
@@ -280,9 +306,10 @@ export interface DraftReminder {
  * whoever set it up happened to use.
  */
 export function ReminderComposer({
-  draft, setDraft, onSave, saving, bare = false,
+  draft, setDraft, onSave, saving, bare = false, waterOnly = false,
 }: {
   draft: DraftReminder;
+  waterOnly?: boolean;
   setDraft: (d: DraftReminder) => void;
   onSave: () => void | Promise<void>;
   saving: boolean;
@@ -290,9 +317,22 @@ export function ReminderComposer({
   bare?: boolean;
 }) {
   const tr = useT();
+  const [choosingPreset, setChoosingPreset] = useState(!draft.preset);
+  const changePreset = useRef<HTMLButtonElement>(null);
   const [allTimes, setAllTimes] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [why, setWhy] = useState("");
+  const { formatDate } = useI18n();
+  const [preview, setPreview] = useState<string[] | null>(null);
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [previewFor, setPreviewFor] = useState<DraftReminder | null>(null);
+  const dates = previewFor === draft ? preview : null;
+  useEffect(() => {
+    if(!draft.preset || !draft.time || (draft.repeat === "someDays" && !draft.days.length) || (draft.repeat === "interval" && (draft.endTime ?? "21:00") <= draft.time)) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => { setPreview(null); setPreviewFailed(false); void apiPreviewReminder({ title_key: draft.preset!.key, ...scheduleFor(draft) }, controller.signal).then(result => { setPreview(result); setPreviewFor(draft); }).catch(() => { if(!controller.signal.aborted) setPreviewFailed(true); }); }, 250);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [draft]);
   const times = allTimes ? ALL_TIMES : QUICK_TIMES;
   const Head = bare ? "h3" : "h2";
 
@@ -306,14 +346,14 @@ export function ReminderComposer({
       </Head>
 
       {/* 1 · the picture */}
-      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {PRESETS.map((p) => {
+      {choosingPreset || !draft.preset ? <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+        {PRESETS.filter(p => (p.key === "rem.preset.water") === waterOnly).map((p) => {
           const on = draft.preset?.key === p.key;
           return (
             <button
               key={p.key}
               type="button"
-              onClick={() => setDraft({ ...draft, preset: p, time: p.suggest })}
+              onClick={() => { setDraft({ ...draft, preset: p, time: p.key === "rem.preset.water" ? "08:00" : p.suggest, repeat: p.key === "rem.preset.water" ? "interval" : draft.repeat, intervalMinutes: draft.intervalMinutes ?? 30, endTime: draft.endTime ?? "21:00" }); setChoosingPreset(false); requestAnimationFrame(() => changePreset.current?.focus()); }}
               aria-pressed={on}
               className="flex min-h-[92px] flex-col items-center justify-center gap-1.5 rounded-xl px-1.5 py-2 text-center transition"
               style={{
@@ -329,8 +369,27 @@ export function ReminderComposer({
             </button>
           );
         })}
-      </div>
+      </div> : <div className="mt-3 flex items-center gap-3 rounded-xl border p-3" style={{ borderColor: v("--ux-line"), background: v("--ux-surface-2") }}>
+        <I name={draft.preset.icon} className="h-6 w-6 shrink-0" style={{ color: v(draft.preset.ink) }} /><p className="min-w-0 flex-1 text-sm font-semibold">{tr(k(draft.preset.key))}</p>
+        {!waterOnly && <button ref={changePreset} type="button" className="min-h-11 rounded-lg px-3 text-sm font-semibold" style={{ color: v("--ux-brand") }} onClick={() => setChoosingPreset(true)}>{tr("rem.changePurpose")}</button>}
+      </div>}
 
+      {draft.repeat === "interval" && <div className="mt-5 space-y-3 rounded-xl border p-4" style={{ borderColor: v("--ux-line"), background: v("--ux-surface-2") }}>
+        <label className="block text-sm font-semibold">{tr("rem.repeatEvery")}
+          <select aria-label={tr("rem.repeatEvery")} className="ux-field mt-2 min-h-11 w-full rounded-xl border px-3" style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} value={draft.intervalMinutes ?? 30} onChange={e => setDraft({ ...draft, intervalMinutes: Number(e.target.value) })}>
+            {[...new Set([...INTERVALS, draft.intervalMinutes ?? 30])].sort((a,b)=>a-b).map(n => <option key={n} value={n}>{tr("rem.everyMinutes", { minutes: n })}</option>)}
+          </select>
+        </label>
+        <label className="block text-sm font-semibold">{tr("rem.startTime")}
+          <input aria-label={tr("rem.startTime")} type="time" required className="ux-field mt-2 min-h-11 w-full rounded-xl border px-3" style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} value={draft.time} onChange={e => setDraft({ ...draft, time: e.target.value })} />
+        </label>
+        <label className="block text-sm font-semibold">{tr("rem.untilTime")}
+          <input aria-label={tr("rem.untilTime")} type="time" required className="ux-field mt-2 min-h-11 w-full rounded-xl border px-3" style={{ borderColor: v("--ux-line-strong"), background: v("--ux-surface"), color: v("--ux-ink") }} value={draft.endTime ?? "21:00"} onChange={e => setDraft({ ...draft, endTime: e.target.value })} />
+        </label>
+        <p className="text-xs leading-relaxed" style={{ color: v("--ux-muted") }}>{tr("rem.intervalHelp")}</p>
+        {(draft.endTime ?? "21:00") <= draft.time && <p role="alert" className="text-sm" style={{ color: v("--ux-danger-ink") }}>{tr("rem.endAfterStart")}</p>}
+      </div>}
+      {draft.repeat !== "interval" && <>
       {/* 2 · the hour */}
       <h3 className="mt-5 text-sm font-semibold" style={{ color: v("--ux-ink") }}>
         {tr("rem.atWhatTime")}
@@ -393,6 +452,7 @@ export function ReminderComposer({
         </div>
       )}
 
+      </>}
       {/* 3 · how often */}
       <h3 className="mt-5 text-sm font-semibold" style={{ color: v("--ux-ink") }}>
         {tr("rem.howOften")}
@@ -402,13 +462,14 @@ export function ReminderComposer({
           ["once", "rem.justOnce"],
           ["everyDay", "rem.everyDay"],
           ["someDays", "rem.someDays"],
+          ["interval", "rem.interval"],
         ] as const).map(([repeat, label]) => {
           const on = draft.repeat === repeat;
           return (
             <button
               key={repeat}
               type="button"
-              onClick={() => setDraft({ ...draft, repeat })}
+              onClick={() => setDraft({ ...draft, repeat, intervalMinutes: draft.intervalMinutes ?? 30, endTime: draft.endTime ?? "21:00" })}
               aria-pressed={on}
               className="min-h-[44px] rounded-full px-3.5 text-xsm font-medium transition"
               style={{
@@ -422,7 +483,8 @@ export function ReminderComposer({
         })}
       </div>
 
-      {draft.repeat === "someDays" && (
+      {draft.repeat === "interval" && <p className="mt-3 text-xs" style={{ color: v("--ux-muted") }}>{tr("rem.intervalDays")}</p>}
+      {(draft.repeat === "someDays" || draft.repeat === "interval") && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {WEEKDAYS.map((d) => {
             const on = draft.days.includes(d.value);
@@ -452,6 +514,9 @@ export function ReminderComposer({
         </div>
       )}
 
+      {draft.preset && <div className="mt-4 rounded-xl p-3" style={{ background: v("--ux-surface-2") }}><p className="text-sm font-semibold">{tr("rem.previewTitle")}</p>
+        {previewFailed ? <p role="status" className="mt-1 text-xs">{tr("rem.datesFailed")}</p> : dates ? <ol className="mt-2 space-y-1 text-xs">{dates.map(at => <li key={at}>{formatDate(at, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</li>)}{!dates.length && <li>{tr("rem.noMoreDates")}</li>}</ol> : <p role="status" className="mt-1 text-xs">{tr("rem.readingDates")}</p>}
+      </div>}
       {/*
         Nothing is saved until this is pressed, and it says so. The composer
         writes to local state only — a half-finished reminder never reaches the
@@ -463,7 +528,7 @@ export function ReminderComposer({
           className="min-h-[44px]"
           onClick={onSave}
           loading={saving}
-          disabled={!draft.preset || (draft.repeat === "someDays" && draft.days.length === 0)}
+          disabled={saving || !draft.preset || !draft.time || (draft.repeat === "someDays" && draft.days.length === 0) || (draft.repeat === "interval" && (!draft.endTime || draft.endTime <= draft.time))}
         >
           {tr("rem.setIt")}
         </Btn>

@@ -1,0 +1,197 @@
+{
+  "date": "2026-10-31",
+  "data": "Existing development demo records; no records changed by these checks.",
+  "screenshots": [
+    "income-desktop.png",
+    "income-mobile.png",
+    "income-dark.png",
+    "money-mobile.png",
+    "customer-dues-desktop.png",
+    "home-mobile.png",
+    "reminders-desktop.png",
+    "reminders-mobile.png",
+    "reminders-dark.png",
+    "calendar-desktop.png",
+    "calendar-mobile.png",
+    "calendar-dark.png",
+    "sleep-clock-desktop.png",
+    "sleep-clock-mobile.png",
+    "sleep-clock-dark.png",
+    "big-orders-desktop.png",
+    "big-orders-mobile.png",
+    "big-orders-dark.png",
+    "course-reader-desktop.png",
+    "course-reader-mobile.png",
+    "course-reader-dark.png",
+    "reader-discovery-desktop.png",
+    "reader-discovery-mobile.png",
+    "reader-discovery-dark.png",
+    "global-upi-desktop.png",
+    "global-upi-mobile.png",
+    "global-upi-dark.png",
+    "grape-wine-home-1440-light.png",
+    "grape-wine-home-390-light.png",
+    "grape-wine-home-390-dark.png",
+    "grape-wine-settings-1440-light.png",
+    "grape-wine-settings-390-light.png",
+    "grape-wine-settings-390-dark.png",
+    "white-text-desktop.png",
+    "white-text-mobile.png",
+    "white-text-dark.png"
+  ],
+  "validation": {
+    "production_build": "passed",
+    "typescript": "passed",
+    "eslint_changed_typescript": "passed",
+    "navigation": "201 routes, 151 nodes passed",
+    "core_responsive_combinations": 48,
+    "other_module_combinations": 28,
+    "income_preview_share_print": "passed; share and print mocked locally",
+    "income_empty_error_states": "passed",
+    "money_keyboard_forms_privacy": "passed",
+    "original_home_banner": "Original artwork and greeting preserved. Image frame follows its 1900:760 proportions without empty bands; six responsive/theme checks passed.",
+    "reminders": {
+      "backend": "767 passed, 3 skipped",
+      "production_build": "passed",
+      "browser": "Preview, create/reload, edit interval, pause/resume, real in-app delivery, snooze, stop, mobile light/dark dialogs and Health water shortcut passed",
+      "push_delivery": "Permission and subscription flow implemented; no external push sent during checks",
+      "local_worker": "Enabled with a successful heartbeat; email/SMS/WhatsApp and safety dispatch disabled in local worker mode"
+    },
+    "water_reminders_location": {
+      "route": "/app/health/reminders/water",
+      "home": "Water shortcut, preset and records removed from the general reminder flow",
+      "existing_schedules": "Shown in Health without a data migration",
+      "notifications": "Water notifications open Health",
+      "checks": "Production build, types, lint, navigation, reminder delivery tests and browser workflow with old-link redirect passed"
+    },
+    "member_calendar": {
+      "backend": "4 calendar tests passed",
+      "production_build": "passed",
+      "typescript": "passed",
+      "browser": "Day/week/month/agenda, period navigation, booking/reminder tabs, focus deadline across tabs, desktop/mobile light/dark passed",
+      "demo_data": "18 labelled activities per active member across 25 October\u20137 November 2026; three active members; no notifications or jobs created"
+    },
+    "sleep_clock": {
+      "production_build": "passed",
+      "typescript": "passed",
+      "eslint": "passed",
+      "browser": "Detailed sleep log and Wellness quick-log entry points; 7 PM overnight, 2:17 AM same-day, midnight/noon, exact minutes, AM/PM, responsive light/dark passed; no personal sleep entries saved"
+    },
+    "big_orders": {
+      "backend": "776 passed, 3 existing skips; includes 22 Work/Big Orders checks",
+      "production_build": "passed",
+      "typescript": "passed",
+      "browser": "Profile-town default, town switching, distant order exclusion, creation, quantities, applications/reload, desktop/mobile light/dark passed against isolated local data",
+      "location_scope": "Selected town, optional area; whole-place fallback for legacy display locations; no GPS-radius claim",
+      "notification_scope": "Big-order skill notifications match town and existing opt-in consent",
+      "workflow_limit": "Shared Work applicant stages; no automatic piece allocation, delivery acceptance or payment transfer"
+    },
+    "course_reading": {
+      "backend": "778 passed, 3 existing skips; 16 targeted course checks passed",
+      "production_build": "passed",
+      "typescript": "passed",
+      "eslint": "passed",
+      "browser": "Article/book authoring, saved-page reload, font controls, save error/retry, mobile/desktop resume CTA and responsive light/dark passed using isolated data",
+      "bookmark_scope": "Per learner and stable lesson ID, revision checked, saved independently of completion",
+      "content_scope": "Authored/pasted text; no PDF/EPUB import"
+    },
+    "reader_discovery": {
+      "production_build": "passed",
+      "browser": "Read book/article entry points, top controls, automatic text pagination, editor preview, page-turn transition and desktop/mobile themes passed against normal app; bookmark writes mocked",
+      "scope": "Paper-style page-turn transition; full text is paginated automatically when Article or Book is chosen"
+    },
+    "paid_course_access": {
+      "backend": "780 passed, 3 existing skips",
+      "production_build": "passed",
+      "browser": "Desktop/mobile editor shows owner-confirmation policy and hides paid public-preview controls; no course saved",
+      "access": "Paid text, videos, articles and books require active/completed enrollment plus paid status, confirmation time and confirmation by the owning teacher",
+      "closed_gaps": [
+        "Paid public-preview flags, including legacy records",
+        "Learner progress updates bypassing pending payment",
+        "Unconfirmed enrollment activation/completion, Q&A, reading writes and new certificate creation"
+      ],
+      "existing_data_audit": "3 active/completed paid enrollments checked, 0 missing valid owner confirmation"
+    },
+    "global_upi": {
+      "backend": "782 passed, 3 existing skips; extra legacy snapshot/empty-default tests passed",
+      "production_build": "passed",
+      "browser": "Settings save/reload, update in course form, mentoring and collection share new address, desktop/mobile themes passed using an isolated local account",
+      "source": "Authenticated user payment_upi_id; same editor in Settings, courses, mentoring and Collect, plus My Payments shortcut",
+      "history": "Submitted destinations are snapshotted; references and confirmed payments preserved",
+      "scope": "Receiving UPI only; no payment gateway, bank transfers or wallet debit enabled"
+    },
+    "grape_wine_theme": {
+      "primary": "#742a4f",
+      "secondary": "#6f35a5",
+      "production_build": "passed",
+      "palette": "Generated preset/hostile scales and exact default scales pass contrast audits",
+      "text_contrast": "192 token/theme/mode combinations passed",
+      "browser": "16 route/viewport/theme combinations passed for Home, UPI settings, Courses and Money; actual member text/action contrast checked",
+      "saved_default": "Existing womsakhi choices normalize to exact wine palette; custom presets remain available",
+      "banner": "Home artwork and proportions preserved"
+    },
+    "white_text_contrast": {
+      "production_build": "passed",
+      "typescript": "passed",
+      "algorithm": "560 foreground/fill pairs and 2,828 gradient samples passed; white action gradients target 7:1",
+      "browser": "48 visible white-control background samples, 16 normal/hover states and 16 desktop/mobile light/dark route combinations passed",
+      "eslint": "Theme helpers pass; existing set-state-in-effect errors remain in SearchPalette and quiet-hours, plus existing unused imports in Sakhi views",
+      "scope": "Colour-only improvements; Home banner artwork and proportions preserved; no member records changed"
+    },
+    "isolated_e2e_2026_10_31": {
+      "environment": "Temporary MongoDB 27099, API 8031 and production frontend 3111. Normal app/API and development database untouched. External integrations disabled.",
+      "backend": {
+        "passed": 782,
+        "skipped": 3,
+        "scope": "Full suite including local-database persistence, recovery, payment access, health, reminders and ownership"
+      },
+      "api_survey": {
+        "endpoints": 360,
+        "ok": 356,
+        "access_gated": 3,
+        "query_required": 1,
+        "not_found": 0,
+        "server_errors": 0
+      },
+      "workflows": {
+        "water": "Save/reload, summary, shared totals, links and undo passed; layout regression passed after fix",
+        "reminders": "30-minute preview/create/reload, edit, pause/resume, in-app delivery, snooze and stop passed on final build",
+        "money": "Entries, bills, linked expense/undo, PIN, hidden amounts and failure states passed",
+        "core_journeys": "10 desktop/mobile Learn, Sell, Work, filters and failure-recovery checks passed on final build",
+        "shop": "37 checks passed across seven operation types",
+        "community_and_related": "15 checks passed",
+        "sessions": "13 staff/member browser checks passed",
+        "reader": "Article/book pagination, bookmark reload, size controls, failed-save/retry and Free/Paid preview policy passed on final build"
+      },
+      "fixes": [
+        "Removed negative horizontal margins on sticky side columns to resolve the 4px desktop overflow",
+        "Added repeatable water regression; made reader fixtures configurable and reader starting page deterministic",
+        "Route sweep now recognizes ux-skeleton before measuring loaded pages"
+      ],
+      "production_build": "passed",
+      "typescript": "passed",
+      "updated_check_lint": "passed",
+      "performance": {
+        "largest_js_chunk_kib": 419,
+        "js_budget": "passed",
+        "image_budget": "fails for two original branding PNGs over 750 KiB; original assets preserved"
+      },
+      "not_exercised": [
+        "Live email/SMS/WhatsApp",
+        "Real-device push delivery",
+        "Paid AI service",
+        "Actual UPI transfer",
+        "Production rollout/restore"
+      ],
+      "route_sweep": {
+        "checked": 366,
+        "uniqueDestinations": 183,
+        "findings": 0,
+        "explicitNotReady": 0,
+        "artifact": "e2e-journey-2026-10-31.json",
+        "scope": "Every concrete member page plus available detail links; desktop and mobile, isolated synthetic data. Rendering/navigation checks are separate from the transaction workflows."
+      }
+    }
+  },
+  "app": "http://localhost:3100/app/books/proof"
+}

@@ -18,12 +18,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
-from app.core import cache, store
-from app.core.media import MediaRefOptional
+from app.core import cache, market_categories, store
+from app.core.media import MediaRef, MediaRefOptional
 from app.core.rbac import require_active_member
 from app.core.serializers import to_object_id
 from app.db.mongodb import get_database
@@ -155,6 +155,7 @@ class StoreView(BaseModel):
     tagline: str = ""
     logo: str = ""
     cover: str = ""
+    gallery: list[str] = Field(default_factory=list)
     open: bool = True
     away_reason: str = ""
     back_on: str = ""
@@ -162,6 +163,11 @@ class StoreView(BaseModel):
     handle: str = ""
     away_reasons: list[str] = []
     live_listings: int = 0
+    #: Her store's one category (app/core/market_categories.py); "" until chosen.
+    category_key: str = ""
+    category_name: str = ""
+    #: Listings paused because they no longer fit her category.
+    paused_outside: int = 0
 
 
 class StoreUpdate(BaseModel):
@@ -169,6 +175,14 @@ class StoreUpdate(BaseModel):
     tagline: Optional[str] = Field(None, max_length=90)
     logo: MediaRefOptional = None
     cover: MediaRefOptional = None
+    gallery: Optional[list[MediaRef]] = Field(None, max_length=8)
+
+    @field_validator("gallery")
+    @classmethod
+    def valid_gallery(cls, value):
+        if value is not None and any(not photo.strip() for photo in value):
+            raise ValueError("Choose a photo for every gallery image")
+        return list(dict.fromkeys(value)) if value is not None else None
 
 
 class Availability(BaseModel):
@@ -182,8 +196,13 @@ async def _store_view(me: dict) -> StoreView:
     fresh = await _users().find_one({"_id": me["_id"]}, {"store": 1, "full_name": 1, "shop_handle": 1}) or me
     live = await get_database()[ListingModel.collection_name].count_documents(
         {"user_id": str(me["_id"]), "status": ListingModel.STATUS_LIVE})
+    cat_key = ((fresh.get("store") or {}).get("category_key") or "")
+    cat = await market_categories.by_key(cat_key) if cat_key else None
+    outside = await get_database()[ListingModel.collection_name].count_documents(
+        {"user_id": str(me["_id"]), "paused_reason": "category_changed"})
     return StoreView(**store.view(fresh), handle=await handle_for({**me, **fresh}),
-                     away_reasons=store.AWAY_REASONS, live_listings=live)
+                     away_reasons=store.AWAY_REASONS, live_listings=live,
+                     category_key=cat_key, category_name=(cat or {}).get("name", ""), paused_outside=outside)
 
 
 @router.get("/store", response_model=StoreView, summary="My store's name, pictures and opening")
@@ -203,6 +222,8 @@ async def update_store(body: StoreUpdate, me: dict = Depends(require_active_memb
         sets["store.logo"] = body.logo
     if body.cover is not None:
         sets["store.cover"] = body.cover
+    if body.gallery is not None:
+        sets["store.gallery"] = body.gallery
     await _users().update_one({"_id": me["_id"]}, {"$set": sets})
     await record(me, "store.update", detail=", ".join(k.split(".")[1] for k in sets if k != "store.updated_at"))
     _forget_public(me)
@@ -344,8 +365,11 @@ async def list_listings(
 )
 async def create_listing(body: ListingCreate, me: dict = Depends(require_active_member)):
     _refuse_if_suspended(me)
+    data = body.model_dump()
+    data.update(await _file_under_tree(me, data["kind"], data.get("category_key", ""),
+                                       data.get("subcategory_key", ""), data.get("category", "")))
     doc = ListingModel.create_document(
-        user_id=str(me["_id"]), member_id=me.get("member_id", ""), **body.model_dump(),
+        user_id=str(me["_id"]), member_id=me.get("member_id", ""), **data,
     )
     result = await _listings().insert_one(doc)
     doc["_id"] = result.inserted_id
@@ -358,14 +382,53 @@ async def update_listing(
 ):
     # Scoped by user_id as well as _id: a listing id in a URL must never be
     # enough to edit somebody else's shop.
+    current = await _listings().find_one({"_id": to_object_id(listing_id), "user_id": str(me["_id"]), **NOT_HIDDEN})
+    if not current:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That listing is not yours, or is gone")
+    changes = body.model_dump(exclude_unset=True)
+    # Filing is checked again only when it could change: a new kind or
+    # category, or a paused listing put back on sale. A listing already on sale
+    # in a sub-category staff have since disabled can still have its price edited.
+    refiles = {"kind", "category", "category_key", "subcategory_key"} & changes.keys()
+    goes_live = changes.get("status") == ListingModel.STATUS_LIVE and current.get("status") != ListingModel.STATUS_LIVE
+    if refiles or goes_live:
+        merged = {**current, **changes}
+        sub_key = merged.get("subcategory_key", "") or ""
+        if "category" in changes and "subcategory_key" not in changes:
+            sub_key = ""  # an older client sent a name: match it inside her category
+        changes.update(await _file_under_tree(me, merged.get("kind", ""), merged.get("category_key", "") or "",
+                                              sub_key, merged.get("category", "")))
+        if goes_live:
+            changes["paused_reason"] = ""
     updated = await _listings().find_one_and_update(
-        {"_id": to_object_id(listing_id), "user_id": str(me["_id"]), **NOT_HIDDEN},
-        {"$set": {**body.model_dump(exclude_unset=True), "updated_at": datetime.now(timezone.utc)}},
+        {"_id": current["_id"]},
+        {"$set": {**changes, "updated_at": datetime.now(timezone.utc)}},
     )
     if not updated:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That listing is not yours, or is gone")
     fresh = await _listings().find_one({"_id": to_object_id(listing_id)})
     return ListingResponse(**ListingModel.to_response(fresh))
+
+
+async def _store_category(me: dict) -> str:
+    fresh = await _users().find_one({"_id": me["_id"]}, {"store.category_key": 1}) or {}
+    return ((fresh.get("store") or {}).get("category_key") or "")
+
+
+async def _file_under_tree(me: dict, kind: str, category_key: str, subcategory_key: str, category_text: str) -> dict:
+    """
+    Check a listing against her store's category (app/core/market_categories.py)
+    and return the fields to store. An older client that sends only a name is
+    matched by that name inside her category.
+    """
+    store_cat = await _store_category(me)
+    if not subcategory_key and category_text and store_cat:
+        for r in await market_categories.all_rows():
+            if r.get("parent_key") == store_cat and r.get("name", "").lower() == category_text.strip().lower():
+                subcategory_key = r["key"]
+                break
+    cat, sub = await market_categories.check_listing(store_cat, category_key or store_cat, subcategory_key, kind)
+    return {"category_key": cat["key"], "subcategory_key": sub["key"], "category": sub["name"]}
 
 
 @router.post("/listings/{listing_id}/pause", response_model=ListingResponse, summary="Pause or restore it")
@@ -384,12 +447,18 @@ async def pause_listing(
     """
     if not paused:
         _refuse_if_suspended(me)
+        current = await _listings().find_one(
+            {"_id": to_object_id(listing_id), "user_id": str(me["_id"]), **NOT_HIDDEN})
+        if current and current.get("status") != ListingModel.STATUS_LIVE:
+            # Back on sale only inside her store's category, in an open sub-category.
+            await _file_under_tree(me, current.get("kind", ""), current.get("category_key", ""),
+                                   current.get("subcategory_key", ""), current.get("category", ""))
     updated = await _listings().find_one_and_update(
         # Scoped by user_id as well as _id: a listing id in a URL must never be
         # enough to change somebody else's shop.
         {"_id": to_object_id(listing_id), "user_id": str(me["_id"]), **NOT_HIDDEN},
         {"$set": {"status": ListingModel.STATUS_PAUSED if paused else ListingModel.STATUS_LIVE,
-                  "updated_at": datetime.now(timezone.utc)}},
+                  "paused_reason": "", "updated_at": datetime.now(timezone.utc)}},
         return_document=ReturnDocument.AFTER,
     )
     if not updated:

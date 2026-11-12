@@ -362,6 +362,7 @@ export default function SignInPage() {
       window.setTimeout(() => setCopied(""), 1800);
     } catch {
       setCopied("");
+      setError("Could not copy the key. Select it and copy it manually, or scan the QR code.");
     }
   };
 
@@ -553,7 +554,7 @@ export default function SignInPage() {
           <button type="button" className="wsa-key" onClick={() => void copy(setup.secret, "secret")}
             aria-label={`Setup key ${setup.secret}. Copy`}>
             {setup.secret.replace(/(.{4})/g, "$1 ").trim()}
-            <small>{copied === "secret" ? "Copied" : "Copy"}</small>
+            <small role="status" aria-live="polite">{copied === "secret" ? "Copied" : "Copy"}</small>
           </button>
           {setup.provisioning_uri && (
             <p className="wsa-link wsa-only-phone"><a href={setup.provisioning_uri}>On this phone? Open in your authenticator app</a></p>

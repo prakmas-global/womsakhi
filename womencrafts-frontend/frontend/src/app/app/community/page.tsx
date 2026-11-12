@@ -6,6 +6,8 @@ import Link from "next/link";
 import * as Icons from "@/components/ux/icons";
 import { EmptyState, Tabs } from "@/components/ux/kit";
 import { HomeShell } from "@/components/ux/home/HomeShell";
+import { SectionPictures } from "@/components/ux/nav/Hub";
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { Composer } from "@/components/ux/social/Composer";
 import { CommunityRail } from "@/components/ux/social/CommunityRail";
 import { FeedList } from "@/components/ux/social/FeedList";
@@ -44,9 +46,12 @@ export default function CommunityPage() {
   return (
     <HomeShell active="/app/community" rail={<CommunityRail />}>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="ux-screen-title text-2xl font-extrabold" style={{ color: "var(--ux-ink)" }}>Community</h1>
-          <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>What the women around you are sharing</p>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <div className="min-w-0">
+            <h1 className="ux-screen-title text-2xl font-extrabold" style={{ color: "var(--ux-ink)" }}>Community</h1>
+            <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>What the women around you are sharing</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Link href="/app/community/friends" data-friends-link
@@ -65,6 +70,10 @@ export default function CommunityPage() {
           </Link>
         </div>
       </div>
+
+      {/* Everything in Community as pictures in its colour, above the feed:
+          the feed never ends, so the map has to come first. */}
+      <SectionPictures id="circle" />
 
       {/* On a phone the side column falls below an endless feed, so the
           requests waiting for her get a line up here. */}

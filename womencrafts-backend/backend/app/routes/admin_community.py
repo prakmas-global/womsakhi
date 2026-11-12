@@ -45,6 +45,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 
 from app.core import cache, mongosafe
+from app.core import community_masters
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.media import media_url
@@ -424,7 +425,7 @@ async def create_circle(
     body: CircleUpsert, request: Request, me: dict = Depends(get_current_user),
 ):
     doc = CircleModel.create_document(
-        name=body.name, topic=body.topic.strip(), desc=body.desc.strip(),
+        name=body.name, topic=await community_masters.fold_topic(body.topic), desc=body.desc.strip(),
         guidelines=body.guidelines.strip(), is_private=body.is_private,
         created_by=str(me["_id"]),
     )
@@ -453,6 +454,7 @@ async def update_circle(
     updates = body.model_dump()
     for k in ("topic", "desc", "guidelines"):
         updates[k] = updates[k].strip()
+    updates["topic"] = await community_masters.fold_topic(updates["topic"], before.get("topic", ""))
     updates["updated_at"] = _now()
     await _circles().update_one({"_id": before["_id"]}, {"$set": updates})
 

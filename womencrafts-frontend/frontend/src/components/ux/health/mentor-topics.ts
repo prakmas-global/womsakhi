@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import type { ApiMentor } from "@/lib/me-api";
+import { loadMaster, masterPicture, type MasterItem } from "@/lib/masters-api";
 
 /**
  * Mentor topics — how Mentor Connect groups the mentors in our database.
@@ -10,9 +14,15 @@ import type { ApiMentor } from "@/lib/me-api";
  * link here with `?topic=<label>` (e.g. `?topic=Pregnancy`).
  */
 
-export interface Topic { label: string; icon: string; words: string[] }
+/** `pic`: the topic group's picture (Masters → Mentor topics), or the one its name points to. */
+export interface Topic { label: string; icon: string; words: string[]; pic: string }
 
-export const TOPICS: Topic[] = [
+/**
+ * What shows until the "mentor_topics" master loads (Masters → Mentor topics).
+ * Once it does, each topic GROUP becomes a topic here: its words are the
+ * group's synonyms plus the names of the topics under it, lower-cased.
+ */
+const BUILT_IN: Topic[] = ([
   { label: "Women's health", icon: "HeartPulse", words: ["women's health", "womens health", "health", "gynec", "gynaec", "pcos", "period"] },
   { label: "Pregnancy", icon: "Baby", words: ["pregnan", "maternal", "gynec", "gynaec", "women's health", "new mother"] },
   { label: "Fertility", icon: "Flower2", words: ["fertil", "pcos", "period", "menstru", "gynec", "gynaec", "women's health"] },
@@ -24,7 +34,34 @@ export const TOPICS: Topic[] = [
   { label: "Business", icon: "Store", words: ["business", "online selling", "marketing", "export", "operations", "whatsapp", "enterprise", "cooperative", "registration", "compliance"] },
   { label: "Crafts & skills", icon: "Scissors", words: ["handicraft", "tailoring", "beauty", "mehendi", "craft", "food"] },
   { label: "Rights & family", icon: "Scale", words: ["legal", "rights", "family", "parent"] },
-];
+] as Omit<Topic, "pic">[]).map((t) => ({ ...t, pic: masterPicture("mentor_topics", { key: t.label, label: t.label, extra: { synonyms: t.words } }) }));
+
+export let TOPICS: Topic[] = BUILT_IN;
+
+function fromMaster(items: MasterItem[]): Topic[] {
+  return items.map((g) => ({
+    label: g.label,
+    icon: g.extra.icon || "Sparkles",
+    words: Array.from(new Set([g.label.toLowerCase(), ...(g.extra.synonyms ?? []),
+                               ...(g.children ?? []).map((c) => c.label.toLowerCase())])),
+    pic: masterPicture("mentor_topics", g),
+  }));
+}
+
+/** Load the master into `TOPICS` and re-render when it arrives. Call at the top of a screen. */
+export function useMentorTopics(): Topic[] {
+  const [list, setList] = useState<Topic[]>(TOPICS);
+  useEffect(() => {
+    let alive = true;
+    loadMaster("mentor_topics").then((items) => {
+      if (!alive || !items.length) return;
+      TOPICS = fromMaster(items);
+      setList(TOPICS);
+    }).catch(() => { /* keep the built-in topics */ });
+    return () => { alive = false; };
+  }, []);
+  return list;
+}
 
 const text = (m: ApiMentor) => [m.expertise.join(" "), m.headline, m.focus || ""].join(" ").toLowerCase();
 
@@ -72,4 +109,9 @@ export function scoreMentors(all: ApiMentor[], q: MatchQuiz) {
     })
     .filter((x) => x.s > 0 && (!q.topics.length || x.why[0]?.startsWith("Helps")))
     .sort((a, b) => b.s - a.s || b.m.sessions_done - a.m.sessions_done);
+}
+
+/** The first topic this mentor helps with, for a picture when she has no photo. */
+export function topicOf(m: ApiMentor): Topic | undefined {
+  return TOPICS.find((t) => inTopic(m, t.label));
 }

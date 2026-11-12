@@ -307,7 +307,7 @@ function Journey() {
               <span aria-hidden
                     className="grid h-[23px] w-[23px] shrink-0 place-items-center rounded-full text-[12px] font-bold"
                     style={done ? { background: v("--ux-green"), color: "#fff" }
-                         : now ? { background: v("--ux-brand"), color: "#fff" }
+                         : now ? { background: v("--ux-fill"), color: "#fff" }
                          : { background: v("--ux-surface-2"), color: v("--ux-muted"),
                              border: `1px solid ${v("--ux-line")}` }}>
                 {done ? <I name="Check" className="h-[13px] w-[13px]" sw={3} /> : i + 1}

@@ -187,6 +187,8 @@ class SupportTicketModel:
     collection_name = "support_tickets"
 
     PRIORITIES = ["Low", "Normal", "High", "Urgent"]
+    #: What the list shipped with; staff edit it as the `support_ticket_categories`
+    #: master (app/core/masters.py), which this only seeds.
     CATEGORIES = [
         "Account & access",
         "A bug or something broken",
@@ -222,7 +224,8 @@ class SupportTicketModel:
             "reference": reference,
             "subject": subject,
             "message": message,
-            "category": category if category in SupportTicketModel.CATEGORIES else "Something else",
+            # Checked against the `support_ticket_categories` master by the route.
+            "category": category or "Something else",
             "priority": priority if priority in SupportTicketModel.PRIORITIES else "Normal",
             "status": SupportTicketModel.STATUS_OPEN,
             "replies": [],

@@ -11,6 +11,7 @@ import {
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { ChipRow, ScreenHead, Segments, Tag } from "@/components/ux/learning/native";
 import { EXCHANGE_ART as RAW_EXCHANGE_ART, SKILL_TAGS as RAW_SKILL_TAGS } from "@/components/ux/exchange/data";
+import { PicChip, pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 import { useMyExchanges, useSwaps } from "@/components/ux/business";
 import { useT } from "@/i18n";
 import { useTranslated } from "@/i18n/data";
@@ -25,7 +26,17 @@ import { artFor } from "@/components/ux/media/art";
  * quietly tell her she is only one of the two.
  */
 export default function SkillExchangePage() {
-  const SKILL_TAGS = useTranslated(RAW_SKILL_TAGS);
+  // Skill swap tags are the "swap_skills" master (Masters → Skill swap tags);
+  // the built-in list shows until it loads. Shown translated, filtered in English.
+  const tagPics = useMasterPictures("swap_skills", RAW_SKILL_TAGS);
+  const tagLabels = tagPics.labels;
+  // An offer has no picture of its own: the swap tag its skill names, else
+  // what its words point to.
+  const swapPicture = (skill: string, wants: string, id: string) => {
+    const tag = tagLabels.find((t) => skill.toLowerCase().includes(t.toLowerCase()));
+    return tag ? pictureOr(null, [skill, wants], tagPics.of(tag)) : artFor([skill, wants], "swap", null, id);
+  };
+  const SKILL_TAGS = useTranslated(tagLabels);
   const EXCHANGE_ART = useTranslated(RAW_EXCHANGE_ART);
   const tr = useT();
   const { data: SWAPS, source } = useSwaps();
@@ -146,11 +157,11 @@ export default function SkillExchangePage() {
             ))}
             <span className="mx-1 h-6 w-px" style={{ background: "var(--ux-line)" }} />
             {/* Filter on the English tag (what offers are written in); show it translated. */}
-            {RAW_SKILL_TAGS.slice(0, 5).map((t, i) => (
-              <Chip key={t} selected={tags.includes(t)}
-                    onClick={() => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])}>
+            {tagLabels.slice(0, 8).map((t, i) => (
+              <PicChip key={t} src={tagPics.pic(t)} selected={tags.includes(t)}
+                       onClick={() => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])}>
                 {SKILL_TAGS[i] ?? t}
-              </Chip>
+              </PicChip>
             ))}
           </ChipRow>
 
@@ -159,7 +170,7 @@ export default function SkillExchangePage() {
               {shown.map((s) => (
                 <MediaCard
                   key={s.id}
-                  image={artFor([s.skill, s.wants], "swap", null, s.id)}
+                  image={swapPicture(s.skill, s.wants, s.id)}
                   topLeft={{ text: s.side, tone: s.side === "Offering" ? "green" : "light" }}
                   topRight={{ text: "No money", tone: "dark" }}
                   overlay={<>{s.online ? <Icons.Video className="h-[13px] w-[13px]" /> : <Icons.Users className="h-[13px] w-[13px]" />}

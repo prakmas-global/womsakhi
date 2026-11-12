@@ -16,7 +16,7 @@ const call = async (path, method = "GET", body) => {
 check(Boolean(token), "member signs in");
 const name = `Launch gap check ${Date.now()}`;
 const made = await call("/community/circles", "POST", {
-  name, topic: "Testing", desc: "Temporary launch verification circle", guidelines: "Be kind",
+  name, topic: "Business", desc: "Temporary launch verification circle", guidelines: "Be kind",
   who_posts: "hosts", tags: ["testing"], is_private: false,
 });
 check(made.status === 201 && made.data?.id, "host creates a host-only circle", String(made.status));

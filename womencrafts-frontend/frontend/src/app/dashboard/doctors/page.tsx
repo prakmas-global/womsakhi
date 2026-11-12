@@ -8,6 +8,7 @@ import {
   Badge, Card, EmptyState, ImageUpload, Input, Modal, Select, StatCard, Switch, Textarea, useToast,
 } from "@/design-system";
 import { memberError } from "@/lib/member-api";
+import { useMaster } from "@/lib/masters-api";
 import {
   MODES, SPECIALITIES, WEEKDAYS, apiAdminAddDoctor, apiAdminDoctors, apiAdminEditDoctor, feeLabel,
   type Doctor, type DoctorInput, type Hours, type Mode,
@@ -23,6 +24,7 @@ import {
  * consultations she gave.
  */
 
+/** What the languages list shipped with; staff edit it as the `languages` master. */
 const LANGS = ["Hindi", "English", "Telugu", "Tamil", "Kannada", "Malayalam", "Marathi", "Bengali", "Gujarati", "Urdu", "Punjabi"];
 
 const BLANK: DoctorInput = {
@@ -95,6 +97,13 @@ export default function DoctorsAdminPage() {
   };
 
   const f = editing?.form;
+  // Both lists are masters staff edit in Settings → Masters. A doctor keeps a
+  // value that has since been disabled, so it stays in her form.
+  const specialityMaster = useMaster("doctor_specialities", [...SPECIALITIES]);
+  const languageMaster = useMaster("languages", LANGS);
+  const specialityOptions = f && f.speciality && !specialityMaster.labels.includes(f.speciality)
+    ? [f.speciality, ...specialityMaster.labels] : specialityMaster.labels;
+  const languageOptions = [...languageMaster.labels, ...(f?.languages ?? []).filter((l) => !languageMaster.labels.includes(l))];
   const setHours = (i: number, patch: Partial<Hours>) => f && set({ availability: f.availability.map((h, k) => (k === i ? { ...h, ...patch } : h)) });
 
   return (
@@ -179,7 +188,7 @@ export default function DoctorsAdminPage() {
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Name" required value={f.name} onChange={(e) => set({ name: e.target.value })} placeholder="Dr Asha Verma" />
-              <Select label="Speciality" value={f.speciality} options={[...SPECIALITIES]} onChange={(e) => set({ speciality: e.target.value as DoctorInput["speciality"] })} />
+              <Select label="Speciality" value={f.speciality} options={specialityOptions} onChange={(e) => set({ speciality: e.target.value })} />
               <Input label="Qualifications" value={f.qualifications} onChange={(e) => set({ qualifications: e.target.value })} placeholder="MBBS, MS (OBG)" />
               <Input label="Registration number" value={f.registration_no} onChange={(e) => set({ registration_no: e.target.value })} hint="Checked with the medical council before adding." />
               <Input label="Years of experience" type="number" value={String(f.experience_years)} onChange={(e) => set({ experience_years: Math.max(0, Number(e.target.value) || 0) })} />
@@ -208,7 +217,7 @@ export default function DoctorsAdminPage() {
             <div>
               <p className="mb-1.5 text-sm font-semibold text-ink-muted">Languages</p>
               <div className="flex flex-wrap gap-2">
-                {LANGS.map((l) => {
+                {languageOptions.map((l) => {
                   const on = f.languages.includes(l);
                   return (
                     <button key={l} type="button" aria-pressed={on}

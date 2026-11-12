@@ -1,8 +1,10 @@
 "use client";
 
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useState } from "react";
 
 import { apiLeaveFeedback } from "@/lib/member-api";
+import { useMaster } from "@/lib/masters-api";
 import { messageFrom } from "@/lib/use-action";
 import * as Icons from "@/components/ux/icons";
 
@@ -12,16 +14,31 @@ import { useT } from "@/i18n";
 import { ListGroup } from "@/components/ux/mobile/ListRow";
 import { PhoneRow, phonePrimary, phoneSecondary } from "@/components/ux/PhoneParts";
 
-const KINDS = [
-  { id: "idea", label: "An idea", note: "Something you wish this app did",
-    icon: "Lightbulb", tint: "--ux-tint-violet", ink: "--ux-violet" },
-  { id: "broken", label: "Something is broken", note: "A screen or number that is wrong",
-    icon: "Bug", tint: "--ux-tint-orange", ink: "--ux-orange" },
-  { id: "hard", label: "Something is confusing", note: "You could not work out how to do it",
-    icon: "HelpCircle", tint: "--ux-tint-blue", ink: "--ux-blue" },
-  { id: "thanks", label: "Something good", note: "What worked, so we keep it",
-    icon: "Heart", tint: "--ux-tint-pink", ink: "--ux-pink" },
+/**
+ * What she can tell us. The list is the `feedback_types` master staff edit
+ * (lib/masters-api.ts); the member form shows the types that have a note,
+ * and these four are what it shows until the master answers. What she picks
+ * is sent as the type's label, so staff can filter by it.
+ */
+const SHIPPED_KINDS = [
+  { label: "An idea", note: "Something you wish this app did", icon: "Lightbulb" },
+  { label: "Something is broken", note: "A screen or number that is wrong", icon: "Bug" },
+  { label: "Something is confusing", note: "You could not work out how to do it", icon: "HelpCircle" },
+  { label: "Something good", note: "What worked, so we keep it", icon: "Heart" },
 ];
+const TINTS = [
+  { tint: "--ux-tint-violet", ink: "--ux-violet" }, { tint: "--ux-tint-orange", ink: "--ux-orange" },
+  { tint: "--ux-tint-blue", ink: "--ux-blue" }, { tint: "--ux-tint-pink", ink: "--ux-pink" },
+  { tint: "--ux-tint-green", ink: "--ux-green" },
+];
+
+function useKinds() {
+  const master = useMaster("feedback_types");
+  const source = master.loaded
+    ? master.items.filter((i) => i.extra.note).map((i) => ({ label: i.label, note: String(i.extra.note), icon: i.extra.icon || "MessageCircle" }))
+    : SHIPPED_KINDS;
+  return source.map((k, i) => ({ ...k, id: k.label, ...TINTS[i % TINTS.length] }));
+}
 
 const SHIPPED = [
   { id: "s1", what: "Sakhi now speaks Telugu properly", who: "Asked for by 40 women", when: "May 2026" },
@@ -38,6 +55,7 @@ const SHIPPED = [
  */
 export default function FeedbackPage() {
   const tr = useT();
+  const KINDS = useKinds();
   const [kind, setKind] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [stage, setStage] = useState<"idle" | "sending" | "sent">("idle");
@@ -62,7 +80,7 @@ export default function FeedbackPage() {
     setStage("sending");
     setProblem("");
     try {
-      await apiLeaveFeedback({ text: text.trim(), rating: 0, type: kind ?? "idea" });
+      await apiLeaveFeedback({ text: text.trim(), rating: 0, type: kind ?? SHIPPED_KINDS[0].label });
       setStage("sent");
     } catch (e) {
       setProblem(messageFrom(e, "That did not go through. Nothing has been lost — try again in a moment."));
@@ -107,7 +125,10 @@ export default function FeedbackPage() {
         </div>
       }
     >
-      <h1 className="ux-screen-title text-2xl font-bold" style={{ color: "var(--ux-ink)" }}>{tr("feedback.tellUsWhatYouThink")}</h1>
+      <div className="flex min-w-0 items-center gap-3">
+        <PlaceMark size={44} />
+        <h1 className="ux-screen-title text-2xl font-bold min-w-0" style={{ color: "var(--ux-ink)" }}>{tr("feedback.tellUsWhatYouThink")}</h1>
+      </div>
       <p className="mb-6 mt-1.5 text-xsm lg:mb-[20px]" style={{ color: "var(--ux-muted)" }}>{tr("feedback.weReadEveryMessageOurselvesNo")}</p>
 
       {stage === "sent" ? (

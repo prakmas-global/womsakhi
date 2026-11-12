@@ -80,7 +80,7 @@ const BAND_MUTED = v("--ux-band-ink-2");
 function Hero() {
   const tr = useT();
   return (
-    <section className="ux-sq relative isolate shrink-0 overflow-hidden rounded-[18px]"
+    <section data-banner data-page-hero className="ux-sq relative isolate shrink-0 overflow-hidden rounded-[18px]"
              /* No border. The drawing has no stroke pixel on any edge of this
                 band — its bottom simply fades to the canvas colour, which is
                 also why it sits only 4px clear of the cards below it. */

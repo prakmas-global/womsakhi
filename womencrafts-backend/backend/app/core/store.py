@@ -3,7 +3,7 @@ Her store — the name, the pictures, and whether she is open for orders.
 
 Kept on her account as `users.store`:
 
-    {name, tagline, logo, cover, open, away_reason, back_on, closed_at, updated_at}
+    {name, tagline, logo, cover, gallery, open, away_reason, back_on, closed_at, updated_at}
 
 ── Open and closed ──────────────────────────────────────────────────────────
 `open` is the switch she flips. Closing can carry a day she is back
@@ -73,6 +73,7 @@ def view(user: dict) -> dict:
         "tagline": store.get("tagline") or "",
         "logo": media_url(store.get("logo") or ""),
         "cover": media_url(store.get("cover") or ""),
+        "gallery": [media_url(photo) for photo in (store.get("gallery") or []) if photo],
         "open": open_now,
         "away_reason": "" if open_now else (store.get("away_reason") or ""),
         "back_on": "" if open_now else (store.get("back_on") or ""),

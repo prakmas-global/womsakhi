@@ -69,6 +69,8 @@ class BookEntryModel:
     def to_response(doc: dict) -> dict:
         on = doc.get("on")
         due = doc.get("due")
+        if isinstance(on, datetime) and on.tzinfo is None: on = on.replace(tzinfo=timezone.utc)
+        if isinstance(due, datetime) and due.tzinfo is None: due = due.replace(tzinfo=timezone.utc)
         return {
             "id": str(doc.get("_id", "")),
             "who": doc.get("who", ""),

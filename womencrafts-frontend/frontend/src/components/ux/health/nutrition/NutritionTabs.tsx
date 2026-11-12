@@ -229,7 +229,7 @@ export function TodayTab({ store, s }: { store: Store; s: Settings }) {
           <>
             <FormLauncher id="nt-log" art={nowMeal} hue="green" steps={MEAL_STEPS} title="Log a meal"
                           sub={`${MEAL_STEPS} quick steps · tap a dish, type only if you want`} onStart={() => setLogging({ editing: null, mealType: nowMeal, at: 0 })} />
-            <WaterPanel store={store} s={s} />
+            <div id="nt-water" className="scroll-mt-24"><WaterPanel store={store} s={s} /></div>
             <DietGuide diet={s.settings.diet} />
           </>
         }
@@ -324,12 +324,25 @@ function WaterPanel({ store, s }: { store: Store; s: Settings }) {
   const add = (n: number) => store.add("water", { ml: n }, t, `+${n >= 1000 ? `${n / 1000} L` : `${n} ml`} of water`);
   return (
     <Panel title="Water" sub={`${(ml / 1000).toFixed(2).replace(/0$/, "")} L of ${(goalMl / 1000).toFixed(1)} L today`} hue="blue">
-      <DropMeter ml={ml} goalMl={goalMl} />
-      <WaterDrops onAdd={(n) => void add(n)} />
-      <WaterBuddy ready={!store.loading && s.ready} ml={ml} goalMl={goalMl} lastAt={lastAt || undefined} onDrink={add} />
-      {todays.length > 0 && (
-        <Btn size="sm" variant="ghost" icon="Undo2" className="self-start" onClick={() => store.remove(todays[0].id, "Removed the last one")}>Undo</Btn>
-      )}
+      <div className="flex flex-wrap gap-1.5" aria-label={`${glasses} of ${s.settings.waterGoal} glasses`} role="img" data-water-glasses>
+        {Array.from({ length: s.settings.waterGoal }, (_, i) => (
+          <span key={i} className="grid h-9 w-8 place-items-center rounded-[9px]"
+                style={{ background: i < glasses ? HUE.blue.ink : HUE.blue.tint, color: i < glasses ? "var(--ux-surface)" : HUE.blue.ink }}>
+            <I name="Droplet" className="h-4 w-4" />
+          </span>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {[150, 250, 500].map((n) => (
+          <Btn key={n} size="sm" variant={n === 250 ? "primary" : "outline"} icon="Plus" onClick={() => store.add("water", { ml: n }, t, `+${n} ml of water`)}>
+            {n} ml
+          </Btn>
+        ))}
+        {todays.length > 0 && (
+          <Btn size="sm" variant="ghost" icon="Undo2" onClick={() => store.remove(todays[0].id, "Removed the last glass")}>Undo</Btn>
+        )}
+      </div>
+      <Btn size="sm" variant="outline" icon="Bell" href="/app/health/reminders/water">Water reminder every 30 min</Btn>
       {water.length > 0 && (
         <BarChart hue="blue" unit=" ml" goal={goalMl}
                   data={days.map((d) => ({ label: d.label, value: water.filter((w) => w.date === d.day).reduce((a, w) => a + w.data.ml, 0) }))} />

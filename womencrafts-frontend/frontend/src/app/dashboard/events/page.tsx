@@ -15,6 +15,7 @@ import {
   type EventAttendee, type EventInput, type EventRow, type GrowthSummary,
 } from "@/lib/growth-admin-api";
 import { memberError } from "@/lib/member-api";
+import { useMaster } from "@/lib/masters-api";
 
 /**
  * Events — workshops, talks and melas.
@@ -60,6 +61,13 @@ export default function AdminEventsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EventRow | null>(null);
   const [form, setForm] = useState<EventInput>(EMPTY);
+  // Categories come from Masters (staff control them). An event already in a
+  // since-disabled category keeps it as an option, so editing it never blanks it.
+  const { labels: categoryLabels } = useMaster("event_categories", ["Workshop", "Mela", "Webinar", "Meet-up", "Talk", "Training"]);
+  // Languages are the `languages` master; an event keeps one that has since been disabled.
+  const { labels: languageLabels } = useMaster("languages", ["Hindi", "English", "Hindi & English", "Telugu", "Tamil", "Kannada", "Marathi", "Bengali", "Gujarati", "Malayalam"]);
+  const categoryOptions = form.category && !categoryLabels.some((c) => c.toLowerCase() === form.category.toLowerCase())
+    ? [...categoryLabels, form.category] : categoryLabels;
   const [busy, setBusy] = useState(false);
 
   const [cancelling, setCancelling] = useState<EventRow | null>(null);
@@ -344,7 +352,7 @@ export default function AdminEventsPage() {
           <Textarea label="What is it about?" value={form.desc} onChange={(e) => set("desc")(e.target.value)} />
           <div className="grid gap-3 sm:grid-cols-2">
             <Select label="Category" value={form.category} onChange={(e) => set("category")(e.target.value)}
-                    options={["Workshop", "Talk", "Mela", "Meet-up", "Training"]} />
+                    options={categoryOptions} />
             <Select label="Mode" value={form.mode} onChange={(e) => set("mode")(e.target.value)} options={["Online", "In person"]} />
             <Input label="Date" type="date" min={editing ? undefined : today} value={form.date} onChange={(e) => set("date")(e.target.value)} />
             <Input label="Time" type="time" value={form.time} onChange={(e) => set("time")(e.target.value)} />
@@ -354,7 +362,7 @@ export default function AdminEventsPage() {
             <Input label="Seats (0 = unlimited)" type="number" value={String(form.seats)} onChange={(e) => set("seats")(Math.max(0, Number(e.target.value) || 0))} />
             <Select label="Language" value={form.language} onChange={(e) => set("language")(e.target.value)}
                     placeholder="Choose a language"
-                    options={["Hindi", "English", "Hindi & English", "Telugu", "Tamil", "Kannada", "Marathi", "Bengali", "Gujarati", "Malayalam"]} />
+                    options={form.language && !languageLabels.includes(form.language) ? [form.language, ...languageLabels] : languageLabels} />
           </div>
           {form.mode !== "Online" && (
             <Input label="Venue" value={form.venue} onChange={(e) => set("venue")(e.target.value)} placeholder="Community Hall, Sector 12" />

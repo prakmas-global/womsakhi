@@ -153,10 +153,25 @@ function darkenUntilWhiteReads(hex: string, hue: number, seedChroma: number): st
  * Returned as a hex rather than a token so it can be used anywhere, including
  * inside canvas-rendered charts.
  */
-export function readableOn(background: string): "#ffffff" | "#111111" {
+export function readableOn(background: string): "#ffffff" | "#111111" | "#000000" {
   const onWhite = contrast(background, "#ffffff");
   const onBlack = contrast(background, "#111111");
+  if (Math.max(onWhite, onBlack) < AA_NORMAL) return "#000000";
   return onWhite >= onBlack ? "#ffffff" : "#111111";
+}
+
+/** Preserve the hue while making a text-bearing fill dark enough for pure white. */
+export function whiteTextFill(background: string, minimum = 7): string {
+  // A small margin keeps interpolated, rounded gradient pixels above the target.
+  const target = Math.max(AA_NORMAL + 0.1, Math.min(21, minimum + 0.15));
+  if (contrast(background, ON_BRAND) >= target) return background;
+  const colour = toOklch(parse(background));
+  if (!colour) return "#000000";
+  for (let lightness = colour.l ?? 0.5; lightness >= 0; lightness -= 0.005) {
+    const candidate = formatHex(toRgb({ mode: "oklch", l: lightness, c: colour.c ?? 0, h: colour.h ?? 0 }));
+    if (candidate && contrast(candidate, ON_BRAND) >= target) return candidate;
+  }
+  return "#000000";
 }
 
 /** WCAG 2.1 contrast ratio, 1–21. */

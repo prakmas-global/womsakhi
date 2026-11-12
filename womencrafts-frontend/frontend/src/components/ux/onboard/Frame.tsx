@@ -43,7 +43,7 @@ export function OnboardFrame({
 }) {
   const tr = useT();
   return (
-    <div className="min-h-screen" style={{ background: "var(--ux-canvas)" }}>
+    <div className="min-h-screen min-w-0 overflow-x-clip" style={{ background: "var(--ux-canvas)" }}>
       {/* 16px from the screen edge on a phone, as everywhere else; the
           desktop's 32 was a third of a phone's margin budget on each side. */}
       <header className="flex items-center gap-2 px-4 pb-2 pt-6 lg:px-8">

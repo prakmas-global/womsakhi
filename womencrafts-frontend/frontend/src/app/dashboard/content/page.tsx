@@ -329,7 +329,7 @@ export default function ContentPage() {
     }
   }
 
-  function useMediaAsCover(file: UploadedFile) {
+  function applyMediaAsCover(file: UploadedFile) {
     setEditId(null);
     setForm({ ...EMPTY_FORM, cover: file.url, type: "Media" });
     setMediaOpen(false);
@@ -802,7 +802,7 @@ export default function ContentPage() {
                   <p className="text-xs text-ink-subtle">{u.size_label} · {u.kind} · {u.uploaded_by_name || "unknown"} · {u.uploaded}</p>
                 </div>
                 {u.content_type.startsWith("image/") && (
-                  <button className="btn btn-sm btn-outline" onClick={() => useMediaAsCover(u)}>Use</button>
+                  <button className="btn btn-sm btn-outline" onClick={() => applyMediaAsCover(u)}>Use</button>
                 )}
                 <a href={u.url} target="_blank" rel="noreferrer" className="btn btn-sm btn-ghost">Preview</a>
                 <button className="btn btn-sm btn-ghost text-status-danger-ink" aria-label={`Remove ${u.original_name}`} onClick={() => void removeMedia(u)}>

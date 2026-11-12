@@ -1,6 +1,6 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
+import { SectionPictures } from "@/components/ux/nav/Hub";
 import { useCallback, useMemo, useState } from "react";
 import { useT } from "@/i18n";
 import { HomeShell } from "@/components/ux/home/HomeShell";
@@ -74,7 +74,7 @@ export function EarnDashboard() {
   return <HomeShell columns active="/app/earn" loadFailed="your earnings">
     <div className={styles.dashboard} data-dashboard="earn" data-earn-dashboard>
       <div className={styles.main}>
-        <section className={styles.hero}>
+        <section className={styles.hero} data-page-hero data-banner>
           <picture>
             {/* The wide banner is composed for a laptop and carries lettering in
               its own artwork; a phone-shaped crop of it cuts the subject or the
@@ -82,14 +82,18 @@ export function EarnDashboard() {
             <source media="(max-width: 1023px)" srcSet="/ux/art/earn-dashboard-hero-mobile.webp" />
             <img src="/ux/art/earn-dashboard-hero.webp" alt="" className={styles.heroImage} />
           </picture>
-          <div className={styles.heroContent}>
+          <div className={styles.heroContent} data-banner-copy>
             <p className={styles.eyebrow}>Earn <span>·</span> Create <span>·</span> Grow</p>
             <h1>{tr("earnDashboard.yourSkills")}<br />Real <em>Opportunities.</em></h1>
             <p>{tr("earnDashboard.turnWhatYouLoveIntoIncome")}</p>
             <div className={styles.heroActions}><TransitionLink href="/app/documents/new" className={styles.primary}>{tr("earnDashboard.startEarning")} <I name="ArrowRight" /></TransitionLink><TransitionLink href="/app/services" className={styles.secondary}><I name="CirclePlay" /> {tr("earnDashboard.exploreWaysToEarn")}</TransitionLink></div>
-            <small>{productCount + serviceCount} of your listings are active</small>
           </div>
         </section>
+        <p data-banner-details className="text-xs">{productCount + serviceCount} of your listings are active</p>
+
+        {/* Everything in this section as pictures in its colour — the map a
+            woman who cannot read the rail finds her way by. */}
+        <SectionPictures id="earn" className="" />
 
         <div className={styles.stats}>
           <TransitionLink href="/app/wallet" className={styles.stat}><I name="Wallet" /><span><strong>{money(current)}</strong><small>{tr("earnDashboard.monthlyEarnings")}</small></span>{change !== null && <b className={change < 0 ? styles.decrease : undefined}>{change >= 0 ? "↑" : "↓"} {Math.abs(change)}%</b>}</TransitionLink>
@@ -115,7 +119,7 @@ export function EarnDashboard() {
         </section>
       </div>
 
-      <aside className={styles.rail} aria-label={tr("earnDashboard.earnOverview")}>
+      <aside className={`${styles.rail} ux-sticky-col`} aria-label={tr("earnDashboard.earnOverview")}>
         <section className={styles.railPanel}><div className={styles.railHeading}><h2>{tr("earnDashboard.yourEarnings")}</h2><TransitionLink href="/app/wallet">{tr("homeRail.viewWallet")} <I name="ArrowRight" /></TransitionLink></div><strong className={styles.earningsNumber}>{money(current)}</strong><p>this month {change !== null && <span className={change < 0 ? styles.decrease : styles.change}>{change >= 0 ? "↑" : "↓"} {Math.abs(change)}% vs last month</span>}</p><div className={styles.chart}>{chart.length ? chart.map((amount, i) => <div key={`${labels[i]}-${i}`}><span style={{ height: `${Math.max(6, amount / chartMax * 86)}px` }} /><small>{labels[i] || ""}</small></div>) : <p>{tr("earnDashboard.earningsHistoryWillAppearHere")}</p>}</div></section>
         <section className={styles.railPanel}>
           <div className={styles.railHeading}><h2>Course income</h2><TransitionLink href="/app/teach">My courses <I name="ArrowRight" /></TransitionLink></div>

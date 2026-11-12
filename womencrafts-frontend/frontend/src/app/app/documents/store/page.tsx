@@ -1,5 +1,8 @@
 "use client";
 
+import { JourneyTrail } from "@/components/ux/home/JourneyTrail";
+
+import { PlaceMark } from "@/components/ux/nav/Place";
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 
@@ -9,7 +12,11 @@ import { Text } from "@/components/ux/kit/form";
 import { HomeShell } from "@/components/ux/home/HomeShell";
 import { toast } from "@/components/ux/mobile/Toast";
 import { AvailabilitySwitch } from "@/components/ux/shop/Availability";
+import { StoreGallery } from "@/components/ux/shop/StoreGallery";
+import { StoreGalleryEditor } from "@/components/ux/shop/StoreGalleryEditor";
 import { StoreCover, StoreLogo } from "@/components/ux/shop/StoreBar";
+import { CatThumb, StoreCategoryPicker, catPicture, useShopCategories } from "@/components/ux/shop/categories";
+import type { StoreCategoryResult } from "@/lib/shop-categories-api";
 import { useAuth } from "@/context/AuthContext";
 import { apiErrorMessage } from "@/lib/api";
 import { apiMyStore, apiUpdateStore, type StoreSettings } from "@/lib/shop-api";
@@ -37,11 +44,20 @@ const LINES = [
 
 export default function StoreSettingsPage() {
   const { user } = useAuth();
-  const { data } = useResource(useCallback((s?: AbortSignal) => apiMyStore(s), []), null as StoreSettings | null);
+  const { data, source, refetch } = useResource(useCallback((s?: AbortSignal) => apiMyStore(s), []), null as StoreSettings | null);
+  const cats = useShopCategories();
+  // What the last category change did, so she can go straight to the paused ones.
+  const [moved, setMoved] = useState<StoreCategoryResult | null>(null);
+  const onCategory = (r: StoreCategoryResult) => {
+    setMoved(r);
+    setChanged(null);
+    cats.reload();
+    refetch();
+  };
   const [changed, setChanged] = useState<StoreSettings | null>(null);
   const store = changed ?? data;
   const [draft, setDraft] = useState<{ name?: string; tagline?: string }>({});
-  const [busy, setBusy] = useState<"" | "save" | "logo" | "cover">("");
+  const [busy, setBusy] = useState<"" | "save" | "logo" | "cover" | "gallery">("");
 
   const first = (user?.full_name || "").split(" ")[0] || "My";
   const names = [`${first}'s Creations`, `${first}'s Kitchen`, `${first} Stitches`, `${first}'s Handmade`, `${first} Crafts`, `Sakhi by ${first}`];
@@ -54,6 +70,7 @@ export default function StoreSettingsPage() {
     : null;
 
   const save = async () => {
+    if (busy || !dirty) return;
     setBusy("save");
     try {
       setChanged(await apiUpdateStore({ name, tagline }));
@@ -67,7 +84,7 @@ export default function StoreSettingsPage() {
   };
 
   const upload = async (which: "logo" | "cover", file: File | undefined) => {
-    if (!file) return;
+    if (!file || busy) return;
     const bad = validateImage(file);
     if (bad) { toast(bad, { tone: "error" }); return; }
     setBusy(which);
@@ -83,6 +100,7 @@ export default function StoreSettingsPage() {
   };
 
   const remove = async (which: "logo" | "cover") => {
+    if (busy) return;
     setBusy(which);
     try { setChanged(await apiUpdateStore({ [which]: "" })); } catch (e) { toast(apiErrorMessage(e), { tone: "error" }); }
     finally { setBusy(""); }
@@ -90,16 +108,49 @@ export default function StoreSettingsPage() {
 
   return (
     <HomeShell columns active="/app/documents/store" loadFailed="your store">
+      <JourneyTrail goal="sell" />
       <header className="mb-5">
-        <h1 className="ux-screen-title text-2xl font-extrabold" style={{ color: "var(--ux-ink)" }}>Store settings</h1>
-        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Your shop&rsquo;s name and pictures, and whether you are taking orders.</p>
+        <div className="flex min-w-0 items-center gap-3">
+          <PlaceMark size={44} />
+          <h1 className="ux-screen-title text-2xl font-extrabold min-w-0" style={{ color: "var(--ux-ink)" }}>Store settings</h1>
+        </div>
+        <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>What your shop sells, its name and pictures, and whether you are taking orders.</p>
       </header>
 
       {!store || !preview ? (
-        <Card><p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Loading your store…</p></Card>
+        <Card>{source === "error" ? <div role="alert"><p className="text-sm" style={{ color: "var(--ux-ink)" }}>Your store could not load. Your saved details are safe.</p><div className="mt-3"><Btn onClick={refetch} icon="RefreshCw">Try again</Btn></div></div> : <p role="status" className="text-xsm" style={{ color: "var(--ux-muted)" }}>Loading your store…</p>}</Card>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="ux-split-lg grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 space-y-5">
+            <Card id="category">
+              <h2 className="mb-1 text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>What does your shop sell?</h2>
+              <p className="mb-4 text-xs" style={{ color: "var(--ux-muted)" }}>
+                {store.category_key
+                  ? "Your shop sells in one category. Every product and service you list sits inside it. Changing it pauses the listings that don't fit — nothing is deleted."
+                  : "Pick one category. You can list products and services only inside it, so buyers always know what your shop is for."}
+              </p>
+              {moved && moved.paused > 0 && (
+                <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[12px] p-3" data-paused-note
+                     style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
+                  <Icons.PauseCircle className="h-5 w-5 shrink-0" />
+                  <p className="min-w-0 flex-1 text-xsm font-semibold">
+                    {moved.paused} {moved.paused === 1 ? "listing is" : "listings are"} paused because {moved.paused === 1 ? "it doesn't" : "they don't"} fit {moved.category_name}.
+                  </p>
+                  <Link href="/app/documents/listings?show=paused" className="ux-press rounded-full px-3 py-2 text-xs font-bold"
+                        style={{ background: "var(--ux-surface)", color: "var(--ux-brand)" }}>Fix them</Link>
+                </div>
+              )}
+              {!moved && (store.paused_outside ?? 0) > 0 && (
+                <p className="mb-4 text-xs font-semibold" style={{ color: "var(--ux-amber-ink)" }}>
+                  {store.paused_outside} paused {store.paused_outside === 1 ? "listing doesn't" : "listings don't"} fit your category.{" "}
+                  <Link href="/app/documents/listings?show=paused" className="underline">Move them</Link>
+                </p>
+              )}
+              {cats.data
+                ? <StoreCategoryPicker data={cats.data} onChanged={onCategory} />
+                : <p className="text-xsm" style={{ color: "var(--ux-muted)" }}>Loading categories…</p>}
+            </Card>
+
             <Card>
               <h2 className="mb-1 text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>Taking orders</h2>
               <p className="mb-3 text-xs" style={{ color: "var(--ux-muted)" }}>
@@ -109,9 +160,10 @@ export default function StoreSettingsPage() {
             </Card>
 
             <Card>
+              <form onSubmit={(event) => { event.preventDefault(); void save(); }}>
               <h2 className="mb-1 text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>Shop name</h2>
               <p className="mb-3 text-xs" style={{ color: "var(--ux-muted)" }}>Tap one, or write your own.</p>
-              <Text label="Shop name" value={name} max={40} placeholder={store.display_name}
+              <Text label="Shop name" name="store_name" autoComplete="organization" disabled={Boolean(busy)} value={name} max={40} placeholder={store.display_name} hint={`${name.length}/40 characters. Leave blank to use your default shop name.`}
                     onChange={(s) => setDraft((d) => ({ ...d, name: s }))} />
               <div className="mt-2.5 flex flex-wrap gap-2">
                 {names.map((n) => (
@@ -121,7 +173,7 @@ export default function StoreSettingsPage() {
 
               <h2 className="mb-1 mt-6 text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>A line about your shop</h2>
               <p className="mb-3 text-xs" style={{ color: "var(--ux-muted)" }}>Shown under the name.</p>
-              <Text label="A line about your shop" value={tagline} max={90} placeholder="Handmade with love"
+              <Text label="A line about your shop" name="store_tagline" disabled={Boolean(busy)} value={tagline} max={90} placeholder="Handmade with love" hint={`${tagline.length}/90 characters`}
                     onChange={(s) => setDraft((d) => ({ ...d, tagline: s }))} />
               <div className="mt-2.5 flex flex-wrap gap-2">
                 {LINES.map((l) => (
@@ -130,38 +182,50 @@ export default function StoreSettingsPage() {
               </div>
 
               <div className="mt-5 flex flex-wrap gap-2">
-                <Btn icon="Check" disabled={!dirty} loading={busy === "save"} onClick={save}>Save</Btn>
-                {dirty && <Btn variant="ghost" onClick={() => setDraft({})}>Undo</Btn>}
+                <Btn type="submit" icon="Check" disabled={!dirty || Boolean(busy)} loading={busy === "save"}>Save shop details</Btn>
+                {dirty && <Btn variant="ghost" disabled={Boolean(busy)} onClick={() => setDraft({})}>Undo</Btn>}
               </div>
+              </form>
             </Card>
 
             <Card>
-              <h2 className="mb-1 text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>Pictures</h2>
-              <p className="mb-4 text-xs" style={{ color: "var(--ux-muted)" }}>A clear logo and a cover photo of your work make your shop look trusted.</p>
+              <h2 className="mb-1 text-base font-extrabold" style={{ color: "var(--ux-ink)" }}>Store pictures</h2>
+              <p className="mb-4 text-xs" style={{ color: "var(--ux-muted)" }}>Add a logo and a wide cover, then show more of your work in your gallery. Picture changes save automatically.</p>
               <div className="grid gap-4 sm:grid-cols-[150px_minmax(0,1fr)]">
-                <PicturePick label="Logo" hint="Square works best" busy={busy === "logo"} has={!!store.logo}
+                <PicturePick label="Logo" hint="Square works best" busy={busy === "logo"} disabled={Boolean(busy)} has={!!store.logo}
                              onPick={(f) => upload("logo", f)} onRemove={() => remove("logo")}>
                   <StoreLogo store={preview} size={110} />
                 </PicturePick>
-                <PicturePick label="Cover photo" hint="Wide — your work, your stall, your kitchen" busy={busy === "cover"} has={!!store.cover}
+                <PicturePick label="Cover photo" hint="A wide image works best — aim for 1600 × 600 pixels. Your cover is cropped to fit." busy={busy === "cover"} disabled={Boolean(busy)} has={!!store.cover}
                              onPick={(f) => upload("cover", f)} onRemove={() => remove("cover")}>
-                  <div className="overflow-hidden rounded-[14px]"><StoreCover store={store} height={110} /></div>
+                  <div className="overflow-hidden rounded-[14px]"><StoreCover store={store} height={150} /></div>
                 </PicturePick>
+              </div>
+              <div className="mt-6 border-t pt-5" style={{ borderColor: "var(--ux-line)" }}>
+                <StoreGalleryEditor photos={store.gallery || []} disabled={Boolean(busy)}
+                  onBusyChange={(working) => setBusy(working ? "gallery" : "")}
+                  onSave={async (gallery) => { setChanged(await apiUpdateStore({ gallery })); }} />
               </div>
             </Card>
           </div>
 
           <aside className="min-w-0">
-            <div className="lg:sticky lg:top-[calc(var(--ux-topbar-h,72px)+18px)]">
+            <div>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.08em]" style={{ color: "var(--ux-muted)" }}>
                 <Icons.Eye className="h-3.5 w-3.5" /> What buyers see
               </p>
               <div className="ux-card overflow-hidden" style={{ padding: 0 }} data-store-preview>
-                <StoreCover store={preview} height={110} />
+                <StoreCover store={preview} height={110} fallback={cats.storeCat ? catPicture(cats.storeCat) : ""} />
                 <div className="px-4 pb-4">
-                  <div className="-mt-10"><StoreLogo store={preview} size={76} /></div>
+                  <div className="relative z-[1] -mt-10"><StoreLogo store={preview} size={76} /></div>
                   <h3 className="mt-2 text-lg font-extrabold" style={{ color: "var(--ux-ink)" }}>{preview.display_name}</h3>
                   {preview.tagline && <p className="text-xs" style={{ color: "var(--ux-muted)" }}>{preview.tagline}</p>}
+                  {cats.storeCat && (
+                    <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
+                       style={{ background: "var(--ux-brand-tint)", color: "var(--ux-brand)" }}>
+                      <CatThumb src={catPicture(cats.storeCat)} size={18} /> {cats.storeCat.name}
+                    </p>
+                  )}
                   {!preview.open && (
                     <p className="mt-3 flex items-start gap-2 rounded-[12px] p-2.5 text-xs font-semibold"
                        style={{ background: "var(--ux-tint-amber)", color: "var(--ux-amber-ink)" }}>
@@ -174,6 +238,7 @@ export default function StoreSettingsPage() {
                   </p>
                 </div>
               </div>
+              {!!store.gallery?.length && <div className="mt-4"><StoreGallery photos={store.gallery} name={preview.display_name} /></div>}
               {store.handle && (
                 <Link href={`/s/${store.handle}`} target="_blank"
                       className="ux-press mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-3.5 text-xs font-bold"
@@ -199,15 +264,15 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   );
 }
 
-function PicturePick({ label, hint, busy, has, onPick, onRemove, children }: {
-  label: string; hint: string; busy: boolean; has: boolean;
+function PicturePick({ label, hint, busy, disabled, has, onPick, onRemove, children }: {
+  label: string; hint: string; busy: boolean; disabled?: boolean; has: boolean;
   onPick: (f: File | undefined) => void; onRemove: () => void; children: React.ReactNode;
 }) {
   const input = useRef<HTMLInputElement>(null);
   return (
     <div className="min-w-0">
       <p className="mb-1.5 text-xs font-bold" style={{ color: "var(--ux-ink-2)" }}>{label}</p>
-      <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label={`Change ${label.toLowerCase()}`}
+      <button type="button" onClick={() => input.current?.click()} disabled={disabled || busy} aria-label={`Change ${label.toLowerCase()}`}
               className="ux-press relative block w-full text-start disabled:opacity-60">
         {children}
         <span className="absolute bottom-2 end-2 grid h-9 w-9 place-items-center rounded-full"
@@ -217,12 +282,12 @@ function PicturePick({ label, hint, busy, has, onPick, onRemove, children }: {
       </button>
       <p className="mt-1.5 text-2xs" style={{ color: "var(--ux-muted)" }}>{hint}</p>
       {has && (
-        <button type="button" onClick={onRemove} disabled={busy}
-                className="mt-1 text-2xs font-bold underline" style={{ color: "var(--ux-danger-ink)" }}>
+        <button type="button" onClick={onRemove} disabled={disabled || busy}
+                className="mt-1 min-h-11 text-xs font-bold underline" style={{ color: "var(--ux-danger-ink)" }}>
           Remove
         </button>
       )}
-      <input ref={input} type="file" accept="image/*" className="hidden"
+      <input ref={input} type="file" accept="image/*" className="hidden" disabled={disabled || busy}
              onChange={(e) => { onPick(e.target.files?.[0]); e.target.value = ""; }} />
     </div>
   );

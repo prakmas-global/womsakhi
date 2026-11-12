@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
-from app.core import mongosafe
+from app.core import masters, mongosafe
 from app.core.audit import record
 from app.core.deps import get_current_user
 from app.core.permissions import require_permission
@@ -67,6 +67,24 @@ from app.schemas.growth_admin import (
 from app.schemas.me import MessageResponse
 
 router = APIRouter(prefix="/admin/growth", tags=["Staff · Growth"])
+
+
+async def _from_master(list_key: str, value: str, current: str = "", field: str = "") -> str:
+    """A value checked against a master; one a record already has passes unchecked,
+    so disabling an item never blocks editing what already uses it."""
+    if current and (value or "").strip().lower() == current.strip().lower():
+        return current
+    return await masters.check(list_key, value, field=field)
+
+async def _languages(values: list[str], current: list[str] | None = None) -> list[str]:
+    """Languages checked against the `languages` master; ones the record already has pass."""
+    have = {c.strip().lower(): c for c in (current or [])}
+    out: list[str] = []
+    for v in values:
+        c = have.get((v or "").strip().lower()) or await masters.check("languages", v, field="language")
+        if c not in out:
+            out.append(c)
+    return out
 
 #: Sessions staff log after they happen. Its own collection so "sessions" on
 #: the mentor screen is a count of things that occurred, not a seeded integer.
@@ -203,10 +221,12 @@ async def list_events(
     dependencies=[Depends(require_permission("growth.create"))],
 )
 async def create_event(body: EventUpsert, request: Request, me: dict = Depends(get_current_user)):
+    category = await _from_master("event_categories", body.category, field="event category")
+    language = await _from_master("languages", body.language, field="language") if (body.language or "").strip() else ""
     doc = EventModel.create_document(
-        title=body.title, desc=body.desc, category=body.category, date_iso=body.date,
+        title=body.title, desc=body.desc, category=category, date_iso=body.date,
         time=body.time, duration=body.duration, mode=body.mode, venue=body.venue,
-        host=body.host, seats=body.seats, fee=body.fee, language=body.language,
+        host=body.host, seats=body.seats, fee=body.fee, language=language,
         status=body.status,
     )
     result = await _events().insert_one(doc)
@@ -227,6 +247,13 @@ async def update_event(
 ):
     updates = body.model_dump()
     updates["updated_at"] = datetime.now(timezone.utc)
+    current = await _events().find_one({"_id": to_object_id(event_id)}, {"category": 1, "language": 1})
+    if not current:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That event doesn't exist")
+    updates["category"] = await _from_master("event_categories", body.category, current.get("category", ""),
+                                             field="event category")
+    updates["language"] = (await _from_master("languages", body.language, current.get("language", ""), field="language")
+                           if (body.language or "").strip() else "")
     doc = await _events().find_one_and_update(
         {"_id": to_object_id(event_id)}, {"$set": updates}, return_document=True
     )
@@ -467,6 +494,7 @@ async def list_mentors(
     dependencies=[Depends(require_permission("growth.create"))],
 )
 async def create_mentor(body: MentorUpsert, request: Request, me: dict = Depends(get_current_user)):
+    body.languages = await _languages(body.languages)
     doc = MentorModel.create_document(
         name=body.name, headline=body.headline, bio=body.bio, photo=body.photo,
         expertise=body.expertise, languages=body.languages,
@@ -490,6 +518,8 @@ async def update_mentor(
     mentor_id: str, body: MentorUpsert, request: Request, me: dict = Depends(get_current_user)
 ):
     updates = body.model_dump()
+    current = await _mentors().find_one({"_id": to_object_id(mentor_id)}, {"languages": 1}) or {}
+    updates["languages"] = await _languages(body.languages, current.get("languages") or [])
     updates["updated_at"] = datetime.now(timezone.utc)
     doc = await _mentors().find_one_and_update(
         {"_id": to_object_id(mentor_id)}, {"$set": updates}, return_document=True
@@ -766,9 +796,10 @@ async def create_opportunity(
     body: OpportunityUpsert, request: Request, me: dict = Depends(get_current_user)
 ):
     from app.routes import work_talent as wt
+    kind = await _from_master("opportunity_types", body.kind, field="type of work")
     category, keys, names = await wt.resolve_job_skills(body.category, body.skill_keys)
     doc = OpportunityModel.create_document(
-        title=body.title, org=body.org, kind=body.kind, desc=body.desc,
+        title=body.title, org=body.org, kind=kind, desc=body.desc,
         location=body.location, mode=body.mode, pay=body.pay, skills=names or body.skills,
         category=category, skill_keys=keys,
         openings=body.openings, deadline=body.deadline, experience=body.experience,
@@ -799,6 +830,10 @@ async def update_opportunity(
 ):
     updates = body.model_dump()
     updates["updated_at"] = datetime.now(timezone.utc)
+    current = await _opportunities().find_one({"_id": to_object_id(opp_id)}, {"kind": 1})
+    if not current:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That opportunity doesn't exist")
+    updates["kind"] = await _from_master("opportunity_types", body.kind, current.get("kind", ""), field="type of work")
     from app.routes import work_talent as wt
     updates["category"], updates["skill_keys"], names = await wt.resolve_job_skills(body.category, body.skill_keys)
     if names:
@@ -910,6 +945,8 @@ def _application_row(d: dict, members: dict[str, dict], skills: dict | None = No
         history=_history(d),
         verified_skills=(skills or {}).get(d.get("user_id", ""), []),
         matching_skills=d.get("skills") or [],
+        done=("confirmed" if (d.get("completion") or {}).get("confirmed") else "mine")
+             if d.get("status") == ApplicationModel.STATUS_COMPLETED else "",
     )
 
 
@@ -955,22 +992,31 @@ async def decide_application(
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Say why — a decline with no reason is the thing everyone hates")
 
     now = datetime.now(timezone.utc)
-    doc = await _applications().find_one_and_update(
-        {"_id": oid},
-        {
-            "$set": {"status": body.status, "staff_note": body.staff_note, "updated_at": now},
-            "$push": {"history": {
-                "status": body.status, "at": now, "by": _actor_name(me), "note": body.staff_note,
-            }},
-        },
-        return_document=True,
-    )
+    if body.status == ApplicationModel.STATUS_COMPLETED:
+        # The team listed this work, so the team confirms it was done
+        # (app/core/work_done.py) — it then counts on her work profile.
+        from app.core import work_done
+        if not work_done.can_finish(existing):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Offer her the work first; mark it done once she has done it.")
+        doc = await work_done.mark_done(existing, by="employer", by_name=_actor_name(me), note=body.staff_note)
+    else:
+        doc = await _applications().find_one_and_update(
+            {"_id": oid},
+            {
+                "$set": {"status": body.status, "staff_note": body.staff_note, "updated_at": now},
+                "$push": {"history": {
+                    "status": body.status, "at": now, "by": _actor_name(me), "note": body.staff_note,
+                }},
+            },
+            return_document=True,
+        )
 
     headlines = {
         "shortlisted": "You've been shortlisted",
         "interview": "They'd like to interview you",
         "offered": "You have an offer",
         "closed": "About your application",
+        "completed": "Your work was confirmed",
         "applied": "Your application was updated",
     }
     await notify(

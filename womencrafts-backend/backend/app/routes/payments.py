@@ -1,14 +1,9 @@
-"""
-Payments.
+"""Direct-UPI payment activity for this release, with recipient confirmation.
 
-Two rules run through everything here:
-
-  1. **Never trust the client about money.** The amount is computed server-side
-     from the catalogue, never read from the request. A payment is only marked
-     paid after the PROVIDER confirms it — a browser saying "I paid" is a claim,
-     not evidence.
-  2. **An order belongs to the person who created it.** Every member-facing
-     query is scoped by the user id in the token, exactly like /me.
+Members pay the provider outside WomSakhi and submit a transaction reference.
+Course and mentoring owners check their own accounts and confirm receipt.
+A claim never creates wallet credit or counts as recipient confirmation.
+Legacy gateway routes remain disabled while DIRECT_UPI_ONLY is true.
 """
 
 from datetime import datetime, timezone
@@ -36,6 +31,11 @@ from app.schemas.payment import (
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
+def _require_gateway_mode():
+    if settings.DIRECT_UPI_ONLY:
+        raise HTTPException(501, "Pay the provider directly by UPI and submit your transaction reference on the course or session page. Gateway checkout is not available in this release.")
+
+
 def _orders():
     return get_database()[OrderModel.collection_name]
 
@@ -46,6 +46,8 @@ async def payment_methods(_: dict = Depends(require_active_member)):
     Only ever the methods the configured provider can actually take — offering a
     method that fails at the last step is worse than not offering it.
     """
+    if settings.DIRECT_UPI_ONLY:
+        return PaymentMethodsResponse(enabled=settings.PAYMENTS_ENABLED, provider="direct_upi", currency=settings.PAYMENT_CURRENCY, methods=[{"key": "upi", "label": "Pay recipient directly by UPI"}])
     provider = get_provider()
     return PaymentMethodsResponse(
         enabled=settings.PAYMENTS_ENABLED,
@@ -92,6 +94,7 @@ async def create_order(
     presses again. Without the key that is two orders; with it, the second
     press gets the first one's answer back.
     """
+    _require_gateway_mode()
     return await idempotency.once(
         request, str(me["_id"]), "payments.create_order",
         lambda: _create_order(payload, me),
@@ -99,6 +102,7 @@ async def create_order(
 
 
 async def _create_order(payload: CreateOrderRequest, me: dict):
+    _require_gateway_mode()
     if not settings.PAYMENTS_ENABLED:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Payments are currently disabled.")
 
@@ -187,6 +191,7 @@ async def confirm(
     Idempotent on `Idempotency-Key`: this is the single most consequential
     button in the app, and the one most likely to be pressed twice.
     """
+    _require_gateway_mode()
     return await idempotency.once(
         request, str(me["_id"]), f"payments.confirm:{order_id}",
         lambda: _confirm(order_id, payload, me),
@@ -194,6 +199,7 @@ async def confirm(
 
 
 async def _confirm(order_id: str, payload: ConfirmPaymentRequest, me: dict):
+    _require_gateway_mode()
     order = await _orders().find_one({"_id": to_object_id(order_id), "user_id": str(me["_id"])})
     if not order:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Order not found")
@@ -274,6 +280,7 @@ async def webhook(request: Request):
     browser closes mid-payment. Unsigned or unrecognised events are dropped
     silently — a 200 with no action, so a bad actor learns nothing.
     """
+    _require_gateway_mode()
     body = await request.body()
     event = get_provider().parse_webhook(body, dict(request.headers))
     if not event or not event.provider_payment_id:
@@ -299,3 +306,64 @@ async def webhook(request: Request):
             }},
         )
     return {"received": True}
+
+
+@router.get("/activity", summary="My direct UPI payments and recipient confirmations")
+async def payment_activity(me: dict = Depends(require_active_member)):
+    """Read existing payment states; never mint wallet credit or infer confirmation from a claim."""
+    uid = str(me["_id"])
+    db = get_database()
+    owned = await db[ProgramModel.collection_name].find({"owner_id": uid}, {"name": 1, "teacher_name": 1}).to_list(500)
+    own_ids = [str(row["_id"]) for row in owned]
+    enrolled = await db["enrollments"].find({
+        "$or": [{"user_id": uid}, {"program_id": {"$in": own_ids}}],
+        "payment.amount_minor": {"$gt": 0},
+    }).sort("updated_at", -1).to_list(500)
+    ids = {row.get("program_id", "") for row in enrolled}
+    programs = {str(row["_id"]): row for row in await db[ProgramModel.collection_name].find(
+        {"_id": {"$in": [to_object_id(value) for value in ids if len(value) == 24 and all(c in "0123456789abcdefABCDEF" for c in value)]}},
+        {"name": 1, "teacher_name": 1, "owner_id": 1},
+    ).to_list(1000)}
+    items = []
+
+    def iso(value):
+        return (value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value).isoformat() if isinstance(value, datetime) else ""
+
+    def manual(row, *, kind, title, recipient, href):
+        pay = row.get("payment") or {}
+        state = pay.get("status", "awaiting")
+        state = state if state in {"awaiting", "claimed", "paid", "declined"} else "awaiting"
+        if row.get("status") == "withdrawn" and state not in {"paid", "declined"}:
+            state = "cancelled"
+        items.append({
+            "id": f"{kind}:{row['_id']}", "kind": kind, "direction": "sent" if row.get("user_id") == uid else "received",
+            "title": title, "recipient": recipient, "amount_minor": int(pay.get("amount_minor") or row.get("price_minor") or 0),
+            "status": state, "reference": pay.get("reference", ""), "note": pay.get("note", ""), "href": href,
+            "submitted_at": iso(pay.get("claimed_at")), "confirmed_at": iso(pay.get("confirmed_at")),
+            "updated_at": iso(row.get("updated_at") or row.get("created_at")), "method": "upi", "legacy": False, "currency": settings.PAYMENT_CURRENCY.upper(),
+        })
+
+    for row in enrolled:
+        program = programs.get(row.get("program_id", ""), {})
+        pid = row.get("program_id", "")
+        manual(row, kind="course", title=program.get("name") or row.get("program_name") or "Course payment",
+               recipient=program.get("teacher_name") or "Course provider",
+               href=f"/app/programs/{pid}" if row.get("user_id") == uid else f"/app/teach/{pid}?tab=learners")
+    sessions = await db["mentorship_requests"].find({
+        "$or": [{"user_id": uid}, {"owner_id": uid}], "payment.amount_minor": {"$gt": 0},
+    }).sort("updated_at", -1).to_list(500)
+    for row in sessions:
+        manual(row, kind="mentoring", title=f"Mentoring with {row.get('mentor_name') or 'your mentor'}",
+               recipient=row.get("mentor_name") or "Mentor",
+               href="/app/mentors" if row.get("user_id") == uid else "/app/mentoring")
+    # Preserve older payment history without offering the gateway or inventing a UPI confirmation.
+    for row in await _orders().find({"user_id": uid}).sort("created_at", -1).to_list(200):
+        items.append({
+            "id": f"legacy:{row['_id']}", "kind": "legacy", "direction": "sent", "title": row.get("title") or "Earlier payment record",
+            "recipient": "Earlier platform record", "amount_minor": int(row.get("amount_minor") or 0),
+            "status": row.get("status", "created"), "reference": "", "note": "", "submitted_at": "", "confirmed_at": iso(row.get("paid_at")),
+            "updated_at": iso(row.get("updated_at") or row.get("created_at")), "method": row.get("method", ""), "legacy": True, "currency": row.get("currency") or settings.PAYMENT_CURRENCY.upper(),
+            "href": f"/app/programs/{row['reference_id']}" if row.get("purpose") == "program" else "/app/bookings",
+        })
+    items.sort(key=lambda row: row["updated_at"], reverse=True)
+    return {"items": items, "currency": settings.PAYMENT_CURRENCY.upper(), "mode": "direct_upi", "limit_per_source": 500}

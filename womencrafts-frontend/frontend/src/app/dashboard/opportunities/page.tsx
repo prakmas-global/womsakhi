@@ -1,5 +1,6 @@
 "use client";
 
+import { useOpportunityTypes } from "@/components/ux/work/types";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -31,7 +32,6 @@ import { apiAdminWorkTaxonomy, type AdminWorkCategory } from "@/lib/work-api";
  * Members can post work too; those rows say so, and staff can still close them.
  */
 
-const KINDS = ["Job", "Internship", "Freelance", "Craft order", "Training"];
 const MAX_SKILLS = 10;
 
 const EMPTY: OpportunityInput = {
@@ -42,6 +42,8 @@ const EMPTY: OpportunityInput = {
 const STATUS_LABEL: Record<string, string> = { "": "Open and closed", open: "Open", closed: "Closed" };
 
 export default function AdminOpportunitiesPage() {
+  // Types are the staff-controlled master (Masters → Opportunity types).
+  const types = useOpportunityTypes();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -55,6 +57,8 @@ export default function AdminOpportunitiesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<OpportunityRow | null>(null);
   const [form, setForm] = useState<OpportunityInput>(EMPTY);
+  // A post already in a since-disabled type keeps it as an option.
+  const KINDS = form.kind && !types.includes(form.kind) ? [...types, form.kind] : types;
   /** Typed skills on a listing made before the masters; kept until keys are picked. */
   const [legacySkills, setLegacySkills] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);

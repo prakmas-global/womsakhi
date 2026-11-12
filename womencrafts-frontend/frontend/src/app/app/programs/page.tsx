@@ -1,5 +1,7 @@
 "use client";
 
+import { JourneyTrail } from "@/components/ux/home/JourneyTrail";
+
 import { useState, useSyncExternalStore } from "react";
 import * as Icons from "@/components/ux/icons";
 
@@ -18,6 +20,7 @@ import { useCertificates } from "@/components/ux/live";
 import { AlsoHere } from "@/components/ux/AlsoHere";
 import { COPY } from "@/components/ux/copy";
 import { useT } from "@/i18n";
+import { PicTiles, pictureOr, useMasterPictures } from "@/components/ux/media/MasterPictures";
 
 // "Paths" is gone. It showed four learning paths from a constant — "Career
 // Growth Path · 8 courses · 32 lessons · 60% complete" — with progress nothing
@@ -49,7 +52,7 @@ export default function LearningPage() {
   const { data: CERTIFICATES } = useCertificates();
   const ME = useMe();
   const [tab, setTab] = useState<string>("All courses");
-  const [cat, setCat] = useState("All");
+  const [chosenCategory, setCat] = useState<string | null>(null);
   const [q, setQ] = useState("");
   /*
     `?cat=A,B&path=Name` — a learning path from the Learn home (Career & Jobs,
@@ -57,14 +60,25 @@ export default function LearningPage() {
     here with no filter at all, so every path opened the same full list.
     Read as an external store so the server and first client render agree.
   */
+  const catPics = useMasterPictures("course_categories");
+  const masterCats = catPics.labels;
   const linked = useSyncExternalStore(noSubscribe, () => window.location.search, () => "");
+  const cat = chosenCategory ?? (new URLSearchParams(linked).get("price") === "free" ? "Free" : "All");
   const [pathOff, setPathOff] = useState(false);
   const pathCats = pathOff ? [] : (new URLSearchParams(linked).get("cat") || "").split(",").map((x) => x.trim()).filter(Boolean);
   const pathName = new URLSearchParams(linked).get("path") || pathCats.join(", ");
 
   // The categories come from the courses themselves — never a chip that can
-  // only lead to an empty list. "Free" and "Paid" come first.
-  const categories = ["All", "Free", "Paid", ...Array.from(new Set(ALL.map((c) => c.category))).sort()];
+  // only lead to an empty list — in the order staff set them (Masters → Course
+  // categories); a course still in an older category comes after. "Free" and
+  // "Paid" come first.
+  const present = new Set(ALL.map((c) => c.category));
+  const ordered = [...masterCats.filter((c) => present.has(c)), ...Array.from(present).filter((c) => !masterCats.includes(c)).sort()];
+  const categories = ["All", "Free", "Paid"];
+  // A course with no cover of its own shows its category's picture. A cover
+  // she chose from the app's library is hers too, though its path is /ux/.
+  const pictured = (c: (typeof ALL)[number]) =>
+    !c.ownCover && c.thumb.startsWith("/ux/") ? { ...c, thumb: pictureOr(null, [c.title], catPics.of(c.category)) } : c;
   const needle = q.trim().toLowerCase();
   const picks = ALL.filter((c) =>
     (!pathCats.length || pathCats.includes(c.category)) &&
@@ -131,6 +145,7 @@ export default function LearningPage() {
         </div>
       }
     >
+      <JourneyTrail goal="learn" />
       <ScreenHead
         title="Courses"
         sub={`${ALL.length} ${plural("course", ALL.length)} from the WomSakhi team and from women who teach here.`}
@@ -176,16 +191,25 @@ export default function LearningPage() {
               </button>
             </div>
           )}
-          <ChipRow className="mb-4">
+          <ChipRow className="mb-3">
             {categories.map((c) => (
               <Chip key={c} selected={cat === c} onClick={() => setCat(c)}>{c}</Chip>
             ))}
           </ChipRow>
+          {/* Categories as pictures; tap again to show everything. */}
+          {ordered.length > 0 && (
+            <PicTiles className="mb-3" label="Course categories" value={cat}
+                      onPick={(c) => setCat(cat === c ? "All" : c)}
+                      tiles={ordered.map((c) => {
+                        const n = ALL.filter((x) => x.category === c).length;
+                        return { value: c, label: c, src: catPics.pic(c), sub: `${n} course${n === 1 ? "" : "s"}` };
+                      })} />
+          )}
           {picks.length ? (
             <>
               {/* The same card everywhere: two across on a phone, three from `lg`. */}
               <div className="ux-stagger grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-[16px]">
-                {picks.map((c) => <CourseCard key={c.id} c={c} />)}
+                {picks.map((c) => <CourseCard key={c.id} c={pictured(c)} />)}
               </div>
             </>
           ) : (

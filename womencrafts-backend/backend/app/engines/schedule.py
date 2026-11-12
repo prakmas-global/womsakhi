@@ -164,17 +164,31 @@ def next_occurrence(
     tz = zone(tz_name)
     at = parse_local_time(schedule.get("local_time") or "")
     days = _weekdays(schedule.get("days"))
+    interval = schedule.get("interval_minutes", 0)
+    if isinstance(interval, bool) or not isinstance(interval, int) or interval < 0 or (interval and not 15 <= interval <= 720):
+        return None
+    end = parse_local_time(schedule.get("end_time") or "") if interval else at
+    start_minute = at.hour * 60 + at.minute
+    end_minute = end.hour * 60 + end.minute
+    if interval and (not schedule.get("end_time") or end_minute <= start_minute):
+        return None
+    if interval and (at.strftime("%H:%M") != schedule.get("local_time") or end.strftime("%H:%M") != schedule.get("end_time")):
+        return None
 
     # Start from her local day, not UTC's. At 23:00 UTC it is already tomorrow
     # in Hyderabad, and computing "today" from UTC would skip a day for her.
     cursor = after.astimezone(tz).date()
     for _ in range(MAX_LOOKAHEAD_DAYS):
         if not days or cursor.weekday() in days:
-            candidate = _instant(cursor, at, tz)
-            if candidate > after:
-                if ends_at and candidate > ends_at:
-                    return None
-                return candidate
+            # Rebuild each local day's slots from its start time. Snoozing,
+            # downtime and timezone changes must not shift the entire series.
+            slots = range(start_minute, end_minute + 1, interval or 1)
+            candidates = sorted({_instant(cursor, time(m // 60, m % 60), tz) for m in slots})
+            for candidate in candidates:
+                if candidate > after:
+                    if ends_at and candidate > ends_at:
+                        return None
+                    return candidate
         cursor += timedelta(days=1)
     return None
 
@@ -246,7 +260,7 @@ def rebuild_for_zone(
     # the instant itself, which is correct for every schedule type and needs no
     # field that may not be there.
     stated = (schedule or {}).get("local_time") or ""
-    fixed = parse_local_time(stated) if stated else None
+    fixed = parse_local_time(stated) if stated and not (schedule or {}).get("interval_minutes") else None
 
     moved: list[datetime] = []
     for inst in pending:

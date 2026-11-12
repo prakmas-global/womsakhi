@@ -129,7 +129,13 @@ def plan(entry: dict, tz: str, lead: int, now: datetime) -> dict | None:
         except Exception:  # noqa: BLE001
             pass
     if at < now - timedelta(minutes=5):
-        return None
+        if repeat != "Every month":
+            return None
+        # Today's monthly occurrence may already have passed (including its
+        # lead time). Carry it forward instead of dropping the rule until
+        # tomorrow's sweep. A future snooze above still takes precedence.
+        day = next_monthly(start, day + timedelta(days=1), done)
+        at = _local(day, hhmm, tz) - timedelta(minutes=lead)
     return {"schedule_type": ReminderModel.SCHEDULE_ONCE, "at": at}
 
 

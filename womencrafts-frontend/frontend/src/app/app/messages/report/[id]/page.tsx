@@ -1,5 +1,6 @@
 "use client";
 
+import { useMaster } from "@/lib/masters-api";
 import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -38,6 +39,12 @@ const MIN = 10;
 const MAX = 1000;
 
 export default function ReportPersonPage() {
+  // Reasons are the second level of the staff-controlled
+  // `safety_report_categories` master, each under the category it files to.
+  // The built-in reasons show until it loads.
+  const { items: cats, loaded } = useMaster("safety_report_categories");
+  const fromMaster = cats.flatMap((c) => (c.children ?? []).map((ch) => ({ id: ch.key, label: ch.label, category: c.label })));
+  const reasons: { id: string; label: string; category: string }[] = loaded && fromMaster.length ? fromMaster : [...REASONS];
   const params = useParams<{ id: string }>();
   const id = String(params?.id ?? "");
   const [conv, setConv] = useState<ConvDetail | null>(null);
@@ -64,7 +71,7 @@ export default function ReportPersonPage() {
 
   const len = details.trim().length;
   const detailsOk = len >= MIN && len <= MAX;
-  const chosen = REASONS.find((r) => r.id === reason);
+  const chosen = reasons.find((r) => r.id === reason);
   const ready = Boolean(chosen) && detailsOk && !busy;
   const name = conv?.name ?? "this person";
   const first = name.split(" ")[0];
@@ -132,7 +139,7 @@ export default function ReportPersonPage() {
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 <Link href="/app/messages"
                       className="ux-press inline-flex min-h-[46px] items-center gap-2 rounded-full px-5 text-[15px] font-bold lg:text-xsm"
-                      style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                      style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
                   Back to messages
                 </Link>
                 <Link href="/app/safety"
@@ -147,7 +154,7 @@ export default function ReportPersonPage() {
               <fieldset aria-describedby={touched && !chosen ? `${groupId}-err` : undefined}>
                 <legend className="text-sm font-bold" style={{ color: "var(--ux-ink)" }}>What happened?</legend>
                 <div className="mt-2 grid gap-1.5">
-                  {REASONS.map((r) => {
+                  {reasons.map((r) => {
                     const on = reason === r.id;
                     return (
                       <label key={r.id}
@@ -224,7 +231,7 @@ export default function ReportPersonPage() {
                 </Link>
                 <button type="submit" disabled={!ready} aria-busy={busy} data-report-submit
                         className="ux-press inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-6 text-[15px] font-bold disabled:cursor-not-allowed disabled:opacity-50 lg:text-xsm"
-                        style={{ background: "linear-gradient(96deg, var(--ux-rib-2), var(--ux-rib-3))", color: "var(--ux-on-brand)" }}>
+                        style={{ background: "var(--ux-action-gradient)", color: "var(--ux-on-brand)" }}>
                   {busy ? <Icons.Loader2 className="h-4 w-4 animate-spin" /> : <Icons.Flag className="h-4 w-4" />}
                   {busy ? "Sending…" : "Send report"}
                 </button>

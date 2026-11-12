@@ -83,6 +83,8 @@ export interface ReminderSchedule {
   local_time: string;
   /** 0 = Monday, matching Python's `weekday()`. */
   days: number[];
+  interval_minutes?: number;
+  end_time?: string;
   offset_minutes: number;
 }
 
@@ -98,6 +100,7 @@ export interface Reminder {
   state: string;
   version: number;
   ends_at: string | null;
+  due_occurrence?: Occurrence | null;
 }
 
 export interface Occurrence {
@@ -120,6 +123,8 @@ export interface ReminderInput {
   local_time?: string;
   /** Empty = every day. 0 = Monday, matching Python's `weekday()`. */
   days?: number[];
+  interval_minutes?: number;
+  end_time?: string;
   offset_minutes?: number;
   anchor_at?: string;
   ends_at?: string;
@@ -180,6 +185,11 @@ export async function apiCreateReminder(body: ReminderInput): Promise<Reminder> 
   return data;
 }
 
+export async function apiPreviewReminder(body: ReminderInput, signal?: AbortSignal): Promise<string[]> {
+  const { data } = await apiClient.post<{ next: string[] }>("/engines/reminders/preview", { ...body, tz: zone() }, { signal });
+  return data.next;
+}
+
 /**
  * The next five real instants.
  *
@@ -214,6 +224,11 @@ export async function apiStopReminder(definitionId: string): Promise<boolean> {
     `/engines/reminders/${definitionId}`,
   );
   return data.stopped;
+}
+
+export async function apiSetReminderState(definitionId: string, state: "paused" | "scheduled"): Promise<boolean> {
+  const { data } = await apiClient.post<{ updated: boolean }>(`/engines/reminders/${definitionId}/state`, { state });
+  return data.updated;
 }
 
 /* ── her answers ────────────────────────────────────────────────────────── */

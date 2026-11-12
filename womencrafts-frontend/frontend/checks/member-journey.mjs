@@ -121,10 +121,15 @@ for (const viewport of viewports) {
           return box.width > 0 && box.height > 0;
         };
         return ![...document.querySelectorAll(
-          '.wc-skeleton,[class*="animate-pulse"],[class*="animate-spin"]'
+          '.wc-skeleton,.ux-skeleton,[class*="animate-pulse"],[class*="animate-spin"]'
         )].some(visible);
       }, { timeout: 5000 }).catch(() => {});
       await new Promise((done) => setTimeout(done, 120));
+      // Measure settled geometry. The tour slides in by 22px; measuring it
+      // mid-animation reports temporary motion as page overflow.
+      await page.waitForFunction(() => [...document.querySelectorAll(".ux-tour-slide")]
+        .every((element) => element.getAnimations().every((animation) => animation.playState !== "running")),
+      { timeout: 2000 }).catch(() => {});
 
       const state = await page.evaluate(() => {
         const visible = (element) => {
@@ -149,7 +154,7 @@ for (const viewport of viewports) {
             if (el.getAttribute("aria-label") || el.getAttribute("placeholder") || el.getAttribute("aria-labelledby")) return false;
             return !el.closest("label") && !(el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`));
           }).length;
-        const loading = [...document.querySelectorAll('.wc-skeleton,[class*="animate-pulse"],[class*="animate-spin"]')]
+        const loading = [...document.querySelectorAll('.wc-skeleton,.ux-skeleton,[class*="animate-pulse"],[class*="animate-spin"]')]
           .filter(visible).length;
         return {
           pathname: location.pathname,
@@ -228,7 +233,7 @@ report.summary = {
   explicitNotReady: new Set(report.passes.flatMap((pass) => pass.results.filter((row) => row.notReady).map((row) => row.route))).size,
 };
 
-const output = resolve(process.cwd(), "../../docs/member-journey-step-02.json");
+const output = resolve(process.cwd(), process.env.CHECK_JOURNEY_REPORT || "../../docs/member-journey-step-02.json");
 writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
 console.log(`\n  ${report.summary.checked} screen/viewport checks`);
 console.log(`  ${report.summary.uniqueDestinations} unique destinations`);

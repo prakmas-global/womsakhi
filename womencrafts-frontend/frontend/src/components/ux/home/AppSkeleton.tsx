@@ -182,10 +182,10 @@ export function HomeBodySkeleton() {
          style={{ animationDelay: "var(--ux-t-fast)" }}>
       <span className="sr-only">Loading your home screen…</span>
 
-      {/* 1 — the hero: 408 */}
-      <section className="ux-sq relative isolate overflow-hidden rounded-[20px]"
+      {/* The home hero follows the artwork’s natural proportions. */}
+      <section data-banner="home" className="ux-sq relative isolate overflow-hidden rounded-[20px]"
                style={{ border: "1px solid var(--ux-line)" }}>
-        <Bar h="auto" r={0} style={{ aspectRatio: "2.8 / 1" }} />
+        <Bar h="auto" r={0} style={{ aspectRatio: "1900 / 760" }} />
         {/* The real strip is a brand gradient. `--ux-surface` here, not
             `--ux-surface-2`: the shimmer's own base IS `--ux-surface-2`, so a
             bar drawn on that colour is a bar nobody can see — 86px of hero that

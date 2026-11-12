@@ -128,6 +128,9 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("user_id", ASCENDING), ("kind", ASCENDING)], name="user_kind"),
         # The market browse: live listings that are not hers, newest first.
         IndexModel([("status", ASCENDING), ("updated_at", DESCENDING)], name="live_updated"),
+        # Category filters in the market, and staff's "how many use this".
+        IndexModel([("subcategory_key", ASCENDING), ("status", ASCENDING)], name="subcategory_status"),
+        IndexModel([("category_key", ASCENDING), ("status", ASCENDING)], name="category_status"),
     ],
     "shop_orders": [
         # "my orders, newest first" and "who is waiting on me"
@@ -385,6 +388,18 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("active", ASCENDING), ("order", ASCENDING)], name="active_order"),
     ],
 
+    # --- masters (app/core/masters.py) ---------------------------------------
+    "master_items": [
+        IndexModel([("list", ASCENDING), ("key", ASCENDING)], unique=True, name="list_key_unique"),
+        IndexModel([("list", ASCENDING), ("parent_key", ASCENDING), ("order", ASCENDING)], name="list_parent_order"),
+    ],
+
+    # --- shop categories (app/core/market_categories.py) ----------------------
+    "market_categories": [
+        IndexModel([("key", ASCENDING)], unique=True, name="key_unique"),
+        IndexModel([("parent_key", ASCENDING), ("order", ASCENDING)], name="parent_order"),
+    ],
+
     # --- community -----------------------------------------------------------
     # Friends and the feed (routes/social.py). One row per pair, whoever asked.
     "friendships": [
@@ -452,6 +467,35 @@ INDEXES: dict[str, list[IndexModel]] = {
             name="user_activity_unique",
         ),
         IndexModel([("user_id", ASCENDING), ("saved", ASCENDING), ("updated_at", DESCENDING)], name="user_saved_recent"),
+    ],
+    # Rent & borrow (routes/rentals.py): the board, an item's held dates, her bookings.
+    "rental_items": [
+        IndexModel([("status", ASCENDING), ("created_at", DESCENDING)], name="status_created"),
+        IndexModel([("owner_id", ASCENDING)], name="owner"),
+    ],
+    "rental_bookings": [
+        IndexModel([("item_id", ASCENDING), ("status", ASCENDING)], name="item_status"),
+        IndexModel([("renter_id", ASCENDING), ("created_at", DESCENDING)], name="renter_created"),
+        IndexModel([("owner_id", ASCENDING), ("created_at", DESCENDING)], name="owner_created"),
+    ],
+    "rental_reviews": [
+        IndexModel([("about_user_id", ASCENDING), ("about", ASCENDING)], name="about"),
+        IndexModel([("booking_id", ASCENDING), ("by_user_id", ASCENDING)], unique=True, name="one_per_side"),
+    ],
+    # My Khata (routes/khata.py): every read is one woman's, by month or by chit.
+    "khata_notes": [
+        IndexModel([("user_id", ASCENDING), ("pinned", DESCENDING), ("updated_at", DESCENDING)], name="user_pinned_updated"),
+    ],
+    "khata_entries": [
+        IndexModel([("user_id", ASCENDING), ("on", DESCENDING)], name="user_on"),
+        IndexModel([("chit_id", ASCENDING)], name="chit"),
+    ],
+    "khata_chits": [
+        IndexModel([("owner_id", ASCENDING), ("created_at", DESCENDING)], name="owner_created"),
+        IndexModel([("members.user_id", ASCENDING)], name="linked_member"),
+    ],
+    "khata_settings": [
+        IndexModel([("user_id", ASCENDING)], unique=True, name="user_unique"),
     ],
     "circle_contributions": [
         # The rule that makes paying twice for one round impossible. It is a

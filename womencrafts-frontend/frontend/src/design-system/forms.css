@@ -1,0 +1,70 @@
+/* Shared field states for member, staff, dialog and public forms. */
+:root {
+  --field-bg: var(--surface);
+  --field-ink: var(--foreground);
+  --field-line: var(--color-line-strong, var(--ws-line-strong));
+  --field-focus: var(--color-focus);
+  --field-halo: color-mix(in srgb, var(--field-focus) 13%, transparent);
+  --field-error: var(--ws-danger-ink);
+}
+.ux {
+  --field-bg: var(--ux-surface);
+  --field-ink: var(--ux-ink);
+  --field-line: var(--ux-line-strong);
+  --field-focus: var(--ux-brand);
+  --field-error: var(--ux-danger-ink);
+}
+.wc-field, [data-field-shell] {
+  background: var(--field-bg);
+  border: 1px solid var(--field-line);
+  border-radius: 12px;
+  box-shadow: none;
+  color: var(--field-ink);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.wc-field:hover:not(:disabled), [data-field-shell]:hover:not(:has(:disabled)) {
+  border-color: color-mix(in srgb, var(--field-line), var(--field-ink) 24%);
+}
+/* One halo follows the visible field, including compound controls with a prefix.
+   Important only on active/error chrome: replaces competing rings and inline borders. */
+html body :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="submit"]):not([type="button"]):not([type="hidden"]), textarea, select, button.wc-field):not(.auth-code-input):not([data-field-input]):not(.wsa-in input):not(.wsa-phone input):focus,
+html body [data-field-shell]:focus-within {
+  border-color: var(--field-focus) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--field-halo) !important;
+}
+html body :is(.wc-field, input, textarea, select)[aria-invalid="true"],
+html body [data-field-shell]:has([aria-invalid="true"]) {
+  --field-focus: var(--field-error);
+  --field-halo: color-mix(in srgb, var(--field-error) 13%, transparent);
+  border-color: var(--field-error) !important;
+}
+html body :is(.wc-field, input, textarea, select)[aria-invalid="true"]:focus,
+html body [data-field-shell]:has([aria-invalid="true"]):focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--field-error) 13%, transparent) !important;
+}
+html body [data-field-shell] [data-field-input]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+html body :is(.wc-field, input, textarea, select):disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+html body :is(input, textarea)[readonly]:not(:disabled) { cursor: default !important; }
+textarea { resize: vertical; }
+/* Preserve browser autofill without the bright yellow or unreadable dark text. */
+.wc-field:autofill { color: var(--field-ink); }
+@media (max-width: 1023px) {
+  /* Prevent iOS zoom when tapping a small field, in admin forms as well. */
+  html body :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]), textarea, select) {
+    font-size: max(16px, 1rem);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wc-field, [data-field-shell] { transition: none; }
+}
+@media (forced-colors: active) {
+  html body :is(input, textarea, select, button.wc-field):focus,
+  html body [data-field-shell]:focus-within { outline: 2px solid Highlight !important; outline-offset: 2px; }
+}

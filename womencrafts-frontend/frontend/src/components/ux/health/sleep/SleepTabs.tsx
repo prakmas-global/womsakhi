@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { ClockTimePicker } from "../ClockTimePicker";
 
 import { Btn } from "@/components/ux/kit";
 import { Text } from "@/components/ux/kit/form";
@@ -11,7 +12,7 @@ import {
 } from "@/components/ux/health/kit";
 import { addDays, daysBetween, fmtDay, today, type Entry, type KindData } from "@/lib/health-api";
 import { DEFAULT_ROUTINE, FACTORS, FACTOR_ART, QUALITY_TILES, SLEEP_TIPS } from "@/components/ux/health/nutrition/data";
-import { Field, FlowNote, HBar, HistoryRow, StepNum, TimeFace, TimePick, fmt12 } from "@/components/ux/health/nutrition/parts";
+import { Field, FlowNote, HBar, HistoryRow, StepNum, TimePick, fmt12 } from "@/components/ux/health/nutrition/parts";
 import { FormLauncher, PicChoice, Review, StepSheet, type FlowStep } from "@/components/ux/health/StepFlow";
 
 /**
@@ -30,7 +31,6 @@ type Settings = ReturnType<typeof useHealthSettings>;
 export const BED_REMINDER = "Time for bed";
 const QUALITIES = ["Poor", "Fair", "Good", "Great"] as const;
 const BED_PRESETS = ["21:30", "22:00", "22:30", "23:00", "23:30"];
-const WAKE_PRESETS = ["05:30", "06:00", "06:30", "07:00", "07:30"];
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 export const sleepMin = (bed: string, wake: string) => (((toMin(wake) - toMin(bed)) % 1440) + 1440) % 1440;
@@ -189,7 +189,7 @@ export function LogTab({ store }: { store: SleepStore }) {
   // The card comes first on a phone (logging last night is why she came)
   // and sits on the right on a wide screen, beside her history.
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="ux-split-xl grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="order-2 flex min-w-0 flex-col gap-5 xl:order-1">
         <Panel title="Sleep history" sub={ss.length ? `${ss.length} night${ss.length === 1 ? "" : "s"} logged` : undefined}>
           {ss.length === 0 ? (
@@ -278,13 +278,12 @@ function SleepLogFlow({ store, editing, onClose }: { store: SleepStore; editing:
       </> },
     { id: "bed", title: "When did you go to bed?", hint: "Tap a time, or set the exact one.",
       body: <>
-        <TimeFace value={bed} hue={hue} caption="Went to bed" />
-        <TimePick label="Bedtime" value={bed} onChange={setBed} presets={BED_PRESETS} />
+        <ClockTimePicker label="Bedtime" value={bed} onChange={setBed} />
       </> },
     { id: "wake", title: "When did you wake up?", hint: "We work out how long you slept.", valid: !bad,
       body: <>
-        <TimeFace value={wake} hue={hue} caption="Woke up" />
-        <TimePick label="Wake-up time" value={wake} onChange={setWake} presets={WAKE_PRESETS} />
+        <ClockTimePicker label="Wake-up time" value={wake} onChange={setWake} />
+        <p className="text-sm" style={{color:"var(--ux-muted)"}}>Wake-up date: {fmtDay(date)}. Bedtime is {bed > wake ? "the previous day" : "the same day"}.</p>
         <FlowNote data-sleep-duration tone={bad ? "error" : "info"} hue={hue} icon={bad ? undefined : "Moon"}>
           {bad ? "Sleep should be between 1 and 16 hours. Check both times." : `${hm(m)} of sleep`}
         </FlowNote>

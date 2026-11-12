@@ -34,6 +34,8 @@ class ListingCard(BaseModel):
     low_stock: bool
     out_of_stock: bool
     category: str
+    category_key: str = ""
+    subcategory_key: str = ""
     place: str
     travels_km: int
     photo: str
@@ -75,6 +77,9 @@ class PublicShop(BaseModel):
     name: str
     #: The category most of her listings are in. Derived from them, not typed.
     trade: str
+    #: Her store category's picture as staff set it ("" = none: the page picks
+    #: one from `trade`). Stands in for a cover she has not added.
+    trade_image: str = ""
     #: The place she has written on her own listings, when they agree on one.
     place: str
     listings: list[ListingCard] = []
@@ -88,6 +93,7 @@ class PublicShop(BaseModel):
     tagline: str = ""
     logo: str = ""
     cover: str = ""
+    gallery: list[str] = Field(default_factory=list)
     #: False while she has closed her store; the page says so above her things.
     open: bool = True
     away_line: str = ""
@@ -107,6 +113,9 @@ class ListingResponse(BaseModel):
     low_stock: bool
     out_of_stock: bool
     category: str
+    category_key: str = ""
+    subcategory_key: str = ""
+    paused_reason: str = ""
     place: str
     travels_km: int
     photo: str
@@ -143,6 +152,11 @@ class ListingCreate(BaseModel):
     rate: str = Field("", description=" | ".join(ListingModel.RATES))
     stock: Optional[int] = Field(None, ge=0)
     category: str = Field("", max_length=60)
+    #: Keys in the staff-controlled tree. The sub-category must sit under her
+    #: store's category (checked by the server); `category` is then set to the
+    #: sub-category's name for display.
+    category_key: str = Field("", max_length=40)
+    subcategory_key: str = Field("", max_length=40)
     place: str = Field("", max_length=120)
     travels_km: int = Field(0, ge=0, le=200)
     photo: MediaRef = Field("", max_length=400)
